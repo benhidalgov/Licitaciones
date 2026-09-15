@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hotel Plaza San Francisco | DUOC UC - Gestion de Licitaciones{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-full flex flex-col font-sans antialiased">
+    <header class="bg-slate-900 text-white border-b border-slate-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('dashboard') if session.get('user') else url_for('login') }}" class="flex flex-col">
+                        <span class="text-lg font-bold tracking-tight text-white">Hotel Plaza San Francisco | DUOC UC</span>
+                        <span class="text-xs text-slate-400">Sistema de Gestion de Licitaciones de Mercado Publico</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    {% if session.get('user') %}
+                    <nav class="hidden md:flex space-x-4">
+                        <a href="{{ url_for('dashboard') }}" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-sm font-medium">Licitaciones</a>
+                    </nav>
+                    <div class="flex items-center space-x-4 pl-4 border-l border-slate-700">
+                        <span class="text-xs text-slate-300 font-medium">Usuario: <strong class="text-white">{{ session.get('user') }}</strong></span>
+                        <a href="{{ url_for('logout') }}" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded border border-slate-700 transition-colors">Cerrar Sesion</a>
+                    </div>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="text-sm text-slate-300 hover:text-white font-medium">Acceso Funcional</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for category, message in messages %}
+                        {% if category in ['error', 'danger'] %}
+                        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded text-sm" role="alert">
+                            <span>{{ message }}</span>
+                        </div>
+                        {% elif category == 'success' %}
+                        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded text-sm" role="alert">
+                            <span>{{ message }}</span>
+                        </div>
+                        {% else %}
+                        <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded text-sm" role="alert">
+                            <span>{{ message }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs">
+            <span>Hotel Plaza San Francisco y DUOC UC - Prototipo de Gestion Comercial y Operativa de Licitaciones. Todos los derechos reservados.</span>
+        </div>
+    </footer>
+</body>
+</html>
