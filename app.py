@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 import database
 
 app = Flask(__name__)
@@ -7,6 +7,14 @@ app.secret_key = "licitaciones-secret-key-2026"
 
 DEMO_USER = "admin"
 DEMO_PASS = "admin123"
+
+VALID_ESTADOS = [
+    "Identificada",
+    "Calificada",
+    "Participada",
+    "Adjudicada",
+    "Descartada"
+]
 
 
 def login_required(f):
@@ -88,6 +96,55 @@ def dashboard():
     )
 
 
+@app.route("/licitaciones/<id_licitacion>")
+@login_required
+def licitacion_detalle(id_licitacion):
+    lic = database.get_licitacion_by_id(id_licitacion)
+    if not lic:
+        abort(404)
+
+    presupuesto = lic["presupuesto_mandante"]
+    costo = lic["costo_base_hotel"]
+    diferencia = presupuesto - costo
+    es_inviable = costo > presupuesto
+    deficit = abs(diferencia) if es_inviable else 0
+    margen_porcentaje = round((diferencia / presupuesto) * 100, 1) if presupuesto > 0 else 0
+
+    return render_template(
+        "detail.html",
+        lic=lic,
+        diferencia=diferencia,
+        es_inviable=es_inviable,
+        deficit=deficit,
+        margen_porcentaje=margen_porcentaje,
+        valid_estados=VALID_ESTADOS,
+        user=session.get("user")
+    )
+
+
+@app.route("/licitaciones/<id_licitacion>/cambiar_estado", methods=["POST"])
+@login_required
+def cambiar_estado_licitacion(id_licitacion):
+    lic = database.get_licitacion_by_id(id_licitacion)
+    if not lic:
+        abort(404)
+
+    nuevo_estado = request.form.get("estado_embudo", "").strip()
+    if nuevo_estado not in VALID_ESTADOS:
+        flash(f"Estado invalido '{nuevo_estado}'. Seleccione una etapa valida del embudo comercial.", "error")
+        return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+    database.update_licitacion(id_licitacion, {"estado_embudo": nuevo_estado})
+    flash(f"Estado en el embudo comercial actualizado exitosamente a '{nuevo_estado}' para la licitacion {id_licitacion}.", "success")
+    return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
+
+
 if __name__ == "__main__":
     database.init_db()
     app.run(debug=True, host="127.0.0.1", port=5000)
+
