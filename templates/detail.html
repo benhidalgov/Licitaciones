@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}Ficha de Licitacion {{ lic.id_licitacion }} - Gestion Comercial{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Migas de Pan y Navegacion Superior -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+        <nav class="flex items-center space-x-2 text-xs text-slate-500 font-medium">
+            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Tablero Principal</a>
+            <span class="text-slate-400">/</span>
+            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Licitaciones</a>
+            <span class="text-slate-400">/</span>
+            <span class="font-mono text-slate-800 font-semibold">{{ lic.id_licitacion }}</span>
+        </nav>
+        <div class="flex items-center space-x-3">
+            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+                Volver al Tablero
+            </a>
+            <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+                Editar Licitacion
+            </a>
+            <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
+                <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-300 rounded hover:bg-red-50 transition-colors shadow-sm cursor-pointer">
+                    Eliminar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Encabezado Principal de la Ficha -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div class="space-y-2 max-w-3xl">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-mono text-sm font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
+                        {{ lic.id_licitacion }}
+                    </span>
+                    <span class="px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                        {{ lic.categoria }}
+                    </span>
+                    {% if lic.modalidad == 'Compra Agil' %}
+                    <span class="px-2.5 py-1 rounded text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200">
+                        Compra Agil
+                    </span>
+                    {% else %}
+                    <span class="px-2.5 py-1 rounded text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200">
+                        Licitacion Publica
+                    </span>
+                    {% endif %}
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                    {{ lic.titulo }}
+                </h1>
+                <div class="text-sm font-medium text-slate-700">
+                    Organismo Mandante: <strong class="text-slate-900">{{ lic.organismo }}</strong>
+                </div>
+                <div class="text-xs text-slate-500">
+                    Region de Ejecucion: <span class="text-slate-700 font-medium">{{ lic.region }}</span>
+                </div>
+            </div>
+
+            <!-- Estado Actual en el Embudo -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 min-w-[240px] text-center sm:text-right">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Estado Actual en Embudo</div>
+                <div class="mt-2">
+                    {% if lic.estado_embudo == 'Identificada' %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                        Identificada
+                    </span>
+                    {% elif lic.estado_embudo == 'Calificada' %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                        Calificada
+                    </span>
+                    {% elif lic.estado_embudo == 'Participada' %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                        Participada
+                    </span>
+                    {% elif lic.estado_embudo == 'Adjudicada' %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Adjudicada
+                    </span>
+                    {% elif lic.estado_embudo == 'Descartada' %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                        Descartada
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                        {{ lic.estado_embudo }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="mt-3 text-xs text-slate-500 space-y-0.5">
+                    <div>Publicacion: <strong class="text-slate-700">{{ lic.fecha_publicacion }}</strong></div>
+                    <div>Cierre Ofertas: <strong class="text-slate-900">{{ lic.fecha_cierre }}</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Transicion Rapida de Estado -->
+        <div class="mt-6 pt-5 border-t border-slate-200">
+            <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/cambiar_estado" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-3.5 rounded-md border border-slate-200">
+                <div class="flex items-center space-x-3">
+                    <label for="select-estado" class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                        Transicion Rapida de Estado:
+                    </label>
+                    <select
+                        id="select-estado"
+                        name="estado_embudo"
+                        class="text-xs px-3 py-1.5 border border-slate-300 rounded bg-white text-slate-900 font-medium focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                        {% for estado_op in valid_estados %}
+                        <option value="{{ estado_op }}" {% if lic.estado_embudo == estado_op %}selected{% endif %}>
+                            {{ estado_op }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button
+                        type="submit"
+                        class="w-full sm:w-auto px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 cursor-pointer"
+                    >
+                        Actualizar Estado en Embudo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel de Control Presupuestario Preventivo -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-base font-bold text-slate-900 tracking-tight">Control Presupuestario Preventivo y Viabilidad Financiera</h2>
+            <p class="text-xs text-slate-600 mt-0.5">
+                Cotejo preventivo entre el presupuesto maximo asignado por el mandante y la estructura de costo base hotel para cautelar la rentabilidad comercial.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Presupuesto Mandante</div>
+                <div class="text-xl font-bold text-slate-900 mt-1 font-mono">
+                    {{ lic.presupuesto_mandante | clp }}
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">Tope oficial disponible</div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Costo Base Hotel</div>
+                <div class="text-xl font-bold text-slate-900 mt-1 font-mono">
+                    {{ lic.costo_base_hotel | clp }}
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">Costo operativo directo estimado</div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Margen Proyectado / Diferencia</div>
+                <div class="text-xl font-bold mt-1 font-mono {% if es_inviable %}text-red-700{% else %}text-emerald-700{% endif %}">
+                    {% if es_inviable %}
+                    -{{ deficit | clp }}
+                    {% else %}
+                    +{{ diferencia | clp }}
+                    {% endif %}
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">
+                    {% if es_inviable %}
+                    Deficit operacional directo
+                    {% else %}
+                    Margen de contribucion: {{ margen_porcentaje }}%
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col justify-between">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Diagnostico de Viabilidad</div>
+                <div class="mt-2">
+                    {% if es_inviable %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+                        Inviable / Costo Excede
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Viable / Margen Positivo
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">
+                    {% if es_inviable %}
+                    Requiere descarte o renegociacion
+                    {% else %}
+                    Parametros de rentabilidad conformes
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerta Formal de Viabilidad -->
+        {% if es_inviable %}
+        <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-md">
+            <div class="flex flex-col space-y-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-red-800">
+                    Alerta Financiera Preventiva: Riesgo de Postulacion a Perdida
+                </span>
+                <p class="text-xs text-red-700 leading-relaxed">
+                    El costo base hotel ({{ lic.costo_base_hotel | clp }}) sobrepasa en {{ deficit | clp }} el presupuesto maximo autorizado por la institucion mandante ({{ lic.presupuesto_mandante | clp }}). Conforme a la directriz corporativa del Hotel Plaza San Francisco, esta oportunidad se clasifica como financieramente inviable y no debe postularse en los terminos actuales.
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-emerald-50 border-l-4 border-emerald-600 p-4 rounded-r-md">
+            <div class="flex flex-col space-y-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                    Viabilidad Financiera Aprobada
+                </span>
+                <p class="text-xs text-emerald-700 leading-relaxed">
+                    El presupuesto mandante ({{ lic.presupuesto_mandante | clp }}) cubre satisfactoriamente el costo base operativo del hotel ({{ lic.costo_base_hotel | clp }}), generando un margen positivo proyectado de {{ diferencia | clp }} ({{ margen_porcentaje }}% sobre presupuesto). La propuesta califica para avanzar a la fase de postulacion formal.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Modalidad Compra Agil: Marco Normativo -->
+        {% if lic.modalidad == 'Compra Agil' %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-900 space-y-1.5">
+            <div class="font-bold uppercase tracking-wide text-blue-950">
+                Marco Normativo: Modalidad Compra Agil (Mercado Publico)
+            </div>
+            <p class="text-blue-800 leading-relaxed">
+                Esta oportunidad se canaliza mediante Compra Agil, mecanismo de contratacion simplificada con un limite normativo maximo de <strong>6.900.000 CLP</strong> (referencial a 100 UTM segun la Ley 19.886 y sus decretos reglamentarios).
+            </p>
+            <div class="pt-1 font-semibold text-blue-950">
+                {% if lic.presupuesto_mandante <= 6900000 %}
+                Cumplimiento normativo validado: El presupuesto de {{ lic.presupuesto_mandante | clp }} se ajusta plenamente al rango legal para compras agiles sin comision evaluadora extensa.
+                {% else %}
+                Advertencia legal: El presupuesto asignado ({{ lic.presupuesto_mandante | clp }}) supera el tope normativo de 6.900.000 CLP establecido para la modalidad Compra Agil.
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Panel de Validacion Robusta (Cruce de ID con Adjuntos / Efecto ID) -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-base font-bold text-slate-900 tracking-tight">Validacion de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
+            <p class="text-xs text-slate-600 mt-0.5">
+                Cotejo de integridad entre el identificador del portal de compras y los archivos de bases tecnicas o administrativas adjuntas (prevencion del Efecto ID).
+            </p>
+        </div>
+
+        {% if lic.validacion_adjuntos == 'Valida' %}
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300">
+                    ID Verificado
+                </span>
+                <span class="text-xs font-semibold text-slate-700">Consistencia Documental Acreditada</span>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                El identificador registrado en la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) coincide de manera precisa con el correlativo interno consignado en los archivos descargables, anexos contractuales y bases administrativas. No se registran discrepancias de identificacion.
+            </p>
+        </div>
+        {% else %}
+        <div class="bg-amber-50 border-l-4 border-amber-500 rounded-r-lg p-4 space-y-2">
+            <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    Discrepancia ID
+                </span>
+                <span class="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                    Conflicto en TDR y Archivos Adjuntos Detectado
+                </span>
+            </div>
+            <p class="text-xs text-amber-900 leading-relaxed">
+                Se ha constatado una discordancia entre el identificador de la ficha maestra (<strong>{{ lic.id_licitacion }}</strong>) y los rotulos en los documentos adjuntos de bases. Esta desalineacion genera riesgo de subsanacion o eventual inadmisibilidad administrativa. Es obligatorio emitir una consulta formal a traves del foro de Mercado Publico previo al envio de la propuesta.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Panel de Checklist de Admisibilidad Administrativa Formal -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 tracking-tight">Checklist de Admisibilidad Administrativa Formal</h2>
+                <p class="text-xs text-slate-600 mt-0.5">
+                    Verificacion de antecedentes legales obligatorios para personas juridicas segun la Ley N° 19.886 de Bases sobre Contratos Administrativos.
+                </p>
+            </div>
+            <div>
+                {% if lic.tiene_anexo4 and lic.tiene_escrituras and lic.tiene_poderes and lic.tiene_vigencias %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    Admisibilidad Administrativa Completa
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    Antecedentes Pendientes
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabla Formal de Verificacion Documental -->
+        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+                    <tr>
+                        <th scope="col" class="px-4 py-3">Documento / Antecedente Obligatorio</th>
+                        <th scope="col" class="px-4 py-3">Fundamento Normativo y Operativo</th>
+                        <th scope="col" class="px-4 py-3 text-center">Estado de Cumplimiento</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                    <!-- Item 1: Anexo 4 -->
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                            Anexo 4 - Declaracion Jurada y Pacto de Integridad
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">
+                            Declaracion jurada de no haber incurrido en conductas sancionadas por el articulo 4 de la Ley 19.886 y aceptacion expresa del pacto de integridad.
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            {% if lic.tiene_anexo4 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Presente / Aprobado
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                                Pendiente / Exigido
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Item 2: Escrituras -->
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                            Escrituras Sociales y Estatutos Vigentes
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">
+                            Copia autorizada de escritura publica de constitucion de sociedad, reformas estatutarias e inscripcion en Registro de Comercio.
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            {% if lic.tiene_escrituras %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Presente / Aprobado
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                                Pendiente / Exigido
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Item 3: Poderes -->
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                            Poderes de Representacion Legal
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">
+                            Personeria y facultades notariales vigentes que habilitan al apoderado para suscribir ofertas y contratos en nombre de la sociedad.
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            {% if lic.tiene_poderes %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Presente / Aprobado
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                                Pendiente / Exigido
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Item 4: Vigencias -->
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                            Certificados de Vigencia de la Sociedad
+                        </td>
+                        <td class="px-4 py-3 text-slate-600">
+                            Certificado de vigencia de la sociedad y del poder otorgado por el Conservador de Bienes Raices (antiguedad no mayor a 60 dias corridos).
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            {% if lic.tiene_vigencias %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Presente / Aprobado
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                                Pendiente / Exigido
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sintesis de Terminos de Referencia (TDR) -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+        <div class="border-b border-slate-200 pb-3">
+            <h2 class="text-base font-bold text-slate-900 tracking-tight">Sintesis de Terminos de Referencia (TDR)</h2>
+            <p class="text-xs text-slate-600 mt-0.5">
+                Especificaciones tecnicas, alcance operativo y requerimientos de servicio formalizados por el organismo licitante.
+            </p>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                Descripcion del Requerimiento Tecnico
+            </div>
+            <p class="text-xs text-slate-800 leading-relaxed whitespace-pre-line">
+                {{ lic.descripcion_tdr or 'No se registra descripcion detallada de TDR en las bases cargadas.' }}
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+            <div class="border border-slate-200 rounded p-3 bg-white">
+                <span class="text-slate-500 font-medium">Categoria Operativa:</span>
+                <div class="font-semibold text-slate-800 mt-0.5">{{ lic.categoria }}</div>
+            </div>
+            <div class="border border-slate-200 rounded p-3 bg-white">
+                <span class="text-slate-500 font-medium">Modalidad Contractual:</span>
+                <div class="font-semibold text-slate-800 mt-0.5">{{ lic.modalidad }}</div>
+            </div>
+            <div class="border border-slate-200 rounded p-3 bg-white">
+                <span class="text-slate-500 font-medium">Plaza / Region:</span>
+                <div class="font-semibold text-slate-800 mt-0.5">{{ lic.region }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Navegacion Inferior -->
+    <div class="flex items-center justify-between border-t border-slate-200 pt-4 text-xs">
+        <a href="{{ url_for('dashboard') }}" class="text-blue-900 hover:text-blue-950 font-semibold hover:underline">
+            Volver al Tablero Principal
+        </a>
+        <div class="flex items-center space-x-4">
+            <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="text-slate-700 hover:text-slate-900 font-medium hover:underline">
+                Editar Registro
+            </a>
+            <span class="text-slate-300">|</span>
+            <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
+                <button type="submit" class="text-red-700 hover:text-red-900 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer">
+                    Eliminar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
