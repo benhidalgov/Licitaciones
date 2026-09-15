@@ -39,11 +39,53 @@ def logout():
     return redirect(url_for("login"))
 
 
+def format_clp(value):
+    if value is None or value == "":
+        return "$0 CLP"
+    try:
+        val = int(value)
+        if val < 0:
+            return f"-${abs(val):,} CLP".replace(",", ".")
+        return f"${val:,} CLP".replace(",", ".")
+    except (ValueError, TypeError):
+        return f"${value} CLP"
+
+
+@app.template_filter("clp")
+def clp_filter(value):
+    return format_clp(value)
+
+
+app.jinja_env.globals["format_clp"] = format_clp
+
+
 @app.route("/")
 @app.route("/licitaciones")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", user=session.get("user"))
+    categoria = request.args.get("categoria", "").strip() or None
+    modalidad = request.args.get("modalidad", "").strip() or None
+    estado = request.args.get("estado", "").strip() or None
+    q = request.args.get("q", "").strip() or None
+
+    licitaciones = database.get_all_licitaciones(
+        categoria=categoria,
+        modalidad=modalidad,
+        estado=estado,
+        q=q
+    )
+    metrics = database.get_funnel_metrics()
+
+    return render_template(
+        "dashboard.html",
+        licitaciones=licitaciones,
+        metrics=metrics,
+        categoria=categoria or "",
+        modalidad=modalidad or "",
+        estado=estado or "",
+        q=q or "",
+        user=session.get("user")
+    )
 
 
 if __name__ == "__main__":

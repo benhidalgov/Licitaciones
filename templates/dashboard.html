@@ -4,18 +4,320 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="border-b border-slate-200 pb-4">
-        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Panel de Control</h1>
-        <p class="text-sm text-slate-600 mt-1">
-            Monitoreo y gestion centralizada de oportunidades comerciales en Mercado Publico.
-        </p>
+    <!-- Encabezado de la Seccion y Accion Principal -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Tablero Principal de Oportunidades</h1>
+            <p class="text-sm text-slate-600 mt-1">
+                Monitoreo del embudo comercial, control preventivo de costos y cruce documental en Mercado Publico.
+            </p>
+        </div>
+        <div>
+            <a href="/licitaciones/nueva" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500">
+                Registrar Nueva Licitacion
+            </a>
+        </div>
     </div>
 
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-        <h2 class="text-lg font-semibold text-slate-900 mb-2">Bienvenido a la Plataforma Comercial</h2>
-        <p class="text-sm text-slate-600">
-            Modulo inicial de autenticacion activo. La vista completa de indicadores del embudo, filtros y tabla de licitaciones se encuentra en despliegue.
-        </p>
+    <!-- Metricas del Embudo de Conversion -->
+    <div>
+        <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Metricas del Embudo Comercial</h2>
+            <span class="text-xs text-slate-500">Total Oportunidades: <strong class="text-slate-800">{{ metrics.Total }}</strong></span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Identificadas</div>
+                <div class="text-2xl font-bold text-slate-900 mt-1">{{ metrics.Identificada }}</div>
+                <div class="text-xs text-slate-500 mt-1">Fase inicial</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <div class="text-xs font-semibold text-blue-700 uppercase tracking-wide">Calificadas</div>
+                <div class="text-2xl font-bold text-blue-900 mt-1">{{ metrics.Calificada }}</div>
+                <div class="text-xs text-slate-500 mt-1">Analisis TDR y costo</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <div class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Participadas</div>
+                <div class="text-2xl font-bold text-indigo-900 mt-1">{{ metrics.Participada }}</div>
+                <div class="text-xs text-slate-500 mt-1">Oferta ingresada</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <div class="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Adjudicadas</div>
+                <div class="text-2xl font-bold text-emerald-900 mt-1">{{ metrics.Adjudicada }}</div>
+                <div class="text-xs text-slate-500 mt-1">Contrato obtenido</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <div class="text-xs font-semibold text-amber-700 uppercase tracking-wide">Descartadas</div>
+                <div class="text-2xl font-bold text-amber-900 mt-1">{{ metrics.Descartada }}</div>
+                <div class="text-xs text-slate-500 mt-1">No viables o vencidas</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm border-l-4 border-l-blue-600">
+                <div class="text-xs font-semibold text-blue-800 uppercase tracking-wide">Compra Agil</div>
+                <div class="text-2xl font-bold text-blue-950 mt-1">{{ metrics.Compra_Agil }}</div>
+                <div class="text-xs text-slate-500 mt-1">Tope 6.900.000 CLP</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros Interactiva -->
+    <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+        <form method="GET" action="{{ url_for('dashboard') }}" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                    <label for="filter-q" class="block text-xs font-semibold text-slate-700 mb-1">Busqueda General</label>
+                    <input
+                        type="text"
+                        id="filter-q"
+                        name="q"
+                        value="{{ q }}"
+                        placeholder="ID, palabra clave u organismo..."
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                </div>
+
+                <div>
+                    <label for="filter-categoria" class="block text-xs font-semibold text-slate-700 mb-1">Categoria Comercial</label>
+                    <select
+                        id="filter-categoria"
+                        name="categoria"
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                        <option value="">Todas las Categorias</option>
+                        <option value="Alojamiento" {% if categoria == 'Alojamiento' %}selected{% endif %}>Alojamiento</option>
+                        <option value="Eventos / Catering" {% if categoria == 'Eventos / Catering' %}selected{% endif %}>Eventos / Catering</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filter-modalidad" class="block text-xs font-semibold text-slate-700 mb-1">Modalidad de Compra</label>
+                    <select
+                        id="filter-modalidad"
+                        name="modalidad"
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                        <option value="">Todas las Modalidades</option>
+                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope 6.9M CLP)</option>
+                        <option value="Licitacion Publica" {% if modalidad == 'Licitacion Publica' %}selected{% endif %}>Licitacion Publica</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filter-estado" class="block text-xs font-semibold text-slate-700 mb-1">Estado en Embudo</label>
+                    <select
+                        id="filter-estado"
+                        name="estado"
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                        <option value="">Todos los Estados</option>
+                        <option value="Identificada" {% if estado == 'Identificada' %}selected{% endif %}>Identificada</option>
+                        <option value="Calificada" {% if estado == 'Calificada' %}selected{% endif %}>Calificada</option>
+                        <option value="Participada" {% if estado == 'Participada' %}selected{% endif %}>Participada</option>
+                        <option value="Adjudicada" {% if estado == 'Adjudicada' %}selected{% endif %}>Adjudicada</option>
+                        <option value="Descartada" {% if estado == 'Descartada' %}selected{% endif %}>Descartada</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div class="text-xs text-slate-500">
+                    Resultados encontrados: <strong class="text-slate-800">{{ licitaciones|length }}</strong>
+                </div>
+                <div class="flex items-center space-x-2">
+                    {% if categoria or modalidad or estado or q %}
+                    <a href="{{ url_for('dashboard') }}" class="text-xs text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 transition-colors">
+                        Limpiar Filtros
+                    </a>
+                    {% endif %}
+                    <button type="submit" class="text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 py-1.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-slate-500">
+                        Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla Corporativa de Licitaciones -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-slate-900">Listado de Licitaciones Registradas</h2>
+            <span class="text-xs text-slate-500">Ordenado cronologicamente por fecha de cierre</span>
+        </div>
+
+        {% if licitaciones %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+                    <tr>
+                        <th scope="col" class="px-4 py-3">ID / Cierre</th>
+                        <th scope="col" class="px-4 py-3">Titulo y Organismo</th>
+                        <th scope="col" class="px-4 py-3">Categoria / Modalidad</th>
+                        <th scope="col" class="px-4 py-3 text-right">Presupuesto Mandante</th>
+                        <th scope="col" class="px-4 py-3 text-right">Costo Base Hotel</th>
+                        <th scope="col" class="px-4 py-3 text-center">Viabilidad Presupuestaria</th>
+                        <th scope="col" class="px-4 py-3 text-center">Cruce ID Adjuntos</th>
+                        <th scope="col" class="px-4 py-3 text-center">Estado Embudo</th>
+                        <th scope="col" class="px-4 py-3 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                    {% for lic in licitaciones %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <!-- ID y Fecha Cierre -->
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <a href="/licitaciones/{{ lic.id_licitacion }}" class="font-mono font-bold text-blue-900 hover:underline">
+                                {{ lic.id_licitacion }}
+                            </a>
+                            <div class="text-[11px] text-slate-500 mt-0.5">
+                                Cierre: {{ lic.fecha_cierre }}
+                            </div>
+                        </td>
+
+                        <!-- Titulo y Organismo -->
+                        <td class="px-4 py-3 max-w-xs sm:max-w-sm">
+                            <a href="/licitaciones/{{ lic.id_licitacion }}" class="font-medium text-slate-900 hover:text-blue-900 line-clamp-2">
+                                {{ lic.titulo }}
+                            </a>
+                            <div class="text-slate-600 font-normal mt-0.5">
+                                {{ lic.organismo }}
+                            </div>
+                            <div class="text-[11px] text-slate-400">
+                                {{ lic.region }}
+                            </div>
+                        </td>
+
+                        <!-- Categoria y Modalidad -->
+                        <td class="px-4 py-3 whitespace-nowrap space-y-1">
+                            <div>
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                                    {{ lic.categoria }}
+                                </span>
+                            </div>
+                            <div>
+                                {% if lic.modalidad == 'Compra Agil' %}
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                                    Compra Agil
+                                </span>
+                                {% else %}
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-50 text-slate-700 border border-slate-200">
+                                    Licitacion Publica
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Presupuesto Mandante -->
+                        <td class="px-4 py-3 whitespace-nowrap text-right font-medium text-slate-900">
+                            {{ lic.presupuesto_mandante | clp }}
+                        </td>
+
+                        <!-- Costo Base Hotel -->
+                        <td class="px-4 py-3 whitespace-nowrap text-right font-medium text-slate-900">
+                            {{ lic.costo_base_hotel | clp }}
+                        </td>
+
+                        <!-- Viabilidad Presupuestaria -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            {% if lic.costo_base_hotel > lic.presupuesto_mandante %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-100 text-red-800 border border-red-200">
+                                Inviable / Costo Excede
+                            </span>
+                            <div class="text-[10px] text-red-700 font-medium mt-0.5">
+                                Deficit: {{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}
+                            </div>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Viable / Margen Positivo
+                            </span>
+                            <div class="text-[10px] text-emerald-800 font-medium mt-0.5">
+                                Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Cruce ID Adjuntos -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            {% if lic.validacion_adjuntos == 'Valida' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-300">
+                                ID Verificado
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                                Discrepancia ID
+                            </span>
+                            <div class="text-[10px] text-amber-800 font-medium mt-0.5">
+                                Conflicto en TDR
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Estado del Embudo -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            {% if lic.estado_embudo == 'Identificada' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-300">
+                                Identificada
+                            </span>
+                            {% elif lic.estado_embudo == 'Calificada' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                Calificada
+                            </span>
+                            {% elif lic.estado_embudo == 'Participada' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                Participada
+                            </span>
+                            {% elif lic.estado_embudo == 'Adjudicada' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Adjudicada
+                            </span>
+                            {% elif lic.estado_embudo == 'Descartada' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-700 border border-slate-300">
+                                Descartada
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800">
+                                {{ lic.estado_embudo }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Acciones -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <a href="/licitaciones/{{ lic.id_licitacion }}" class="text-xs text-blue-700 hover:text-blue-900 font-medium hover:underline">
+                                    Ver Detalle
+                                </a>
+                                <span class="text-slate-300">|</span>
+                                <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="text-xs text-slate-700 hover:text-slate-900 font-medium hover:underline">
+                                    Editar
+                                </a>
+                                <span class="text-slate-300">|</span>
+                                <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">
+                                    <button type="submit" class="text-xs text-red-700 hover:text-red-900 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-8 text-center bg-slate-50">
+            <p class="text-sm font-semibold text-slate-700">No se encontraron licitaciones que coincidan con los criterios de busqueda seleccionados.</p>
+            <p class="text-xs text-slate-500 mt-1">Modifique los parametros de filtro o restablezca la consulta para visualizar el inventario completo.</p>
+            <div class="mt-4">
+                <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-100 transition-colors">
+                    Restablecer Filtros
+                </a>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
