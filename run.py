@@ -3,7 +3,6 @@ Script de inicio para el Asistente Virtual de Licitaciones (Mercado Publico).
 Hotel Plaza San Francisco - Programa de Vinculacion con el Medio (VcM) DUOC UC.
 """
 
-import sys
 from app import app, DEMO_USER, DEMO_PASS
 import database
 

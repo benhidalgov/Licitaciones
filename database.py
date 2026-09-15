@@ -3,6 +3,14 @@ from typing import Any, Dict, List, Optional
 
 DB_NAME = "licitaciones.db"
 
+ALLOWED_COLUMNS = {
+    "titulo", "organismo", "categoria", "modalidad", "region",
+    "presupuesto_mandante", "costo_base_hotel", "estado_embudo",
+    "validacion_adjuntos", "tiene_anexo4", "tiene_escrituras",
+    "tiene_poderes", "tiene_vigencias", "fecha_publicacion",
+    "fecha_cierre", "descripcion_tdr"
+}
+
 
 def get_db_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_NAME)
@@ -257,11 +265,14 @@ def create_licitacion(data: Dict[str, Any]) -> str:
 def update_licitacion(id_licitacion: str, data: Dict[str, Any]) -> bool:
     if not data:
         return False
+    valid_data = {k: v for k, v in data.items() if k in ALLOWED_COLUMNS}
+    if not valid_data:
+        return False
     conn = get_db_connection()
     try:
         fields = []
         values = []
-        for k, v in data.items():
+        for k, v in valid_data.items():
             fields.append(f"{k} = ?")
             values.append(v)
         values.append(id_licitacion)
