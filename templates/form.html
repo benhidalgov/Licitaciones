@@ -61,6 +61,7 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
 
     <!-- Formulario Modular de Creacion y Edicion -->
     <form method="POST" action="{% if mode == 'create' %}{{ url_for('crear_licitacion') }}{% else %}{{ url_for('editar_licitacion', id_licitacion=lic.id_licitacion) }}{% endif %}" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <!-- 1. Identificacion y Organismo -->
         <div class="card-editorial p-6 space-y-4">

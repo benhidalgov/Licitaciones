@@ -1,9 +1,24 @@
+import hmac
+import os
+import secrets
+import sqlite3
+import time
+from datetime import date
 from functools import wraps
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 import database
+import mercado_publico
+
+mercado_publico.load_env_file()
 
 app = Flask(__name__)
-app.secret_key = "licitaciones-secret-key-2026"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "licitaciones-secret-key-2026")
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_COOKIE_SECURE", "") == "1"
+app.config["CSRF_ENABLED"] = True
+app.config["LOGIN_RATE_LIMIT"] = 5
+app.config["LOGIN_RATE_WINDOW"] = 300
 
 DEMO_USER = "admin"
 DEMO_PASS = "admin123"
@@ -24,6 +39,55 @@ VALID_JORNADAS = [
     "Horario Especial"
 ]
 
+VALID_CATEGORIAS = ["Alojamiento", "Eventos / Catering"]
+VALID_MODALIDADES = ["Compra Agil", "Licitacion Publica"]
+VALID_ADJUNTOS = ["Valida", "Error ID / Discrepancia"]
+VALID_ESTADOS_RESERVA = ["Confirmada", "Tentativa", "Bloqueo Interno"]
+
+
+@app.context_processor
+def inject_csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+    return {"csrf_token": session["csrf_token"]}
+
+
+@app.before_request
+def verify_csrf_token():
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+    if not app.config.get("CSRF_ENABLED", True):
+        return None
+    token = request.form.get("csrf_token", "")
+    expected = session.get("csrf_token", "")
+    if not token or not expected or not hmac.compare_digest(token.encode("utf-8"), expected.encode("utf-8")):
+        return ("Token de seguridad ausente o invalido. Recargue la pagina e intente nuevamente.", 400)
+    return None
+
+
+_login_attempts = {}
+
+
+def _is_login_blocked(ip):
+    now = time.monotonic()
+    entry = _login_attempts.get(ip)
+    if not entry:
+        return False
+    count, started = entry
+    if now - started >= app.config["LOGIN_RATE_WINDOW"]:
+        _login_attempts.pop(ip, None)
+        return False
+    return count >= app.config["LOGIN_RATE_LIMIT"]
+
+
+def _record_login_failure(ip):
+    now = time.monotonic()
+    entry = _login_attempts.get(ip)
+    if not entry or now - entry[1] >= app.config["LOGIN_RATE_WINDOW"]:
+        _login_attempts[ip] = (1, now)
+    else:
+        _login_attempts[ip] = (entry[0] + 1, entry[1])
+
 
 def login_required(f):
     @wraps(f)
@@ -37,18 +101,25 @@ def login_required(f):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        ip = request.remote_addr or "desconocido"
+        if _is_login_blocked(ip):
+            flash("Demasiados intentos fallidos. Espere unos minutos antes de volver a intentar.", "error")
+            return render_template("login.html"), 429
         user = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
-        if user == DEMO_USER and password == DEMO_PASS:
+        user_ok = hmac.compare_digest(user.encode("utf-8"), DEMO_USER.encode("utf-8"))
+        pass_ok = hmac.compare_digest(password.encode("utf-8"), DEMO_PASS.encode("utf-8"))
+        if user_ok and pass_ok:
+            _login_attempts.pop(ip, None)
             session["user"] = user
             flash("Sesion iniciada correctamente.", "info")
             return redirect(url_for("dashboard"))
-        else:
-            flash("Credenciales invalidas. Ingrese las credenciales de prueba proporcionadas.", "error")
+        _record_login_failure(ip)
+        flash("Credenciales invalidas. Ingrese las credenciales de prueba proporcionadas.", "error")
     return render_template("login.html")
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     session.pop("user", None)
     flash("Ha cerrado sesion correctamente.", "info")
@@ -85,6 +156,7 @@ def dashboard():
         q=q
     )
     metrics = database.get_funnel_metrics()
+    ticket_configurado = bool(mercado_publico.get_ticket())
 
     return render_template(
         "dashboard.html",
@@ -94,8 +166,20 @@ def dashboard():
         modalidad=modalidad or "",
         estado=estado or "",
         q=q or "",
+        ticket_configurado=ticket_configurado,
         user=session.get("user")
     )
+
+
+def _parse_iso_date(field_label, raw_value, errors):
+    if not raw_value:
+        errors.append(f"La {field_label} es un campo obligatorio.")
+        return None
+    try:
+        return date.fromisoformat(raw_value)
+    except ValueError:
+        errors.append(f"La {field_label} debe tener formato AAAA-MM-DD.")
+        return None
 
 
 def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
@@ -120,13 +204,20 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
     region = form.get("region", "").strip() or "Region Metropolitana (Santiago)"
 
     categoria = form.get("categoria", "").strip() or "Alojamiento"
+    if categoria not in VALID_CATEGORIAS:
+        errors.append(f"Categoria '{categoria}' invalida. Seleccione una categoria valida.")
+
     modalidad = form.get("modalidad", "").strip() or "Compra Agil"
+    if modalidad not in VALID_MODALIDADES:
+        errors.append(f"Modalidad '{modalidad}' invalida. Seleccione una modalidad valida.")
 
     estado_embudo = form.get("estado_embudo", "").strip() or "Identificada"
     if estado_embudo not in VALID_ESTADOS:
         errors.append(f"Estado de embudo '{estado_embudo}' invalido. Seleccione una etapa valida.")
 
     validacion_adjuntos = form.get("validacion_adjuntos", "").strip() or "Valida"
+    if validacion_adjuntos not in VALID_ADJUNTOS:
+        errors.append(f"Validacion de adjuntos '{validacion_adjuntos}' invalida. Seleccione una opcion valida.")
 
     presupuesto_val = 0
     presupuesto_str = form.get("presupuesto_mandante", "").strip()
@@ -158,12 +249,13 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
     ]
 
     fecha_publicacion = form.get("fecha_publicacion", "").strip()
-    if not fecha_publicacion:
-        errors.append("La Fecha de Publicacion es un campo obligatorio.")
+    fecha_pub_date = _parse_iso_date("Fecha de Publicacion", fecha_publicacion, errors)
 
     fecha_cierre = form.get("fecha_cierre", "").strip()
-    if not fecha_cierre:
-        errors.append("La Fecha de Cierre de Ofertas es un campo obligatorio.")
+    fecha_cierre_date = _parse_iso_date("Fecha de Cierre de Ofertas", fecha_cierre, errors)
+
+    if fecha_pub_date and fecha_cierre_date and fecha_cierre_date < fecha_pub_date:
+        errors.append("La Fecha de Cierre no puede ser anterior a la Fecha de Publicacion.")
 
     descripcion_tdr = form.get("descripcion_tdr", "").strip()
 
@@ -179,8 +271,13 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
             errors.append("La Cantidad de Asistentes debe ser un valor numerico entero.")
 
     tipo_jornada = form.get("tipo_jornada", "").strip() or "Jornada Completa (8 hrs)"
+    if tipo_jornada not in VALID_JORNADAS:
+        errors.append(f"Tipo de jornada '{tipo_jornada}' invalido. Seleccione una opcion valida.")
+
     horario_evento = form.get("horario_evento", "").strip() or "08:30 a 18:30 hrs"
     id_salon_asignado = form.get("id_salon_asignado", "").strip()
+    if id_salon_asignado and database.get_salon_by_id(id_salon_asignado) is None:
+        errors.append(f"El salon '{id_salon_asignado}' no existe en el catalogo del hotel.")
 
     data = {
         "id_licitacion": id_licitacion,
@@ -216,6 +313,11 @@ def crear_licitacion():
     salones = database.get_all_salones()
     if request.method == "POST":
         data, errors = parse_and_validate_licitacion_form(request.form, is_create=True)
+        if not errors:
+            try:
+                database.create_licitacion(data)
+            except sqlite3.IntegrityError:
+                errors.append(f"El ID de licitacion '{data['id_licitacion']}' ya existe en el sistema (ID duplicado). Ingrese un identificador unico.")
         if errors:
             for err in errors:
                 flash(err, "error") 
@@ -232,7 +334,6 @@ def crear_licitacion():
                 valid_estados=VALID_ESTADOS,
                 user=session.get("user")
             )
-        database.create_licitacion(data)
         flash(f"Licitacion {data['id_licitacion']} registrada exitosamente.", "success")
         return redirect(url_for("licitacion_detalle", id_licitacion=data["id_licitacion"]))
 
@@ -397,6 +498,20 @@ def cambiar_estado_licitacion(id_licitacion):
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
 
+@app.route("/licitaciones/sincronizar", methods=["GET", "POST"])
+@login_required
+def sincronizar_licitaciones_route():
+    fecha = request.form.get("fecha", "").strip() or request.args.get("fecha", "").strip() or None
+    resumen = mercado_publico.sincronizar_licitaciones(fecha=fecha)
+    if resumen.get("total_guardadas", 0) > 0:
+        flash(f"[OK] {resumen['mensaje']}", "success")
+    elif resumen.get("total_consultadas", 0) > 0:
+        flash(f"[INFO] {resumen['mensaje']}", "info")
+    else:
+        flash(f"[WARN] {resumen['mensaje']}", "warning")
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/salones")
 @login_required
 def salones_catalogo():
@@ -435,7 +550,77 @@ def salon_detalle(id_salon):
     )
 
 
-VALID_ESTADOS_RESERVA = ["Confirmada", "Tentativa", "Bloqueo Interno"]
+def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
+    id_salon = form.get("id_salon", "").strip()
+    cliente_evento = form.get("cliente_evento", "").strip()
+    organismo_o_empresa = form.get("organismo_o_empresa", "").strip()
+    tipo_evento = form.get("tipo_evento", "").strip()
+    fecha_inicio = form.get("fecha_inicio", "").strip()
+    fecha_fin = form.get("fecha_fin", "").strip()
+    horario = form.get("horario", "").strip()
+    asistentes_str = form.get("asistentes_estimados", "0").strip()
+    estado_reserva = form.get("estado_reserva", "Confirmada").strip()
+    id_licitacion = form.get("id_licitacion", "").strip()
+    contacto_responsable = form.get("contacto_responsable", "").strip()
+    observaciones = form.get("observaciones", "").strip()
+
+    errors = []
+    if not id_salon:
+        errors.append("Debe seleccionar un salon del hotel.")
+    elif database.get_salon_by_id(id_salon) is None:
+        errors.append("El salon seleccionado no existe en el catalogo del hotel.")
+    if not cliente_evento:
+        errors.append("Debe indicar el nombre o descripcion del evento.")
+    if not organismo_o_empresa:
+        errors.append("Debe indicar el organismo mandante o empresa cliente.")
+    if not fecha_inicio or not fecha_fin:
+        errors.append("Debe especificar la fecha de inicio y de termino del evento.")
+    else:
+        try:
+            d_inicio = date.fromisoformat(fecha_inicio)
+            d_fin = date.fromisoformat(fecha_fin)
+            if d_inicio > d_fin:
+                errors.append("La fecha de inicio no puede ser posterior a la fecha de fin.")
+        except ValueError:
+            errors.append("Las fechas deben tener formato AAAA-MM-DD.")
+    if id_licitacion and database.get_licitacion_by_id(id_licitacion) is None:
+        errors.append("La licitacion vinculada no existe en el sistema.")
+
+    asistentes = 0
+    if asistentes_str:
+        try:
+            asistentes = int(asistentes_str)
+            if asistentes < 0:
+                errors.append("La cantidad de asistentes estimados no puede ser negativa.")
+        except (ValueError, TypeError):
+            errors.append("La cantidad de asistentes debe ser un numero entero valido.")
+
+    if estado_reserva not in VALID_ESTADOS_RESERVA:
+        errors.append(f"Estado de reserva '{estado_reserva}' invalido. Seleccione una etapa valida.")
+
+    if not errors:
+        conflictos = database.get_conflictos_reserva(
+            id_salon, fecha_inicio, fecha_fin, exclude_id_reserva=exclude_id_reserva
+        )
+        if conflictos and estado_reserva == "Confirmada":
+            conflictos_nombres = ", ".join(f"{c['organismo_o_empresa']} ({c['fecha_inicio']})" for c in conflictos[:3])
+            errors.append(f"Conflicto de disponibilidad detectado: El salon ya registra {len(conflictos)} evento(s) en esas fechas ({conflictos_nombres}).")
+
+    form_data = {
+        "id_salon": id_salon,
+        "cliente_evento": cliente_evento,
+        "organismo_o_empresa": organismo_o_empresa,
+        "tipo_evento": tipo_evento,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "horario": horario,
+        "asistentes_estimados": asistentes,
+        "estado_reserva": estado_reserva,
+        "id_licitacion": id_licitacion,
+        "contacto_responsable": contacto_responsable,
+        "observaciones": observaciones
+    }
+    return form_data, errors
 
 
 @app.route("/reservas/nueva", methods=["GET", "POST"])
@@ -445,63 +630,7 @@ def crear_reserva():
     licitaciones = database.get_all_licitaciones()
 
     if request.method == "POST":
-        id_salon = request.form.get("id_salon", "").strip()
-        cliente_evento = request.form.get("cliente_evento", "").strip()
-        organismo_o_empresa = request.form.get("organismo_o_empresa", "").strip()
-        tipo_evento = request.form.get("tipo_evento", "").strip()
-        fecha_inicio = request.form.get("fecha_inicio", "").strip()
-        fecha_fin = request.form.get("fecha_fin", "").strip()
-        horario = request.form.get("horario", "").strip()
-        asistentes_str = request.form.get("asistentes_estimados", "0").strip()
-        estado_reserva = request.form.get("estado_reserva", "Confirmada").strip()
-        id_licitacion = request.form.get("id_licitacion", "").strip()
-        contacto_responsable = request.form.get("contacto_responsable", "").strip()
-        observaciones = request.form.get("observaciones", "").strip()
-
-        errors = []
-        if not id_salon:
-            errors.append("Debe seleccionar un salon del hotel.")
-        if not cliente_evento:
-            errors.append("Debe indicar el nombre o descripcion del evento.")
-        if not organismo_o_empresa:
-            errors.append("Debe indicar el organismo mandante o empresa cliente.")
-        if not fecha_inicio or not fecha_fin:
-            errors.append("Debe especificar la fecha de inicio y de termino del evento.")
-        elif fecha_inicio > fecha_fin:
-            errors.append("La fecha de inicio no puede ser posterior a la fecha de fin.")
-
-        asistentes = 0
-        try:
-            asistentes = int(asistentes_str)
-            if asistentes < 0:
-                errors.append("La cantidad de asistentes estimados no puede ser negativa.")
-        except (ValueError, TypeError):
-            errors.append("La cantidad de asistentes debe ser un numero entero valido.")
-
-        if estado_reserva not in VALID_ESTADOS_RESERVA:
-            estado_reserva = "Confirmada"
-
-        if not errors and id_salon and fecha_inicio and fecha_fin:
-            conflictos = database.get_conflictos_reserva(id_salon, fecha_inicio, fecha_fin)
-            if conflictos and estado_reserva == "Confirmada":
-                conflictos_nombres = ", ".join(f"{c['organismo_o_empresa']} ({c['fecha_inicio']})" for c in conflictos[:3])
-                errors.append(f"Conflicto de disponibilidad detectado: El salon ya registra {len(conflictos)} evento(s) en esas fechas ({conflictos_nombres}).")
-
-        form_data = {
-            "id_salon": id_salon,
-            "cliente_evento": cliente_evento,
-            "organismo_o_empresa": organismo_o_empresa,
-            "tipo_evento": tipo_evento,
-            "fecha_inicio": fecha_inicio,
-            "fecha_fin": fecha_fin,
-            "horario": horario,
-            "asistentes_estimados": asistentes,
-            "estado_reserva": estado_reserva,
-            "id_licitacion": id_licitacion,
-            "contacto_responsable": contacto_responsable,
-            "observaciones": observaciones
-        }
-
+        form_data, errors = parse_and_validate_reserva_form(request.form)
         if errors:
             for err in errors:
                 flash(err, "error")
@@ -574,63 +703,7 @@ def editar_reserva(id_reserva):
     licitaciones = database.get_all_licitaciones()
 
     if request.method == "POST":
-        id_salon = request.form.get("id_salon", "").strip()
-        cliente_evento = request.form.get("cliente_evento", "").strip()
-        organismo_o_empresa = request.form.get("organismo_o_empresa", "").strip()
-        tipo_evento = request.form.get("tipo_evento", "").strip()
-        fecha_inicio = request.form.get("fecha_inicio", "").strip()
-        fecha_fin = request.form.get("fecha_fin", "").strip()
-        horario = request.form.get("horario", "").strip()
-        asistentes_str = request.form.get("asistentes_estimados", "0").strip()
-        estado_reserva = request.form.get("estado_reserva", "Confirmada").strip()
-        id_licitacion = request.form.get("id_licitacion", "").strip()
-        contacto_responsable = request.form.get("contacto_responsable", "").strip()
-        observaciones = request.form.get("observaciones", "").strip()
-
-        errors = []
-        if not id_salon:
-            errors.append("Debe seleccionar un salon del hotel.")
-        if not cliente_evento:
-            errors.append("Debe indicar el nombre o descripcion del evento.")
-        if not organismo_o_empresa:
-            errors.append("Debe indicar el organismo mandante o empresa cliente.")
-        if not fecha_inicio or not fecha_fin:
-            errors.append("Debe especificar la fecha de inicio y de termino del evento.")
-        elif fecha_inicio > fecha_fin:
-            errors.append("La fecha de inicio no puede ser posterior a la fecha de fin.")
-
-        asistentes = 0
-        try:
-            asistentes = int(asistentes_str)
-            if asistentes < 0:
-                errors.append("La cantidad de asistentes estimados no puede ser negativa.")
-        except (ValueError, TypeError):
-            errors.append("La cantidad de asistentes debe ser un numero entero valido.")
-
-        if estado_reserva not in VALID_ESTADOS_RESERVA:
-            estado_reserva = "Confirmada"
-
-        if not errors and id_salon and fecha_inicio and fecha_fin:
-            conflictos = database.get_conflictos_reserva(id_salon, fecha_inicio, fecha_fin, exclude_id_reserva=id_reserva)
-            if conflictos and estado_reserva == "Confirmada":
-                conflictos_nombres = ", ".join(f"{c['organismo_o_empresa']} ({c['fecha_inicio']})" for c in conflictos[:3])
-                errors.append(f"Conflicto de disponibilidad detectado: El salon ya registra {len(conflictos)} evento(s) en esas fechas ({conflictos_nombres}).")
-
-        form_data = {
-            "id_salon": id_salon,
-            "cliente_evento": cliente_evento,
-            "organismo_o_empresa": organismo_o_empresa,
-            "tipo_evento": tipo_evento,
-            "fecha_inicio": fecha_inicio,
-            "fecha_fin": fecha_fin,
-            "horario": horario,
-            "asistentes_estimados": asistentes,
-            "estado_reserva": estado_reserva,
-            "id_licitacion": id_licitacion,
-            "contacto_responsable": contacto_responsable,
-            "observaciones": observaciones
-        }
-
+        form_data, errors = parse_and_validate_reserva_form(request.form, exclude_id_reserva=id_reserva)
         if errors:
             for err in errors:
                 flash(err, "error")
@@ -680,5 +753,6 @@ def page_not_found(e):
 
 if __name__ == "__main__":
     database.init_db()
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    debug_mode = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
+    app.run(debug=debug_mode, host="127.0.0.1", port=5000)
 

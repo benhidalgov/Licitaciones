@@ -21,6 +21,7 @@
                 Editar Licitacion
             </a>
             <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn-secondary text-xs px-3 py-1.5 text-[#9F2F2D] hover:border-[#F8D1D3]">
                     Eliminar
                 </button>
@@ -98,6 +99,7 @@
         <!-- Barra de Transicion Rapida de Estado -->
         <div class="pt-5 border-t border-[#EAEAEA]">
             <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/cambiar_estado" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FBFBFA] p-3.5 rounded-[6px] border border-[#EAEAEA]">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="flex items-center space-x-3">
                     <label for="select-estado" class="text-xs font-medium text-[#111111] uppercase tracking-wide">
                         Transicion Rapida de Estado:
@@ -657,6 +659,7 @@
             </a>
             <span class="text-[#EAEAEA]">|</span>
             <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="text-[#9F2F2D] hover:underline bg-transparent border-0 p-0 cursor-pointer">
                     Eliminar
                 </button>

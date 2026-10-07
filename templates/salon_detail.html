@@ -195,6 +195,7 @@
                                     Editar
                                 </a>
                                 <form method="POST" action="{{ url_for('eliminar_reserva', id_reserva=r.id_reserva) }}" onsubmit="return confirm('Confirma la eliminacion de esta reserva de la agenda?');" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <button type="submit" class="btn-ghost text-[11px] px-2 py-0.5 text-neutral-400 hover:text-neutral-900 cursor-pointer">
                                         Eliminar
                                     </button>

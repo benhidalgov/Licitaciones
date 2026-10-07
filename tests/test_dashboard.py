@@ -18,6 +18,7 @@ class TestDashboard(unittest.TestCase):
 
         flask_app.app.config["TESTING"] = True
         flask_app.app.config["SECRET_KEY"] = "test-dashboard-secret"
+        flask_app.app.config["CSRF_ENABLED"] = False
         self.client = flask_app.app.test_client()
         with self.client.session_transaction() as sess:
             sess["user"] = "admin"
@@ -155,6 +156,26 @@ class TestDashboard(unittest.TestCase):
         matches = emoji_pattern.findall(html)
         self.assertEqual(matches, [], f"Found emojis in dashboard output: {matches}")
 
+    def test_dashboard_renders_sync_button_and_ticket_status(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+        self.assertIn("Sincronizar Mercado Publico", html)
+        self.assertTrue("[API ACTIVA]" in html or "[TICKET PENDIENTE]" in html)
+
+    def test_sincronizar_route_unauthenticated(self):
+        unauth_client = flask_app.app.test_client()
+        res = unauth_client.post("/licitaciones/sincronizar")
+        self.assertEqual(res.status_code, 302)
+        self.assertIn("/login", res.headers["Location"])
+
+    def test_sincronizar_route_authenticated(self):
+        res = self.client.post("/licitaciones/sincronizar", follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        html = res.data.decode("utf-8")
+        self.assertIn("Sincronizar Mercado Publico", html)
+
 
 if __name__ == "__main__":
     unittest.main()
+

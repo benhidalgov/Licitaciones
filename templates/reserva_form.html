@@ -53,6 +53,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
 
     <!-- Formulario de Reserva -->
     <form method="POST" action="{% if mode == 'create' %}{{ url_for('crear_reserva') }}{% else %}{{ url_for('editar_reserva', id_reserva=reserva.id_reserva) }}{% endif %}" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <!-- 1. Espacio y Evento -->
         <div class="card-editorial p-6 space-y-4">

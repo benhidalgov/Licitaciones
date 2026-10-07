@@ -18,7 +18,20 @@
                 Monitoreo del embudo comercial, control preventivo de costos y cruce documental en Mercado Publico.
             </p>
         </div>
-        <div>
+        <div class="flex flex-wrap items-center gap-2">
+            {% if ticket_configurado %}
+                <span class="badge-spot badge-spot-green text-[10px] font-mono" title="Ticket de API configurado en .env">[API ACTIVA]</span>
+            {% else %}
+                <span class="badge-spot badge-spot-yellow text-[10px] font-mono" title="Configure MERCADO_PUBLICO_TICKET en el archivo .env">[TICKET PENDIENTE]</span>
+            {% endif %}
+
+            <form action="{{ url_for('sincronizar_licitaciones_route') }}" method="POST" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn-secondary text-xs px-3 py-2 inline-flex items-center space-x-1" title="Consultar e importar oportunidades desde Mercado Publico">
+                    <span>Sincronizar Mercado Publico</span>
+                </button>
+            </form>
+
             <a href="/licitaciones/nueva" class="btn-primary text-xs px-4 py-2 inline-flex items-center space-x-2">
                 <span>Registrar Nueva Licitacion</span>
             </a>
@@ -371,6 +384,7 @@
                                 </a>
                                 <span class="text-[#EAEAEA]">|</span>
                                 <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <button type="submit" class="text-[#9F2F2D] hover:underline bg-transparent border-0 p-0 cursor-pointer text-[11px]">
                                         Eliminar
                                     </button>

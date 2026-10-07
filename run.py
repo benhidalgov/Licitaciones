@@ -3,8 +3,12 @@ Script de inicio para el Asistente Virtual de Licitaciones (Mercado Publico).
 Hotel Plaza San Francisco - Programa de Vinculacion con el Medio (VcM) DUOC UC.
 """
 
+import os
+
 from app import app, DEMO_USER, DEMO_PASS
 import database
+
+DEBUG = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
 
 
 def main():
@@ -26,7 +30,7 @@ def main():
     print("[INFO] Servidor web iniciado en modo local. Presione CTRL+C para detener.")
     print("=" * 72)
 
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=DEBUG)
 
 
 if __name__ == "__main__":

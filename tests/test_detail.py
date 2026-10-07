@@ -18,6 +18,7 @@ class TestDetail(unittest.TestCase):
 
         flask_app.app.config["TESTING"] = True
         flask_app.app.config["SECRET_KEY"] = "test-detail-secret"
+        flask_app.app.config["CSRF_ENABLED"] = False
         self.client = flask_app.app.test_client()
         with self.client.session_transaction() as sess:
             sess["user"] = "admin"

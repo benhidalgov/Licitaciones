@@ -12,6 +12,7 @@ class TestAuth(unittest.TestCase):
         database.init_db()
         flask_app.app.config["TESTING"] = True
         flask_app.app.config["SECRET_KEY"] = "test-secret"
+        flask_app.app.config["CSRF_ENABLED"] = False
         self.client = flask_app.app.test_client()
 
     def tearDown(self):
@@ -61,8 +62,10 @@ class TestAuth(unittest.TestCase):
     def test_logout(self):
         # Login first
         self.client.post("/login", data={"username": "admin", "password": "admin123"})
-        # Logout
-        response = self.client.get("/logout", follow_redirects=True)
+        # Logout (POST only; GET must be rejected)
+        get_response = self.client.get("/logout")
+        self.assertEqual(get_response.status_code, 405)
+        response = self.client.post("/logout", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Iniciar Sesion", response.data)
 

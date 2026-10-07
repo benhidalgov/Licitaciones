@@ -30,6 +30,7 @@
         </div>
 
         <form class="space-y-4" action="{{ url_for('login') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div>
                 <label for="username" class="block text-xs font-medium text-[#111111] mb-1">Usuario</label>
                 <input id="username" name="username" type="text" required

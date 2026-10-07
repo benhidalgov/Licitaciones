@@ -1,7 +1,8 @@
+import os
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-DB_NAME = "licitaciones.db"
+DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "licitaciones.db")
 
 ALLOWED_COLUMNS = {
     "titulo", "organismo", "categoria", "modalidad", "region",
@@ -16,6 +17,7 @@ ALLOWED_COLUMNS = {
 def get_db_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -799,6 +801,10 @@ def update_licitacion(id_licitacion: str, data: Dict[str, Any]) -> bool:
 def delete_licitacion(id_licitacion: str) -> bool:
     conn = get_db_connection()
     try:
+        conn.execute(
+            "UPDATE reservas_salones SET id_licitacion = '' WHERE id_licitacion = ?",
+            (id_licitacion,)
+        )
         cursor = conn.execute(
             "DELETE FROM licitaciones WHERE id_licitacion = ?",
             (id_licitacion,)

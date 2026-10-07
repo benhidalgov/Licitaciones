@@ -28,7 +28,7 @@ class TestRunScript(unittest.TestCase):
             run.main()
 
         mock_init_db.assert_called_once()
-        mock_app_run.assert_called_once_with(host="127.0.0.1", port=5000, debug=True)
+        mock_app_run.assert_called_once_with(host="127.0.0.1", port=5000, debug=run.DEBUG)
 
         output = captured_stdout.getvalue()
         self.assertIn("ASISTENTE VIRTUAL PARA LICITACIONES", output)
