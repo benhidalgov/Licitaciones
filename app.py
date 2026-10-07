@@ -55,21 +55,15 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.template_filter("clp")
 def format_clp(value):
     if value is None or value == "":
         return "$0 CLP"
     try:
         val = int(value)
-        if val < 0:
-            return f"-${abs(val):,} CLP".replace(",", ".")
-        return f"${val:,} CLP".replace(",", ".")
+        return f"-${abs(val):,} CLP".replace(",", ".") if val < 0 else f"${val:,} CLP".replace(",", ".")
     except (ValueError, TypeError):
         return f"${value} CLP"
-
-
-@app.template_filter("clp")
-def clp_filter(value):
-    return format_clp(value)
 
 
 app.jinja_env.globals["format_clp"] = format_clp
@@ -158,10 +152,10 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
         except (ValueError, TypeError):
             errors.append("El Costo Base Hotel debe ser un valor numerico entero valido.")
 
-    tiene_anexo4 = 1 if form.get("tiene_anexo4") in ("1", "true", "on", "yes") else 0
-    tiene_escrituras = 1 if form.get("tiene_escrituras") in ("1", "true", "on", "yes") else 0
-    tiene_poderes = 1 if form.get("tiene_poderes") in ("1", "true", "on", "yes") else 0
-    tiene_vigencias = 1 if form.get("tiene_vigencias") in ("1", "true", "on", "yes") else 0
+    tiene_anexo4, tiene_escrituras, tiene_poderes, tiene_vigencias = [
+        1 if form.get(k) in ("1", "true", "on", "yes") else 0
+        for k in ("tiene_anexo4", "tiene_escrituras", "tiene_poderes", "tiene_vigencias")
+    ]
 
     fecha_publicacion = form.get("fecha_publicacion", "").strip()
     if not fecha_publicacion:
@@ -224,7 +218,7 @@ def crear_licitacion():
         data, errors = parse_and_validate_licitacion_form(request.form, is_create=True)
         if errors:
             for err in errors:
-                flash(err, "error")
+                flash(err, "error") 
             form_view_data = dict(data)
             form_view_data["presupuesto_mandante"] = request.form.get("presupuesto_mandante", "")
             form_view_data["costo_base_hotel"] = request.form.get("costo_base_hotel", "")
@@ -441,7 +435,245 @@ def salon_detalle(id_salon):
     )
 
 
+VALID_ESTADOS_RESERVA = ["Confirmada", "Tentativa", "Bloqueo Interno"]
+
+
+@app.route("/reservas/nueva", methods=["GET", "POST"])
+@login_required
+def crear_reserva():
+    salones = database.get_all_salones()
+    licitaciones = database.get_all_licitaciones()
+
+    if request.method == "POST":
+        id_salon = request.form.get("id_salon", "").strip()
+        cliente_evento = request.form.get("cliente_evento", "").strip()
+        organismo_o_empresa = request.form.get("organismo_o_empresa", "").strip()
+        tipo_evento = request.form.get("tipo_evento", "").strip()
+        fecha_inicio = request.form.get("fecha_inicio", "").strip()
+        fecha_fin = request.form.get("fecha_fin", "").strip()
+        horario = request.form.get("horario", "").strip()
+        asistentes_str = request.form.get("asistentes_estimados", "0").strip()
+        estado_reserva = request.form.get("estado_reserva", "Confirmada").strip()
+        id_licitacion = request.form.get("id_licitacion", "").strip()
+        contacto_responsable = request.form.get("contacto_responsable", "").strip()
+        observaciones = request.form.get("observaciones", "").strip()
+
+        errors = []
+        if not id_salon:
+            errors.append("Debe seleccionar un salon del hotel.")
+        if not cliente_evento:
+            errors.append("Debe indicar el nombre o descripcion del evento.")
+        if not organismo_o_empresa:
+            errors.append("Debe indicar el organismo mandante o empresa cliente.")
+        if not fecha_inicio or not fecha_fin:
+            errors.append("Debe especificar la fecha de inicio y de termino del evento.")
+        elif fecha_inicio > fecha_fin:
+            errors.append("La fecha de inicio no puede ser posterior a la fecha de fin.")
+
+        asistentes = 0
+        try:
+            asistentes = int(asistentes_str)
+            if asistentes < 0:
+                errors.append("La cantidad de asistentes estimados no puede ser negativa.")
+        except (ValueError, TypeError):
+            errors.append("La cantidad de asistentes debe ser un numero entero valido.")
+
+        if estado_reserva not in VALID_ESTADOS_RESERVA:
+            estado_reserva = "Confirmada"
+
+        if not errors and id_salon and fecha_inicio and fecha_fin:
+            conflictos = database.get_conflictos_reserva(id_salon, fecha_inicio, fecha_fin)
+            if conflictos and estado_reserva == "Confirmada":
+                conflictos_nombres = ", ".join(f"{c['organismo_o_empresa']} ({c['fecha_inicio']})" for c in conflictos[:3])
+                errors.append(f"Conflicto de disponibilidad detectado: El salon ya registra {len(conflictos)} evento(s) en esas fechas ({conflictos_nombres}).")
+
+        form_data = {
+            "id_salon": id_salon,
+            "cliente_evento": cliente_evento,
+            "organismo_o_empresa": organismo_o_empresa,
+            "tipo_evento": tipo_evento,
+            "fecha_inicio": fecha_inicio,
+            "fecha_fin": fecha_fin,
+            "horario": horario,
+            "asistentes_estimados": asistentes,
+            "estado_reserva": estado_reserva,
+            "id_licitacion": id_licitacion,
+            "contacto_responsable": contacto_responsable,
+            "observaciones": observaciones
+        }
+
+        if errors:
+            for err in errors:
+                flash(err, "error")
+            return render_template(
+                "reserva_form.html",
+                mode="create",
+                reserva=form_data,
+                salones=salones,
+                licitaciones=licitaciones,
+                valid_estados_reserva=VALID_ESTADOS_RESERVA,
+                user=session.get("user")
+            )
+
+        database.create_reserva(form_data)
+        flash("Reserva registrada exitosamente en la agenda del hotel.", "success")
+        return redirect(url_for("salones_catalogo"))
+
+    pre_salon = request.args.get("salon", "").strip()
+    pre_lic_id = request.args.get("licitacion", "").strip()
+    pre_fecha_inicio = request.args.get("fecha_inicio", "").strip()
+    pre_fecha_fin = request.args.get("fecha_fin", "").strip()
+
+    reserva_init = {
+        "id_salon": pre_salon,
+        "cliente_evento": "",
+        "organismo_o_empresa": "",
+        "tipo_evento": "Reunion / Seminario",
+        "fecha_inicio": pre_fecha_inicio,
+        "fecha_fin": pre_fecha_fin or pre_fecha_inicio,
+        "horario": "08:30 a 18:30 hrs",
+        "asistentes_estimados": 0,
+        "estado_reserva": "Confirmada",
+        "id_licitacion": pre_lic_id,
+        "contacto_responsable": "",
+        "observaciones": ""
+    }
+
+    if pre_lic_id:
+        lic = database.get_licitacion_by_id(pre_lic_id)
+        if lic:
+            reserva_init["cliente_evento"] = lic.get("titulo", "")
+            reserva_init["organismo_o_empresa"] = lic.get("organismo", "")
+            reserva_init["asistentes_estimados"] = lic.get("cantidad_asistentes", 0)
+            reserva_init["horario"] = lic.get("horario_evento", "08:30 a 18:30 hrs") or "08:30 a 18:30 hrs"
+            if not pre_salon and lic.get("id_salon_asignado"):
+                reserva_init["id_salon"] = lic.get("id_salon_asignado")
+            if not pre_fecha_inicio and lic.get("fecha_cierre"):
+                reserva_init["fecha_inicio"] = lic.get("fecha_cierre")
+                reserva_init["fecha_fin"] = lic.get("fecha_cierre")
+
+    return render_template(
+        "reserva_form.html",
+        mode="create",
+        reserva=reserva_init,
+        salones=salones,
+        licitaciones=licitaciones,
+        valid_estados_reserva=VALID_ESTADOS_RESERVA,
+        user=session.get("user")
+    )
+
+
+@app.route("/reservas/<int:id_reserva>/editar", methods=["GET", "POST"])
+@login_required
+def editar_reserva(id_reserva):
+    reserva = database.get_reserva_by_id(id_reserva)
+    if not reserva:
+        abort(404)
+
+    salones = database.get_all_salones()
+    licitaciones = database.get_all_licitaciones()
+
+    if request.method == "POST":
+        id_salon = request.form.get("id_salon", "").strip()
+        cliente_evento = request.form.get("cliente_evento", "").strip()
+        organismo_o_empresa = request.form.get("organismo_o_empresa", "").strip()
+        tipo_evento = request.form.get("tipo_evento", "").strip()
+        fecha_inicio = request.form.get("fecha_inicio", "").strip()
+        fecha_fin = request.form.get("fecha_fin", "").strip()
+        horario = request.form.get("horario", "").strip()
+        asistentes_str = request.form.get("asistentes_estimados", "0").strip()
+        estado_reserva = request.form.get("estado_reserva", "Confirmada").strip()
+        id_licitacion = request.form.get("id_licitacion", "").strip()
+        contacto_responsable = request.form.get("contacto_responsable", "").strip()
+        observaciones = request.form.get("observaciones", "").strip()
+
+        errors = []
+        if not id_salon:
+            errors.append("Debe seleccionar un salon del hotel.")
+        if not cliente_evento:
+            errors.append("Debe indicar el nombre o descripcion del evento.")
+        if not organismo_o_empresa:
+            errors.append("Debe indicar el organismo mandante o empresa cliente.")
+        if not fecha_inicio or not fecha_fin:
+            errors.append("Debe especificar la fecha de inicio y de termino del evento.")
+        elif fecha_inicio > fecha_fin:
+            errors.append("La fecha de inicio no puede ser posterior a la fecha de fin.")
+
+        asistentes = 0
+        try:
+            asistentes = int(asistentes_str)
+            if asistentes < 0:
+                errors.append("La cantidad de asistentes estimados no puede ser negativa.")
+        except (ValueError, TypeError):
+            errors.append("La cantidad de asistentes debe ser un numero entero valido.")
+
+        if estado_reserva not in VALID_ESTADOS_RESERVA:
+            estado_reserva = "Confirmada"
+
+        if not errors and id_salon and fecha_inicio and fecha_fin:
+            conflictos = database.get_conflictos_reserva(id_salon, fecha_inicio, fecha_fin, exclude_id_reserva=id_reserva)
+            if conflictos and estado_reserva == "Confirmada":
+                conflictos_nombres = ", ".join(f"{c['organismo_o_empresa']} ({c['fecha_inicio']})" for c in conflictos[:3])
+                errors.append(f"Conflicto de disponibilidad detectado: El salon ya registra {len(conflictos)} evento(s) en esas fechas ({conflictos_nombres}).")
+
+        form_data = {
+            "id_salon": id_salon,
+            "cliente_evento": cliente_evento,
+            "organismo_o_empresa": organismo_o_empresa,
+            "tipo_evento": tipo_evento,
+            "fecha_inicio": fecha_inicio,
+            "fecha_fin": fecha_fin,
+            "horario": horario,
+            "asistentes_estimados": asistentes,
+            "estado_reserva": estado_reserva,
+            "id_licitacion": id_licitacion,
+            "contacto_responsable": contacto_responsable,
+            "observaciones": observaciones
+        }
+
+        if errors:
+            for err in errors:
+                flash(err, "error")
+            view_data = dict(form_data)
+            view_data["id_reserva"] = id_reserva
+            return render_template(
+                "reserva_form.html",
+                mode="edit",
+                reserva=view_data,
+                salones=salones,
+                licitaciones=licitaciones,
+                valid_estados_reserva=VALID_ESTADOS_RESERVA,
+                user=session.get("user")
+            )
+
+        database.update_reserva(id_reserva, form_data)
+        flash("Reserva actualizada exitosamente en la agenda.", "success")
+        return redirect(url_for("salones_catalogo"))
+
+    return render_template(
+        "reserva_form.html",
+        mode="edit",
+        reserva=reserva,
+        salones=salones,
+        licitaciones=licitaciones,
+        valid_estados_reserva=VALID_ESTADOS_RESERVA,
+        user=session.get("user")
+    )
+
+
+@app.route("/reservas/<int:id_reserva>/eliminar", methods=["POST"])
+@login_required
+def eliminar_reserva(id_reserva):
+    reserva = database.get_reserva_by_id(id_reserva)
+    if not reserva:
+        abort(404)
+    database.delete_reserva(id_reserva)
+    flash(f"La reserva para '{reserva.get('cliente_evento')}' ha sido eliminada de la agenda.", "info")
+    return redirect(url_for("salones_catalogo"))
+
+
 @app.errorhandler(404)
+
 def page_not_found(e):
     return render_template("404.html"), 404
 

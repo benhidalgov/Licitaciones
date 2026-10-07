@@ -11,27 +11,27 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto">
     <!-- Migas de Pan y Encabezado Superior -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
-        <nav class="flex items-center space-x-2 text-xs text-slate-500 font-medium">
-            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Tablero Principal</a>
-            <span class="text-slate-400">/</span>
-            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Licitaciones</a>
-            <span class="text-slate-400">/</span>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EAEAEA] pb-4">
+        <nav class="flex items-center space-x-2 text-xs text-neutral-500 font-mono">
+            <a href="{{ url_for('dashboard') }}" class="hover:text-neutral-900 transition-colors">Tablero</a>
+            <span class="text-neutral-300">/</span>
+            <a href="{{ url_for('dashboard') }}" class="hover:text-neutral-900 transition-colors">Licitaciones</a>
+            <span class="text-neutral-300">/</span>
             {% if mode == 'create' %}
-            <span class="text-slate-800 font-semibold">Nueva Licitacion</span>
+            <span class="text-neutral-900 font-semibold">Nueva Licitacion</span>
             {% else %}
-            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="font-mono hover:text-slate-900">{{ lic.id_licitacion }}</a>
-            <span class="text-slate-400">/</span>
-            <span class="text-slate-800 font-semibold">Editar</span>
+            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="hover:text-neutral-900">{{ lic.id_licitacion }}</a>
+            <span class="text-neutral-300">/</span>
+            <span class="text-neutral-900 font-semibold">Editar</span>
             {% endif %}
         </nav>
         <div>
             {% if mode == 'create' %}
-            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+            <a href="{{ url_for('dashboard') }}" class="btn-secondary">
                 Cancelar y Volver
             </a>
             {% else %}
-            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="btn-secondary">
                 Cancelar y Volver
             </a>
             {% endif %}
@@ -39,15 +39,18 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
     </div>
 
     <!-- Titulo Principal del Formulario -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+    <div class="card-editorial p-6">
+        <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-1">
+            {% if mode == 'create' %}Formulario de Alta / Registro{% else %}Modificacion de Registro / Auditoria{% endif %}
+        </span>
+        <h1 class="text-xl sm:text-2xl font-serif text-neutral-900 tracking-tight">
             {% if mode == 'create' %}
             Registrar Nueva Licitacion
             {% else %}
-            Editar Licitacion <span class="font-mono text-blue-900">{{ lic.id_licitacion }}</span>
+            Editar Licitacion <span class="font-mono text-neutral-900 font-normal">[{{ lic.id_licitacion }}]</span>
             {% endif %}
         </h1>
-        <p class="text-xs text-slate-600 mt-1">
+        <p class="text-xs text-neutral-500 mt-1">
             {% if mode == 'create' %}
             Complete los campos para registrar una nueva oportunidad en el embudo comercial, control preventivo de costos y checklist de admisibilidad legal.
             {% else %}
@@ -60,16 +63,16 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
     <form method="POST" action="{% if mode == 'create' %}{{ url_for('crear_licitacion') }}{% else %}{{ url_for('editar_licitacion', id_licitacion=lic.id_licitacion) }}{% endif %}" class="space-y-6">
 
         <!-- 1. Identificacion y Organismo -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">1. Identificacion y Organismo</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Parametros de identificacion oficial segun la ficha de Mercado Publico.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">1. Identificacion y Organismo</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Parametros de identificacion oficial segun la ficha de Mercado Publico.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="id_licitacion" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        ID Mercado Publico <span class="text-red-600">*</span>
+                    <label for="id_licitacion" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        ID Mercado Publico <span class="text-neutral-900">*</span>
                     </label>
                     {% if mode == 'create' %}
                     <input
@@ -79,9 +82,9 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         value="{{ lic.id_licitacion }}"
                         placeholder="Ejemplo: 1058-12-COT24"
                         required
-                        class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Codigo identificador unico de la licitacion o cotizacion en el portal.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Codigo identificador unico de la licitacion o cotizacion en el portal.</p>
                     {% else %}
                     <input
                         type="text"
@@ -89,15 +92,15 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         name="id_licitacion"
                         value="{{ lic.id_licitacion }}"
                         readonly
-                        class="w-full text-xs font-mono px-3 py-2 border border-slate-200 rounded bg-slate-100 text-slate-600 cursor-not-allowed"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#F5F5F3] text-neutral-500 cursor-not-allowed"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">El identificador oficial no es modificable en modo edicion.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">El identificador oficial no es modificable en modo edicion.</p>
                     {% endif %}
                 </div>
 
                 <div>
-                    <label for="region" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Plaza / Region de Ejecucion <span class="text-red-600">*</span>
+                    <label for="region" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Plaza / Region de Ejecucion <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="text"
@@ -106,14 +109,14 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         value="{{ lic.region }}"
                         placeholder="Region Metropolitana (Santiago)"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Ubicacion geografica donde se prestaran los servicios hoteleros.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Ubicacion geografica donde se prestaran los servicios hoteleros.</p>
                 </div>
 
                 <div class="sm:col-span-2">
-                    <label for="titulo" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Titulo de la Licitacion <span class="text-red-600">*</span>
+                    <label for="titulo" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Titulo de la Licitacion <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="text"
@@ -122,14 +125,14 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         value="{{ lic.titulo }}"
                         placeholder="Ejemplo: Servicio de Banqueteria y Salones Jornada de Planificacion Estrategica"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Nombre descriptivo oficial de la contratacion publicado por el mandante.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Nombre descriptivo oficial de la contratacion publicado por el mandante.</p>
                 </div>
 
                 <div class="sm:col-span-2">
-                    <label for="organismo" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Organismo Mandante <span class="text-red-600">*</span>
+                    <label for="organismo" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Organismo Mandante <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="text"
@@ -138,62 +141,62 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         value="{{ lic.organismo }}"
                         placeholder="Ejemplo: Subsecretaria de Turismo"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Institucion, ministerio o servicio publico licitante.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Institucion, ministerio o servicio publico licitante.</p>
                 </div>
             </div>
         </div>
 
         <!-- 2. Categoria y Modalidad -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">2. Categoria y Modalidad</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Clasificacion operativa, mecanismo legal de compra y etapa comercial.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">2. Categoria y Modalidad</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Clasificacion operativa, mecanismo legal de compra y etapa comercial.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label for="categoria" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Categoria Comercial <span class="text-red-600">*</span>
+                    <label for="categoria" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Categoria Comercial <span class="text-neutral-900">*</span>
                     </label>
                     <select
                         id="categoria"
                         name="categoria"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                         <option value="Alojamiento" {% if lic.categoria == 'Alojamiento' %}selected{% endif %}>Alojamiento</option>
                         <option value="Eventos / Catering" {% if lic.categoria == 'Eventos / Catering' %}selected{% endif %}>Eventos / Catering</option>
                     </select>
-                    <p class="text-[11px] text-slate-500 mt-1">Unidad de negocio principal hotelera.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Unidad de negocio principal hotelera.</p>
                 </div>
 
                 <div>
-                    <label for="modalidad" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Modalidad de Compra <span class="text-red-600">*</span>
+                    <label for="modalidad" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Modalidad de Compra <span class="text-neutral-900">*</span>
                     </label>
                     <select
                         id="modalidad"
                         name="modalidad"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                         <option value="Compra Agil" {% if lic.modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope 6.9M CLP)</option>
                         <option value="Licitacion Publica" {% if lic.modalidad == 'Licitacion Publica' %}selected{% endif %}>Licitacion Publica</option>
                     </select>
-                    <p class="text-[11px] text-slate-500 mt-1">Mecanismo normativo de contratacion.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Mecanismo normativo de contratacion.</p>
                 </div>
 
                 <div>
-                    <label for="estado_embudo" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Estado del Embudo <span class="text-red-600">*</span>
+                    <label for="estado_embudo" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Estado del Embudo <span class="text-neutral-900">*</span>
                     </label>
                     <select
                         id="estado_embudo"
                         name="estado_embudo"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                         {% for estado_op in valid_estados %}
                         <option value="{{ estado_op }}" {% if lic.estado_embudo == estado_op %}selected{% endif %}>
@@ -201,21 +204,21 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[11px] text-slate-500 mt-1">Etapa actual en el ciclo de conversion.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Etapa actual en el ciclo de conversion.</p>
                 </div>
             </div>
         </div>
 
         <!-- 3. Dimensionamiento Operativo, Aforo y Horarios -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">3. Dimensionamiento Operativo, Aforo y Horarios</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Capacidad requerida, cantidad estimada de asistentes, franja horaria y salon propuesto.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">3. Dimensionamiento Operativo, Aforo y Horarios</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Capacidad requerida, cantidad estimada de asistentes, franja horaria y salon propuesto.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="cantidad_asistentes" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                    <label for="cantidad_asistentes" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
                         Cantidad Estimada de Personas / Aforo
                     </label>
                     <input
@@ -226,19 +229,19 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         placeholder="Ejemplo: 80"
                         min="0"
                         step="1"
-                        class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Numero de personas que utilizaran el salon o dependencias del hotel.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Numero de personas que utilizaran el salon o dependencias del hotel.</p>
                 </div>
 
                 <div>
-                    <label for="id_salon_asignado" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                    <label for="id_salon_asignado" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
                         Salon Sugerido / Asignado
                     </label>
                     <select
                         id="id_salon_asignado"
                         name="id_salon_asignado"
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                         <option value="">[SIN ASIGNAR / PENDIENTE DE EVALUACION]</option>
                         {% for salon in salones %}
@@ -247,27 +250,27 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[11px] text-slate-500 mt-1">Espacio del Hotel Plaza San Francisco asignado a la propuesta.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Espacio del Hotel Plaza San Francisco asignado a la propuesta.</p>
                 </div>
 
                 <div>
-                    <label for="tipo_jornada" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                    <label for="tipo_jornada" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
                         Tipo de Jornada
                     </label>
                     <select
                         id="tipo_jornada"
                         name="tipo_jornada"
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                         {% for jor in valid_jornadas %}
                         <option value="{{ jor }}" {% if lic.tipo_jornada == jor %}selected{% endif %}>{{ jor }}</option>
                         {% endfor %}
                     </select>
-                    <p class="text-[11px] text-slate-500 mt-1">Regimen de uso del salon segun especificaciones de las bases.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Regimen de uso del salon segun especificaciones de las bases.</p>
                 </div>
 
                 <div>
-                    <label for="horario_evento" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                    <label for="horario_evento" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
                         Horario Estimado del Evento
                     </label>
                     <input
@@ -276,29 +279,29 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         name="horario_evento"
                         value="{{ lic.horario_evento or '' }}"
                         placeholder="Ejemplo: 08:30 a 18:30 hrs"
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Franja horaria especificada por el organismo licitante.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Franja horaria especificada por el organismo licitante.</p>
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded p-3 text-xs text-slate-600">
-                <span class="font-semibold text-slate-800">Regla Operativa de Aforo:</span>
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded p-3 text-xs text-neutral-600">
+                <span class="font-semibold text-neutral-900 font-mono text-[11px] uppercase tracking-wider block mb-0.5">Regla Operativa de Aforo:</span>
                 Si la cantidad de asistentes solicitada excede la capacidad maxima del salon, el sistema generara una alerta de sobrecupo y sugerira los salones compatibles del hotel.
             </div>
         </div>
 
         <!-- 4. Evaluacion Economica -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">4. Evaluacion Economica</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Control presupuestario preventivo para cautelar la rentabilidad operativa del hotel.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">4. Evaluacion Economica</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Control presupuestario preventivo para cautelar la rentabilidad operativa del hotel.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="presupuesto_mandante" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Presupuesto Mandante (CLP) <span class="text-red-600">*</span>
+                    <label for="presupuesto_mandante" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Presupuesto Mandante (CLP) <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="number"
@@ -309,14 +312,14 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         min="0"
                         step="1"
                         required
-                        class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Monto maximo oficial disponible autorizado por el mandante.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Monto maximo oficial disponible autorizado por el mandante.</p>
                 </div>
 
                 <div>
-                    <label for="costo_base_hotel" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Costo Base Hotel (CLP) <span class="text-red-600">*</span>
+                    <label for="costo_base_hotel" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Costo Base Hotel (CLP) <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="number"
@@ -327,29 +330,29 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         min="0"
                         step="1"
                         required
-                        class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Costo operativo directo estimado para la prestacion del servicio.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Costo operativo directo estimado para la prestacion del servicio.</p>
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded p-3 text-xs text-slate-600">
-                <span class="font-semibold text-slate-800">Regla Financiera Preventiva:</span>
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded p-3 text-xs text-neutral-600">
+                <span class="font-semibold text-neutral-900 font-mono text-[11px] uppercase tracking-wider block mb-0.5">Regla Financiera Preventiva:</span>
                 Si el Costo Base Hotel sobrepasa el Presupuesto Mandante, la oportunidad sera clasificada de forma automatica como financieramente inviable en la ficha de detalle.
             </div>
         </div>
 
         <!-- 5. Fechas Criticas -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">5. Fechas Criticas</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Cronograma de plazos administrativos y recepcion de ofertas.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">5. Fechas Criticas</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Cronograma de plazos administrativos y recepcion de ofertas.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="fecha_publicacion" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Fecha de Publicacion <span class="text-red-600">*</span>
+                    <label for="fecha_publicacion" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Fecha de Publicacion <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="date"
@@ -357,14 +360,14 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         name="fecha_publicacion"
                         value="{{ lic.fecha_publicacion }}"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Fecha oficial de publicacion en el portal Mercado Publico.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Fecha oficial de publicacion en el portal Mercado Publico.</p>
                 </div>
 
                 <div>
-                    <label for="fecha_cierre" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                        Fecha de Cierre de Ofertas <span class="text-red-600">*</span>
+                    <label for="fecha_cierre" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Fecha de Cierre de Ofertas <span class="text-neutral-900">*</span>
                     </label>
                     <input
                         type="date"
@@ -372,30 +375,30 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         name="fecha_cierre"
                         value="{{ lic.fecha_cierre }}"
                         required
-                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-slate-500 mt-1">Plazo fatal para el envio formal de propuestas.</p>
+                    <p class="text-[11px] text-neutral-400 mt-1">Plazo fatal para el envio formal de propuestas.</p>
                 </div>
             </div>
         </div>
 
         <!-- 6. Validacion Robusta y Checklist de Admisibilidad -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">6. Validacion Robusta y Checklist de Admisibilidad</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Cotejo de integridad documental (Efecto ID) y antecedentes legales exigidos por la Ley 19.886.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">6. Validacion Robusta y Checklist de Admisibilidad</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Cotejo de integridad documental (Efecto ID) y antecedentes legales exigidos por la Ley 19.886.</p>
             </div>
 
             <!-- Cruce de ID con Adjuntos -->
             <div class="space-y-2">
-                <label for="validacion_adjuntos" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                    Cruce de ID con Adjuntos (Consistencia Documental) <span class="text-red-600">*</span>
+                <label for="validacion_adjuntos" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500">
+                    Cruce de ID con Adjuntos (Consistencia Documental) <span class="text-neutral-900">*</span>
                 </label>
                 <select
                     id="validacion_adjuntos"
                     name="validacion_adjuntos"
                     required
-                    class="w-full sm:w-80 text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    class="w-full sm:w-96 text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                 >
                     <option value="Valida" {% if lic.validacion_adjuntos == 'Valida' %}selected{% endif %}>
                         Valida (ID Coincide con bases adjuntas)
@@ -404,18 +407,18 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                         Error ID / Discrepancia (Conflicto detectado en bases)
                     </option>
                 </select>
-                <p class="text-[11px] text-slate-500">
+                <p class="text-[11px] text-neutral-400">
                     Alerta Efecto ID: Cotejo de concordancia entre el codigo del portal y el correlativo de las bases adjuntas.
                 </p>
             </div>
 
             <!-- Checklist de Documentos Legales -->
             <div class="pt-2">
-                <span class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                <span class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-2">
                     Checklist de Admisibilidad Administrativa Formal:
                 </span>
 
-                <div class="space-y-3 bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div class="space-y-3 bg-[#FBFBFA] border border-[#EAEAEA] rounded-lg p-4">
                     <label class="flex items-start space-x-3 cursor-pointer">
                         <input
                             type="checkbox"
@@ -423,56 +426,56 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                             name="tiene_anexo4"
                             value="1"
                             {% if lic.tiene_anexo4 %}checked{% endif %}
-                            class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                            class="mt-0.5 h-4 w-4 rounded border-[#EAEAEA] text-neutral-900 focus:ring-0 focus:outline-none accent-neutral-900"
                         >
                         <div class="text-xs">
-                            <span class="font-bold text-slate-900">Anexo 4 - Declaracion Jurada y Pacto de Integridad</span>
-                            <p class="text-slate-600">Declaracion obligatoria segun el art. 4 de la Ley 19.886 y compromiso de probidad administrativa.</p>
+                            <span class="font-semibold text-neutral-900">Anexo 4 - Declaracion Jurada y Pacto de Integridad</span>
+                            <p class="text-neutral-500 text-[11px]">Declaracion obligatoria segun el art. 4 de la Ley 19.886 y compromiso de probidad administrativa.</p>
                         </div>
                     </label>
 
-                    <label class="flex items-start space-x-3 cursor-pointer border-t border-slate-200 pt-2">
+                    <label class="flex items-start space-x-3 cursor-pointer border-t border-[#EAEAEA] pt-2.5">
                         <input
                             type="checkbox"
                             id="tiene_escrituras"
                             name="tiene_escrituras"
                             value="1"
                             {% if lic.tiene_escrituras %}checked{% endif %}
-                            class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                            class="mt-0.5 h-4 w-4 rounded border-[#EAEAEA] text-neutral-900 focus:ring-0 focus:outline-none accent-neutral-900"
                         >
                         <div class="text-xs">
-                            <span class="font-bold text-slate-900">Escrituras Sociales y Estatutos Vigentes</span>
-                            <p class="text-slate-600">Copia autorizada de constitucion social, modificaciones e inscripcion registral.</p>
+                            <span class="font-semibold text-neutral-900">Escrituras Sociales y Estatutos Vigentes</span>
+                            <p class="text-neutral-500 text-[11px]">Copia autorizada de constitucion social, modificaciones e inscripcion registral.</p>
                         </div>
                     </label>
 
-                    <label class="flex items-start space-x-3 cursor-pointer border-t border-slate-200 pt-2">
+                    <label class="flex items-start space-x-3 cursor-pointer border-t border-[#EAEAEA] pt-2.5">
                         <input
                             type="checkbox"
                             id="tiene_poderes"
                             name="tiene_poderes"
                             value="1"
                             {% if lic.tiene_poderes %}checked{% endif %}
-                            class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                            class="mt-0.5 h-4 w-4 rounded border-[#EAEAEA] text-neutral-900 focus:ring-0 focus:outline-none accent-neutral-900"
                         >
                         <div class="text-xs">
-                            <span class="font-bold text-slate-900">Poderes de Representacion Legal</span>
-                            <p class="text-slate-600">Facultades notariales vigentes habilitantes del representante legal para suscribir ofertas.</p>
+                            <span class="font-semibold text-neutral-900">Poderes de Representacion Legal</span>
+                            <p class="text-neutral-500 text-[11px]">Facultades notariales vigentes habilitantes del representante legal para suscribir ofertas.</p>
                         </div>
                     </label>
 
-                    <label class="flex items-start space-x-3 cursor-pointer border-t border-slate-200 pt-2">
+                    <label class="flex items-start space-x-3 cursor-pointer border-t border-[#EAEAEA] pt-2.5">
                         <input
                             type="checkbox"
                             id="tiene_vigencias"
                             name="tiene_vigencias"
                             value="1"
                             {% if lic.tiene_vigencias %}checked{% endif %}
-                            class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                            class="mt-0.5 h-4 w-4 rounded border-[#EAEAEA] text-neutral-900 focus:ring-0 focus:outline-none accent-neutral-900"
                         >
                         <div class="text-xs">
-                            <span class="font-bold text-slate-900">Certificados de Vigencia de la Sociedad</span>
-                            <p class="text-slate-600">Certificados emitidos por el Conservador de Bienes Raices con antiguedad no superior a 60 dias.</p>
+                            <span class="font-semibold text-neutral-900">Certificados de Vigencia de la Sociedad</span>
+                            <p class="text-neutral-500 text-[11px]">Certificados emitidos por el Conservador de Bienes Raices con antiguedad no superior a 60 dias.</p>
                         </div>
                     </label>
                 </div>
@@ -480,14 +483,14 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
         </div>
 
         <!-- 7. Descripcion o Extracto de TDR -->
-        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-            <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">7. Descripcion o Extracto de TDR</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Sintesis tecnica de los requerimientos, alcances y especificaciones del servicio.</p>
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">7. Descripcion o Extracto de TDR</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Sintesis tecnica de los requerimientos, alcances y especificaciones del servicio.</p>
             </div>
 
             <div>
-                <label for="descripcion_tdr" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                <label for="descripcion_tdr" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
                     Extracto de Especificaciones Tecnicas (TDR)
                 </label>
                 <textarea
@@ -495,30 +498,34 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
                     name="descripcion_tdr"
                     rows="4"
                     placeholder="Ingrese descripcion del servicio requerido, cantidad de habitaciones, montaje de salones, servicios de coffee break o requerimientos especiales..."
-                    class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 leading-relaxed"
+                    class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors leading-relaxed"
                 >{{ lic.descripcion_tdr or '' }}</textarea>
-                <p class="text-[11px] text-slate-500 mt-1">Sintesis analitica para el equipo comercial y operativo.</p>
+                <p class="text-[11px] text-neutral-400 mt-1">Sintesis analitica para el equipo comercial y operativo.</p>
             </div>
         </div>
 
         <!-- Botones de Accion -->
-        <div class="flex items-center justify-between pt-2 pb-6">
-            {% if mode == 'create' %}
-            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-sm">
-                Cancelar
-            </a>
-            {% else %}
-            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="inline-flex items-center px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-sm">
-                Cancelar
-            </a>
-            {% endif %}
+        <div class="flex items-center justify-between pt-6 pb-10 border-t border-[#EAEAEA]">
+            <div>
+                {% if mode == 'create' %}
+                <a href="{{ url_for('dashboard') }}" class="btn-secondary">
+                    Cancelar
+                </a>
+                {% else %}
+                <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="btn-secondary">
+                    Cancelar
+                </a>
+                {% endif %}
+            </div>
 
-            <button
-                type="submit"
-                class="inline-flex items-center justify-center px-5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 cursor-pointer"
-            >
-                Guardar Licitacion
-            </button>
+            <div class="flex items-center space-x-3">
+                <button
+                    type="submit"
+                    class="btn-primary"
+                >
+                    Guardar Licitacion
+                </button>
+            </div>
         </div>
     </form>
 </div>

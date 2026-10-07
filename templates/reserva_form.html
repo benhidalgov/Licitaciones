@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if mode == 'create' %}
+Registrar Nueva Reserva - Agenda de Salones
+{% else %}
+Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+    <!-- Migas de Pan y Encabezado Superior -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EAEAEA] pb-4">
+        <nav class="flex items-center space-x-2 text-xs text-neutral-500 font-mono">
+            <a href="{{ url_for('dashboard') }}" class="hover:text-neutral-900 transition-colors">Tablero</a>
+            <span class="text-neutral-300">/</span>
+            <a href="{{ url_for('salones_catalogo') }}" class="hover:text-neutral-900 transition-colors">Salones y Agenda</a>
+            <span class="text-neutral-300">/</span>
+            {% if mode == 'create' %}
+            <span class="text-neutral-900 font-semibold">Nueva Reserva</span>
+            {% else %}
+            <span class="text-neutral-900 font-semibold">Editar #{{ reserva.id_reserva }}</span>
+            {% endif %}
+        </nav>
+        <div>
+            <a href="{{ url_for('salones_catalogo') }}" class="btn-secondary">
+                Cancelar y Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Titulo Principal -->
+    <div class="card-editorial p-6">
+        <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-1">
+            {% if mode == 'create' %}Agenda y Control de Bloqueos / Nuevo Registro{% else %}Modificacion de Reserva / Auditoria{% endif %}
+        </span>
+        <h1 class="text-xl sm:text-2xl font-serif text-neutral-900 tracking-tight">
+            {% if mode == 'create' %}
+            Registrar Nueva Reserva de Salon
+            {% else %}
+            Editar Reserva <span class="font-mono text-neutral-900 font-normal">[#{{ reserva.id_reserva }}]</span>
+            {% endif %}
+        </h1>
+        <p class="text-xs text-neutral-500 mt-1">
+            {% if mode == 'create' %}
+            Ingrese los parametros de ocupacion para bloquear fechas, registrar clientes y validar la disponibilidad de espacios del hotel.
+            {% else %}
+            Modifique los datos de la reserva o actualice las fechas y aforo asignados.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Formulario de Reserva -->
+    <form method="POST" action="{% if mode == 'create' %}{{ url_for('crear_reserva') }}{% else %}{{ url_for('editar_reserva', id_reserva=reserva.id_reserva) }}{% endif %}" class="space-y-6">
+
+        <!-- 1. Espacio y Evento -->
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">1. Espacio y Descripcion del Evento</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Asignacion del espacio en el Hotel Plaza San Francisco y titularidad de la reserva.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_salon" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Salon Requerido <span class="text-neutral-900">*</span>
+                    </label>
+                    <select
+                        id="id_salon"
+                        name="id_salon"
+                        required
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                        <option value="">[SELECCIONAR SALON]</option>
+                        {% for salon in salones %}
+                        <option value="{{ salon.id_salon }}" {% if reserva.id_salon == salon.id_salon %}selected{% endif %}>
+                            {{ salon.nombre }} (Aforo: {{ salon.capacidad_maxima }} pers. - {{ salon.tipo }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-neutral-400 mt-1">Espacio fisico asignado para la prestacion del servicio.</p>
+                </div>
+
+                <div>
+                    <label for="estado_reserva" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Estado de la Reserva <span class="text-neutral-900">*</span>
+                    </label>
+                    <select
+                        id="estado_reserva"
+                        name="estado_reserva"
+                        required
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                        {% for est in valid_estados_reserva %}
+                        <option value="{{ est }}" {% if reserva.estado_reserva == est %}selected{% endif %}>
+                            [{{ est | upper }}]
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-neutral-400 mt-1">Nivel de compromiso de la fecha en la agenda.</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="cliente_evento" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Nombre o Motivo del Evento <span class="text-neutral-900">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="cliente_evento"
+                        name="cliente_evento"
+                        value="{{ reserva.cliente_evento or '' }}"
+                        placeholder="Ejemplo: Jornada de Planificacion Estrategica Anual"
+                        required
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Denominacion descriptiva del evento corporativo o licitacion.</p>
+                </div>
+
+                <div>
+                    <label for="organismo_o_empresa" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Organismo o Empresa Cliente <span class="text-neutral-900">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="organismo_o_empresa"
+                        name="organismo_o_empresa"
+                        value="{{ reserva.organismo_o_empresa or '' }}"
+                        placeholder="Ejemplo: Subsecretaria de Turismo"
+                        required
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Institucion mandante o cliente contratante.</p>
+                </div>
+
+                <div>
+                    <label for="tipo_evento" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Tipo / Formato de Actividad
+                    </label>
+                    <input
+                        type="text"
+                        id="tipo_evento"
+                        name="tipo_evento"
+                        value="{{ reserva.tipo_evento or 'Seminario / Reunion' }}"
+                        placeholder="Seminario, Banquete, Conferencia, Mesa de Trabajo"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Modalidad de uso y distribucion del montaje.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Cronograma y Aforo -->
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">2. Cronograma de Fechas, Horarios y Aforo</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Definicion de periodos de ocupacion y cantidad estimada de asistentes.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="fecha_inicio" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Fecha de Inicio <span class="text-neutral-900">*</span>
+                    </label>
+                    <input
+                        type="date"
+                        id="fecha_inicio"
+                        name="fecha_inicio"
+                        value="{{ reserva.fecha_inicio or '' }}"
+                        required
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Dia de inicio de la ocupacion o montaje.</p>
+                </div>
+
+                <div>
+                    <label for="fecha_fin" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Fecha de Termino <span class="text-neutral-900">*</span>
+                    </label>
+                    <input
+                        type="date"
+                        id="fecha_fin"
+                        name="fecha_fin"
+                        value="{{ reserva.fecha_fin or '' }}"
+                        required
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Dia final de uso del espacio.</p>
+                </div>
+
+                <div>
+                    <label for="horario" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Horario Diario Estimado
+                    </label>
+                    <input
+                        type="text"
+                        id="horario"
+                        name="horario"
+                        value="{{ reserva.horario or '08:30 a 18:30 hrs' }}"
+                        placeholder="Ejemplo: 08:30 a 18:30 hrs"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Franja operativa diaria de prestacion del servicio.</p>
+                </div>
+
+                <div>
+                    <label for="asistentes_estimados" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Asistentes Estimados / Aforo
+                    </label>
+                    <input
+                        type="number"
+                        id="asistentes_estimados"
+                        name="asistentes_estimados"
+                        value="{{ reserva.asistentes_estimados or 0 }}"
+                        min="0"
+                        step="1"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Cantidad aproximada de participantes.</p>
+                </div>
+            </div>
+
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded p-3 text-xs text-neutral-600">
+                <span class="font-semibold text-neutral-900 font-mono text-[11px] uppercase tracking-wider block mb-0.5">Control Preventivo de Colisiones:</span>
+                El sistema verifica automaticamente que el salon seleccionado no tenga otros eventos confirmados en el mismo rango de fechas. Si existe conflicto, se notificara en pantalla.
+            </div>
+        </div>
+
+        <!-- 3. Vinculacion y Datos de Contacto -->
+        <div class="card-editorial p-6 space-y-4">
+            <div class="border-b border-[#EAEAEA] pb-3">
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">3. Vinculacion con Licitacion y Contacto</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Asociacion opcional con procesos de Mercado Publico y datos de coordinacion operativa.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_licitacion" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        ID Licitacion Vinculada (Opcional)
+                    </label>
+                    <select
+                        id="id_licitacion"
+                        name="id_licitacion"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                        <option value="">[NINGUNA - EVENTO CORPORATIVO PRIVADO]</option>
+                        {% for lic in licitaciones %}
+                        <option value="{{ lic.id_licitacion }}" {% if reserva.id_licitacion == lic.id_licitacion %}selected{% endif %}>
+                            {{ lic.id_licitacion }} - {{ lic.titulo[:45] }}...
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-neutral-400 mt-1">Vincula esta reserva a una oportunidad del embudo de compras publicas.</p>
+                </div>
+
+                <div>
+                    <label for="contacto_responsable" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Contacto Responsable / Ejecutivo
+                    </label>
+                    <input
+                        type="text"
+                        id="contacto_responsable"
+                        name="contacto_responsable"
+                        value="{{ reserva.contacto_responsable or '' }}"
+                        placeholder="Nombre, cargo o email del contacto"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                    <p class="text-[11px] text-neutral-400 mt-1">Persona de enlace tecnico u organizador del evento.</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="observaciones" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Observaciones y Requerimientos Especiales
+                    </label>
+                    <textarea
+                        id="observaciones"
+                        name="observaciones"
+                        rows="3"
+                        placeholder="Especificaciones tecnicas de montaje, requerimientos de alimentacion, coffee break o instrucciones especificas..."
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors leading-relaxed"
+                    >{{ reserva.observaciones or '' }}</textarea>
+                    <p class="text-[11px] text-neutral-400 mt-1">Notas de apoyo para el personal de operaciones y banqueteria.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Accion -->
+        <div class="flex items-center justify-between pt-6 pb-10 border-t border-[#EAEAEA]">
+            <div>
+                <a href="{{ url_for('salones_catalogo') }}" class="btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button
+                    type="submit"
+                    class="btn-primary"
+                >
+                    Guardar Reserva
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -4,51 +4,237 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hotel Plaza San Francisco | DUOC UC - Gestion de Licitaciones{% endblock %}</title>
+
+    <!-- Tipografia Editorial Minimalista: Geist Sans, Newsreader Serif y Geist Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        serif: ['Newsreader', 'Georgia', 'serif'],
+                        mono: ['Geist Mono', 'SF Mono', 'monospace'],
+                    },
+                    colors: {
+                        canvas: '#FBFBFA',
+                        surface: '#FFFFFF',
+                        borderSubtle: '#EAEAEA',
+                        ink: '#111111',
+                        muted: '#787774',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Sistema de Variables y Utilidades Utilitarias Minimalistas -->
+    <style>
+        :root {
+            --canvas: #FBFBFA;
+            --surface: #FFFFFF;
+            --border-subtle: #EAEAEA;
+            --ink: #111111;
+            --muted: #787774;
+
+            /* Spot Pastels Desaturados */
+            --pastel-green-bg: #EDF3EC;
+            --pastel-green-text: #346538;
+            --pastel-blue-bg: #E1F3FE;
+            --pastel-blue-text: #1F6C9F;
+            --pastel-red-bg: #FDEBEC;
+            --pastel-red-text: #9F2F2D;
+            --pastel-yellow-bg: #FBF3DB;
+            --pastel-yellow-text: #956400;
+            --pastel-neutral-bg: #F3F3F1;
+            --pastel-neutral-text: #5F5E5B;
+        }
+
+        body {
+            background-color: var(--canvas);
+            color: var(--ink);
+            font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-serif-title {
+            font-family: 'Newsreader', Georgia, serif;
+            letter-spacing: -0.025em;
+        }
+
+        .badge-spot {
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1.4;
+        }
+        .badge-spot-green { background: var(--pastel-green-bg); color: var(--pastel-green-text); }
+        .badge-spot-blue { background: var(--pastel-blue-bg); color: var(--pastel-blue-text); }
+        .badge-spot-red { background: var(--pastel-red-bg); color: var(--pastel-red-text); }
+        .badge-spot-yellow { background: var(--pastel-yellow-bg); color: var(--pastel-yellow-text); }
+        .badge-spot-neutral { background: var(--pastel-neutral-bg); color: var(--pastel-neutral-text); }
+
+        .kbd-shortcut {
+            border: 1px solid #EAEAEA;
+            border-radius: 4px;
+            background: #F7F6F3;
+            font-family: 'Geist Mono', monospace;
+            font-size: 10px;
+            padding: 1px 5px;
+            color: #787774;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+        }
+
+        .btn-primary,
+        .btn-secondary,
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.25;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+            transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease;
+        }
+
+        .btn-primary {
+            background: #111111;
+            color: #FFFFFF;
+            border: 1px solid #111111;
+        }
+        .btn-primary:hover {
+            background: #2A2A2A;
+            border-color: #2A2A2A;
+            color: #FFFFFF;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #FFFFFF;
+            color: #111111;
+            border: 1px solid #EAEAEA;
+        }
+        .btn-secondary:hover {
+            background: #F7F6F3;
+            border-color: #D4D4D4;
+            color: #111111;
+        }
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #787774;
+            border: 1px solid transparent;
+        }
+        .btn-ghost:hover {
+            background: #F3F3F1;
+            color: #111111;
+        }
+        .btn-ghost:active {
+            transform: scale(0.98);
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+
+        .card-editorial {
+            background: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 8px;
+            transition: border-color 200ms ease;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-full flex flex-col font-sans antialiased">
-    <header class="bg-slate-900 text-white border-b border-slate-800 shadow-sm">
+<body class="min-h-full flex flex-col font-sans antialiased" style="background-color: var(--canvas);">
+    <!-- Header Utilitario Minimalista de Perfil Bajo -->
+    <header class="bg-white border-b border-[#EAEAEA] sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('dashboard') if session.get('user') else url_for('login') }}" class="flex flex-col">
-                        <span class="text-lg font-bold tracking-tight text-white">Hotel Plaza San Francisco | DUOC UC</span>
-                        <span class="text-xs text-slate-400">Sistema de Gestion de Licitaciones de Mercado Publico</span>
+            <div class="flex items-center justify-between h-13 py-2.5">
+                <!-- Marca Institucional -->
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('dashboard') if session.get('user') else url_for('login') }}" class="flex items-center space-x-2.5 text-neutral-900 group">
+                        <span class="w-2 h-2 rounded-full bg-neutral-900 group-hover:scale-125 transition-transform"></span>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold tracking-tight text-[#111111]">
+                                Hotel Plaza San Francisco
+                            </span>
+                            <span class="text-[11px] text-[#787774] font-medium leading-none -mt-0.5">
+                                Mercado Publico | DUOC UC VcM
+                            </span>
+                        </div>
                     </a>
                 </div>
-                <div class="flex items-center space-x-6">
+
+                <!-- Navegacion y Control de Sesion -->
+                <div class="flex items-center space-x-4">
                     {% if session.get('user') %}
-                    <nav class="hidden md:flex space-x-2">
-                        <a href="{{ url_for('dashboard') }}" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-sm font-medium">Licitaciones</a>
-                        <a href="{{ url_for('salones_catalogo') }}" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-sm font-medium">Salones y Agenda</a>
+                    <nav class="hidden md:flex items-center space-x-1">
+                        <a href="{{ url_for('dashboard') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['dashboard', 'licitacion_detalle', 'editar_licitacion', 'crear_licitacion'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                            Licitaciones
+                        </a>
+                        <a href="{{ url_for('salones_catalogo') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['salones_catalogo', 'salon_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                            Salones y Agenda
+                        </a>
                     </nav>
-                    <div class="flex items-center space-x-4 pl-4 border-l border-slate-700">
-                        <span class="text-xs text-slate-300 font-medium">Usuario: <strong class="text-white">{{ session.get('user') }}</strong></span>
-                        <a href="{{ url_for('logout') }}" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded border border-slate-700 transition-colors">Cerrar Sesion</a>
+
+                    <div class="flex items-center space-x-3 pl-3 border-l border-[#EAEAEA]">
+                        <span class="text-[11px] text-[#787774]">
+                            Usuario: <span class="font-mono font-medium text-[#111111]">{{ session.get('user') }}</span>
+                        </span>
+                        <a href="{{ url_for('logout') }}" class="btn-secondary text-[11px] px-2.5 py-1">
+                            Cerrar Sesion
+                        </a>
                     </div>
                     {% else %}
-                    <a href="{{ url_for('login') }}" class="text-sm text-slate-300 hover:text-white font-medium">Acceso Funcional</a>
+                    <a href="{{ url_for('login') }}" class="btn-primary text-xs px-3 py-1.5">
+                        Acceso Funcional
+                    </a>
                     {% endif %}
                 </div>
             </div>
         </div>
     </header>
 
+    <!-- Notificaciones y Mensajes Flash en Tonos Pastel -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="space-y-2">
                     {% for category, message in messages %}
                         {% if category in ['error', 'danger'] %}
-                        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded text-sm" role="alert">
+                        <div class="px-4 py-2.5 rounded text-xs font-medium border" style="background: var(--pastel-red-bg); border-color: #F8D1D3; color: var(--pastel-red-text);" role="alert">
                             <span>{{ message }}</span>
                         </div>
                         {% elif category == 'success' %}
-                        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded text-sm" role="alert">
+                        <div class="px-4 py-2.5 rounded text-xs font-medium border" style="background: var(--pastel-green-bg); border-color: #D6E8D4; color: var(--pastel-green-text);" role="alert">
                             <span>{{ message }}</span>
                         </div>
                         {% else %}
-                        <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded text-sm" role="alert">
+                        <div class="px-4 py-2.5 rounded text-xs font-medium border" style="background: var(--pastel-blue-bg); border-color: #CBE8FC; color: var(--pastel-blue-text);" role="alert">
                             <span>{{ message }}</span>
                         </div>
                         {% endif %}
@@ -58,13 +244,16 @@
         {% endwith %}
     </div>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+    <!-- Contenedor Principal de la Vista -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 py-4 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs">
-            <span>Hotel Plaza San Francisco y DUOC UC - Prototipo de Gestion Comercial y Operativa de Licitaciones. Todos los derechos reservados.</span>
+    <!-- Footer Utilitario Minimalista -->
+    <footer class="border-t border-[#EAEAEA] bg-transparent py-5 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#787774] gap-2">
+            <span>Hotel Plaza San Francisco y DUOC UC - Vinculacion con el Medio (VcM)</span>
+            <span class="font-mono text-[11px]">Plataforma de Gestion Comercial de Licitaciones</span>
         </div>
     </footer>
 </body>

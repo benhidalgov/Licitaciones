@@ -3,25 +3,25 @@
 {% block title %}Ficha de Licitacion {{ lic.id_licitacion }} - Gestion Comercial{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-8">
     <!-- Migas de Pan y Navegacion Superior -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
-        <nav class="flex items-center space-x-2 text-xs text-slate-500 font-medium">
-            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Tablero Principal</a>
-            <span class="text-slate-400">/</span>
-            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Licitaciones</a>
-            <span class="text-slate-400">/</span>
-            <span class="font-mono text-slate-800 font-semibold">{{ lic.id_licitacion }}</span>
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-6 border-b border-[#EAEAEA]">
+        <nav class="flex items-center space-x-2 text-xs text-[#787774]">
+            <a href="{{ url_for('dashboard') }}" class="hover:text-[#111111] transition-colors">Tablero Principal</a>
+            <span>/</span>
+            <a href="{{ url_for('dashboard') }}" class="hover:text-[#111111] transition-colors">Licitaciones</a>
+            <span>/</span>
+            <span class="font-mono text-[#111111] font-medium">{{ lic.id_licitacion }}</span>
         </nav>
-        <div class="flex items-center space-x-3">
-            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+        <div class="flex items-center space-x-2">
+            <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5">
                 Volver al Tablero
             </a>
-            <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+            <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="btn-secondary text-xs px-3 py-1.5">
                 Editar Licitacion
             </a>
             <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
-                <button type="submit" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-300 rounded hover:bg-red-50 transition-colors shadow-sm cursor-pointer">
+                <button type="submit" class="btn-secondary text-xs px-3 py-1.5 text-[#9F2F2D] hover:border-[#F8D1D3]">
                     Eliminar
                 </button>
             </form>
@@ -29,85 +29,83 @@
     </div>
 
     <!-- Encabezado Principal de la Ficha -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div class="space-y-2 max-w-3xl">
+    <div class="card-editorial p-6 bg-white space-y-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div class="space-y-2.5 max-w-3xl">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="font-mono text-sm font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
+                    <span class="badge-spot badge-spot-blue font-mono font-bold">
                         {{ lic.id_licitacion }}
                     </span>
-                    <span class="px-2.5 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                    <span class="badge-spot badge-spot-neutral">
                         {{ lic.categoria }}
                     </span>
                     {% if lic.modalidad == 'Compra Agil' %}
-                    <span class="px-2.5 py-1 rounded text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200">
+                    <span class="badge-spot badge-spot-blue">
                         Compra Agil
                     </span>
                     {% else %}
-                    <span class="px-2.5 py-1 rounded text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200">
+                    <span class="badge-spot badge-spot-neutral">
                         Licitacion Publica
                     </span>
                     {% endif %}
                 </div>
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                <h1 class="text-2xl sm:text-3xl font-serif font-normal text-[#111111] tracking-tight">
                     {{ lic.titulo }}
                 </h1>
-                <div class="text-sm font-medium text-slate-700">
-                    Organismo Mandante: <strong class="text-slate-900">{{ lic.organismo }}</strong>
-                </div>
-                <div class="text-xs text-slate-500">
-                    Region de Ejecucion: <span class="text-slate-700 font-medium">{{ lic.region }}</span>
+                <div class="text-xs text-[#787774] space-y-0.5">
+                    <div>Organismo Mandante: <strong class="text-[#111111]">{{ lic.organismo }}</strong></div>
+                    <div>Region de Ejecucion: <span class="text-[#111111] font-medium">{{ lic.region }}</span></div>
                 </div>
             </div>
 
             <!-- Estado Actual en el Embudo -->
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 min-w-[240px] text-center sm:text-right">
-                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Estado Actual en Embudo</div>
-                <div class="mt-2">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 min-w-[240px] text-left sm:text-right space-y-2">
+                <div class="text-[10px] font-semibold uppercase tracking-wider text-[#787774]">Estado Actual en Embudo</div>
+                <div>
                     {% if lic.estado_embudo == 'Identificada' %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                    <span class="badge-spot badge-spot-neutral">
                         Identificada
                     </span>
                     {% elif lic.estado_embudo == 'Calificada' %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                    <span class="badge-spot badge-spot-blue">
                         Calificada
                     </span>
                     {% elif lic.estado_embudo == 'Participada' %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                    <span class="badge-spot badge-spot-yellow">
                         Participada
                     </span>
                     {% elif lic.estado_embudo == 'Adjudicada' %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span class="badge-spot badge-spot-green">
                         Adjudicada
                     </span>
                     {% elif lic.estado_embudo == 'Descartada' %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                    <span class="badge-spot badge-spot-neutral">
                         Descartada
                     </span>
                     {% else %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                    <span class="badge-spot badge-spot-neutral">
                         {{ lic.estado_embudo }}
                     </span>
                     {% endif %}
                 </div>
-                <div class="mt-3 text-xs text-slate-500 space-y-0.5">
-                    <div>Publicacion: <strong class="text-slate-700">{{ lic.fecha_publicacion }}</strong></div>
-                    <div>Cierre Ofertas: <strong class="text-slate-900">{{ lic.fecha_cierre }}</strong></div>
+                <div class="text-[11px] font-mono text-[#787774] pt-2 border-t border-[#EAEAEA] space-y-0.5">
+                    <div>Publicacion: <span class="text-[#111111]">{{ lic.fecha_publicacion }}</span></div>
+                    <div>Cierre Ofertas: <span class="text-[#111111] font-semibold">{{ lic.fecha_cierre }}</span></div>
                 </div>
             </div>
         </div>
 
         <!-- Barra de Transicion Rapida de Estado -->
-        <div class="mt-6 pt-5 border-t border-slate-200">
-            <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/cambiar_estado" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-3.5 rounded-md border border-slate-200">
+        <div class="pt-5 border-t border-[#EAEAEA]">
+            <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/cambiar_estado" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FBFBFA] p-3.5 rounded-[6px] border border-[#EAEAEA]">
                 <div class="flex items-center space-x-3">
-                    <label for="select-estado" class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    <label for="select-estado" class="text-xs font-medium text-[#111111] uppercase tracking-wide">
                         Transicion Rapida de Estado:
                     </label>
                     <select
                         id="select-estado"
                         name="estado_embudo"
-                        class="text-xs px-3 py-1.5 border border-slate-300 rounded bg-white text-slate-900 font-medium focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                        class="text-xs px-3 py-1.5 border border-[#EAEAEA] rounded bg-white text-[#111111] focus:outline-none focus:border-[#111111]"
                     >
                         {% for estado_op in valid_estados %}
                         <option value="{{ estado_op }}" {% if lic.estado_embudo == estado_op %}selected{% endif %}>
@@ -119,7 +117,7 @@
                 <div>
                     <button
                         type="submit"
-                        class="w-full sm:w-auto px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 cursor-pointer"
+                        class="btn-primary text-xs px-4 py-1.5"
                     >
                         Actualizar Estado en Embudo
                     </button>
@@ -129,41 +127,41 @@
     </div>
 
     <!-- Panel de Control Presupuestario Preventivo -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-        <div class="border-b border-slate-200 pb-3">
-            <h2 class="text-base font-bold text-slate-900 tracking-tight">Control Presupuestario Preventivo y Viabilidad Financiera</h2>
-            <p class="text-xs text-slate-600 mt-0.5">
+    <div class="card-editorial p-6 bg-white space-y-4">
+        <div class="border-b border-[#EAEAEA] pb-3">
+            <h2 class="text-sm font-semibold text-[#111111]">Control Presupuestario Preventivo y Viabilidad Financiera</h2>
+            <p class="text-xs text-[#787774] mt-0.5">
                 Cotejo preventivo entre el presupuesto maximo asignado por el mandante y la estructura de costo base hotel para cautelar la rentabilidad comercial.
             </p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Presupuesto Mandante</div>
-                <div class="text-xl font-bold text-slate-900 mt-1 font-mono">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Presupuesto Mandante</div>
+                <div class="text-2xl font-bold text-[#111111] mt-1 font-mono">
                     {{ lic.presupuesto_mandante | clp }}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">Tope oficial disponible</div>
+                <div class="text-[11px] text-[#787774] mt-1">Tope oficial disponible</div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Costo Base Hotel</div>
-                <div class="text-xl font-bold text-slate-900 mt-1 font-mono">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Costo Base Hotel</div>
+                <div class="text-2xl font-bold text-[#111111] mt-1 font-mono">
                     {{ lic.costo_base_hotel | clp }}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">Costo operativo directo estimado</div>
+                <div class="text-[11px] text-[#787774] mt-1">Costo operativo directo estimado</div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Margen Proyectado / Diferencia</div>
-                <div class="text-xl font-bold mt-1 font-mono {% if es_inviable %}text-red-700{% else %}text-emerald-700{% endif %}">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Margen Proyectado / Diferencia</div>
+                <div class="text-2xl font-bold mt-1 font-mono {% if es_inviable %}text-[#9F2F2D]{% else %}text-[#346538]{% endif %}">
                     {% if es_inviable %}
                     -{{ deficit | clp }}
                     {% else %}
                     +{{ diferencia | clp }}
                     {% endif %}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">
+                <div class="text-[11px] text-[#787774] mt-1">
                     {% if es_inviable %}
                     Deficit operacional directo
                     {% else %}
@@ -172,20 +170,20 @@
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col justify-between">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Diagnostico de Viabilidad</div>
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 flex flex-col justify-between">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Diagnostico de Viabilidad</div>
                 <div class="mt-2">
                     {% if es_inviable %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+                    <span class="badge-spot badge-spot-red">
                         Inviable / Costo Excede
                     </span>
                     {% else %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <span class="badge-spot badge-spot-green">
                         Viable / Margen Positivo
                     </span>
                     {% endif %}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">
+                <div class="text-[11px] text-[#787774] mt-1">
                     {% if es_inviable %}
                     Requiere descarte o renegociacion
                     {% else %}
@@ -195,25 +193,25 @@
             </div>
         </div>
 
-        <!-- Alerta Formal de Viabilidad -->
+        <!-- Alerta Formal de Viabilidad en Spot Pastel -->
         {% if es_inviable %}
-        <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-md">
+        <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-red-bg); border-color: #F8D1D3; color: var(--pastel-red-text);">
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-red-800">
+                <span class="font-semibold uppercase tracking-wider">
                     Alerta Financiera Preventiva: Riesgo de Postulacion a Perdida
                 </span>
-                <p class="text-xs text-red-700 leading-relaxed">
+                <p class="leading-relaxed">
                     El costo base hotel ({{ lic.costo_base_hotel | clp }}) sobrepasa en {{ deficit | clp }} el presupuesto maximo autorizado por la institucion mandante ({{ lic.presupuesto_mandante | clp }}). Conforme a la directriz corporativa del Hotel Plaza San Francisco, esta oportunidad se clasifica como financieramente inviable y no debe postularse en los terminos actuales.
                 </p>
             </div>
         </div>
         {% else %}
-        <div class="bg-emerald-50 border-l-4 border-emerald-600 p-4 rounded-r-md">
+        <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-green-bg); border-color: #D6E8D4; color: var(--pastel-green-text);">
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <span class="font-semibold uppercase tracking-wider">
                     Viabilidad Financiera Aprobada
                 </span>
-                <p class="text-xs text-emerald-700 leading-relaxed">
+                <p class="leading-relaxed">
                     El presupuesto mandante ({{ lic.presupuesto_mandante | clp }}) cubre satisfactoriamente el costo base operativo del hotel ({{ lic.costo_base_hotel | clp }}), generando un margen positivo proyectado de {{ diferencia | clp }} ({{ margen_porcentaje }}% sobre presupuesto). La propuesta califica para avanzar a la fase de postulacion formal.
                 </p>
             </div>
@@ -222,14 +220,14 @@
 
         <!-- Modalidad Compra Agil: Marco Normativo -->
         {% if lic.modalidad == 'Compra Agil' %}
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-900 space-y-1.5">
-            <div class="font-bold uppercase tracking-wide text-blue-950">
+        <div class="p-4 rounded-[6px] border text-xs space-y-1.5" style="background: var(--pastel-blue-bg); border-color: #CBE8FC; color: var(--pastel-blue-text);">
+            <div class="font-semibold uppercase tracking-wide">
                 Marco Normativo: Modalidad Compra Agil (Mercado Publico)
             </div>
-            <p class="text-blue-800 leading-relaxed">
+            <p class="leading-relaxed">
                 Esta oportunidad se canaliza mediante Compra Agil, mecanismo de contratacion simplificada con un limite normativo maximo de <strong>6.900.000 CLP</strong> (referencial a 100 UTM segun la Ley 19.886 y sus decretos reglamentarios).
             </p>
-            <div class="pt-1 font-semibold text-blue-950">
+            <div class="pt-1 font-semibold">
                 {% if lic.presupuesto_mandante <= 6900000 %}
                 Cumplimiento normativo validado: El presupuesto de {{ lic.presupuesto_mandante | clp }} se ajusta plenamente al rango legal para compras agiles sin comision evaluadora extensa.
                 {% else %}
@@ -241,39 +239,54 @@
     </div>
 
     <!-- Panel de Dimensionamiento Operativo, Aforo y Horarios de Salones -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-        <div class="border-b border-slate-200 pb-3">
-            <h2 class="text-base font-bold text-slate-900 tracking-tight">Dimensionamiento Operativo, Aforo y Horarios de Salones</h2>
-            <p class="text-xs text-slate-600 mt-0.5">
-                Cotejo de cantidad estimada de personas, requerimientos de horario y compatibilidad de aforo con los salones del Hotel Plaza San Francisco.
-            </p>
+    <div class="card-editorial p-6 bg-white space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EAEAEA] pb-3">
+            <div>
+                <h2 class="text-sm font-semibold text-[#111111]">Dimensionamiento Operativo, Aforo y Horarios de Salones</h2>
+                <p class="text-xs text-[#787774] mt-0.5">
+                    Cotejo de cantidad estimada de personas, requerimientos de horario y compatibilidad de aforo con los salones del Hotel Plaza San Francisco.
+                </p>
+            </div>
+            {% if salon_asignado %}
+            <div>
+                <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion, salon=salon_asignado.id_salon, fecha_inicio=lic.fecha_cierre) }}" class="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
+                    Bloquear Salon para esta Licitacion
+                </a>
+            </div>
+            {% else %}
+            <div>
+                <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion, fecha_inicio=lic.fecha_cierre) }}" class="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap">
+                    Registrar Reserva de Salon
+                </a>
+            </div>
+            {% endif %}
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Aforo / Asistentes Solicitados</div>
-                <div class="text-xl font-bold text-slate-900 mt-1 font-mono">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Aforo / Asistentes Solicitados</div>
+                <div class="text-2xl font-bold text-[#111111] mt-1 font-mono">
                     {% if lic.cantidad_asistentes and lic.cantidad_asistentes > 0 %}
                     {{ lic.cantidad_asistentes }} personas
                     {% else %}
-                    <span class="text-slate-500 text-sm">No especificado</span>
+                    <span class="text-[#787774] text-sm">No especificado</span>
                     {% endif %}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">Capacidad requerida por mandante</div>
+                <div class="text-[11px] text-[#787774] mt-1">Capacidad requerida por mandante</div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Salon Asignado / Propuesto</div>
-                <div class="text-sm font-bold text-slate-900 mt-1">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Salon Asignado / Propuesto</div>
+                <div class="text-sm font-semibold text-[#111111] mt-1">
                     {% if salon_asignado %}
-                    <a href="/salones/{{ salon_asignado.id_salon }}" class="text-blue-900 hover:underline">
+                    <a href="/salones/{{ salon_asignado.id_salon }}" class="hover:underline">
                         {{ salon_asignado.nombre }}
                     </a>
                     {% else %}
-                    <span class="text-amber-800">[SIN ASIGNAR]</span>
+                    <span class="text-[#956400]">[SIN ASIGNAR]</span>
                     {% endif %}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">
+                <div class="text-[11px] text-[#787774] mt-1">
                     {% if salon_asignado %}
                     {{ salon_asignado.tipo }}
                     {% else %}
@@ -282,16 +295,16 @@
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Capacidad Maxima del Salon</div>
-                <div class="text-xl font-bold mt-1 font-mono {% if excede_aforo %}text-red-700{% else %}text-slate-900{% endif %}">
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Capacidad Maxima del Salon</div>
+                <div class="text-2xl font-bold mt-1 font-mono {% if excede_aforo %}text-[#9F2F2D]{% else %}text-[#111111]{% endif %}">
                     {% if salon_asignado %}
                     {{ salon_asignado.capacidad_maxima }} personas
                     {% else %}
-                    <span class="text-slate-400 text-sm">N/A</span>
+                    <span class="text-[#787774] text-sm">N/A</span>
                     {% endif %}
                 </div>
-                <div class="text-[11px] text-slate-500 mt-1">
+                <div class="text-[11px] text-[#787774] mt-1">
                     {% if salon_asignado %}
                     Horario: {{ salon_asignado.horario_disponible }}
                     {% else %}
@@ -300,37 +313,37 @@
                 </div>
             </div>
 
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col justify-between">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Jornada y Franja Horaria</div>
+            <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 flex flex-col justify-between">
+                <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider">Jornada y Franja Horaria</div>
                 <div class="mt-1">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">
+                    <span class="badge-spot badge-spot-neutral">
                         {{ lic.tipo_jornada or 'Jornada Completa' }}
                     </span>
                 </div>
-                <div class="text-[11px] text-slate-600 mt-1">
-                    Horario: <strong class="text-slate-800">{{ lic.horario_evento or '08:30 a 18:30 hrs' }}</strong>
+                <div class="text-[11px] text-[#787774] mt-1">
+                    Horario: <strong class="text-[#111111] font-mono">{{ lic.horario_evento or '08:30 a 18:30 hrs' }}</strong>
                 </div>
             </div>
         </div>
 
         <!-- Alerta de Conflicto de Agenda con Reservas Existentes -->
         {% if conflictos_agenda %}
-        <div class="bg-amber-50 border-l-4 border-amber-600 p-4 rounded-r-md space-y-2">
+        <div class="p-4 rounded-[6px] border text-xs space-y-2" style="background: var(--pastel-yellow-bg); border-color: #F3E0A9; color: var(--pastel-yellow-text);">
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-amber-900">
+                <span class="font-semibold uppercase tracking-wider">
                     [ALERTA] Conflicto de Disponibilidad de Salon en Fecha Comprometida
                 </span>
-                <p class="text-xs text-amber-800 leading-relaxed">
+                <p class="leading-relaxed">
                     El salon asignado <strong>{{ salon_asignado.nombre }}</strong> registra reservas activas que coinciden con el periodo de ejecucion o cierre de esta oportunidad (<strong>{{ lic.fecha_cierre }}</strong>):
                 </p>
-                <ul class="list-disc list-inside text-xs text-amber-900 pl-1 space-y-1 pt-1">
+                <ul class="list-disc list-inside pl-1 space-y-1 pt-1 font-mono">
                     {% for ca in conflictos_agenda %}
                     <li>
                         <strong>{{ ca.organismo_o_empresa }}</strong> ({{ ca.cliente_evento }}): del <strong>{{ ca.fecha_inicio }}</strong> al <strong>{{ ca.fecha_fin }}</strong> [{{ ca.horario }}] - Estado: <strong>{{ ca.estado_reserva }}</strong>
                     </li>
                     {% endfor %}
                 </ul>
-                <p class="text-[11px] text-amber-700 pt-1">
+                <p class="text-[11px] pt-1">
                     Nota: Se sugiere evaluar la reasignacion de fecha o seleccionar otro salon del hotel con aforo compatible.
                 </p>
             </div>
@@ -339,23 +352,23 @@
 
         <!-- Diagnostico de Aforo y Alertas -->
         {% if excede_aforo %}
-        <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-md space-y-2">
+        <div class="p-4 rounded-[6px] border text-xs space-y-2" style="background: var(--pastel-red-bg); border-color: #F8D1D3; color: var(--pastel-red-text);">
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-red-800">
+                <span class="font-semibold uppercase tracking-wider">
                     [CRIT] Alerta de Inviabilidad Operativa: Aforo Excedido
                 </span>
-                <p class="text-xs text-red-700 leading-relaxed">
+                <p class="leading-relaxed">
                     La cantidad de asistentes requerida (<strong>{{ lic.cantidad_asistentes }} personas</strong>) sobrepasa la capacidad maxima autorizada para el salon asignado <strong>{{ salon_asignado.nombre }}</strong> (capacidad maxima: <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>). Se genera un sobrecupo de <strong>{{ sobrecupo }} personas</strong>.
                 </p>
             </div>
             {% if salones_compatibles %}
-            <div class="pt-2 border-t border-red-200">
-                <div class="text-xs font-semibold text-red-900 mb-1">
+            <div class="pt-2 border-t border-[#F8D1D3]">
+                <div class="font-medium mb-1.5">
                     Salones alternativos del Hotel Plaza San Francisco con capacidad suficiente:
                 </div>
                 <div class="flex flex-wrap gap-2">
                     {% for sc in salones_compatibles %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-white text-slate-800 border border-slate-300">
+                    <span class="badge-spot badge-spot-neutral">
                         {{ sc.nombre }} (Aforo: {{ sc.capacidad_maxima }} pers. - {{ sc.horario_disponible }})
                     </span>
                     {% endfor %}
@@ -364,34 +377,34 @@
             {% endif %}
         </div>
         {% elif salon_asignado and lic.cantidad_asistentes and lic.cantidad_asistentes > 0 %}
-        <div class="bg-emerald-50 border-l-4 border-emerald-600 p-4 rounded-r-md">
+        <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-green-bg); border-color: #D6E8D4; color: var(--pastel-green-text);">
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <span class="font-semibold uppercase tracking-wider">
                     [OK] Dimensionamiento Operativo Conforme: Capacidad Adecuada
                 </span>
-                <p class="text-xs text-emerald-700 leading-relaxed">
+                <p class="leading-relaxed">
                     El salon <strong>{{ salon_asignado.nombre }}</strong> dispone de una capacidad maxima de <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>, cubriendo con holgura los <strong>{{ lic.cantidad_asistentes }} asistentes</strong> solicitados por el mandante (margen disponible: {{ salon_asignado.capacidad_maxima - lic.cantidad_asistentes }} plazas). Franja horaria disponible: {{ salon_asignado.horario_disponible }}.
                 </p>
             </div>
         </div>
         {% elif not salon_asignado %}
-        <div class="bg-slate-50 border-l-4 border-slate-500 p-4 rounded-r-md space-y-2">
+        <div class="p-4 rounded-[6px] border text-xs space-y-2 bg-[#FBFBFA] border-[#EAEAEA] text-[#787774]">
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-800">
+                <span class="font-semibold uppercase tracking-wider text-[#111111]">
                     [INFO] Salon Pendiente de Asignacion
                 </span>
-                <p class="text-xs text-slate-600 leading-relaxed">
+                <p class="leading-relaxed text-[#111111]">
                     La oportunidad requiere capacidad estimada para <strong>{{ lic.cantidad_asistentes or 0 }} personas</strong> bajo modalidad <strong>{{ lic.tipo_jornada or 'Jornada Completa' }}</strong>. Asigne un salon desde la opcion "Editar Licitacion" para verificar la viabilidad operativa definitiva.
                 </p>
             </div>
             {% if salones_compatibles %}
-            <div class="pt-2 border-t border-slate-200">
-                <div class="text-xs font-semibold text-slate-700 mb-1">
+            <div class="pt-2 border-t border-[#EAEAEA]">
+                <div class="font-medium text-[#111111] mb-1.5">
                     Salones del hotel recomendados para este aforo:
                 </div>
                 <div class="flex flex-wrap gap-2">
                     {% for sc in salones_compatibles %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-white text-slate-800 border border-slate-300">
+                    <span class="badge-spot badge-spot-neutral">
                         {{ sc.nombre }} (Aforo: {{ sc.capacidad_maxima }} pers. - {{ sc.tipo }})
                     </span>
                     {% endfor %}
@@ -403,13 +416,13 @@
 
         <!-- Catalogo Referencial de Salones del Hotel -->
         <div class="pt-2">
-            <details class="text-xs text-slate-600">
-                <summary class="font-semibold text-slate-800 cursor-pointer hover:text-slate-900 pb-2">
+            <details class="text-xs text-[#787774]">
+                <summary class="font-medium text-[#111111] cursor-pointer hover:underline pb-2">
                     [Ver Infraestructura de Salones del Hotel Plaza San Francisco]
                 </summary>
-                <div class="mt-2 overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 text-left text-xs bg-slate-50 rounded border border-slate-200">
-                        <thead class="bg-slate-100 text-slate-700 font-semibold uppercase tracking-wider">
+                <div class="mt-2 overflow-x-auto border border-[#EAEAEA] rounded-[6px]">
+                    <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs bg-white">
+                        <thead class="bg-[#FBFBFA] text-[#787774] font-medium uppercase text-[10px] tracking-wider">
                             <tr>
                                 <th class="px-3 py-2">Salon</th>
                                 <th class="px-3 py-2">Tipo / Formato</th>
@@ -418,19 +431,19 @@
                                 <th class="px-3 py-2 text-right">Tarifa Ref. (CLP)</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200 bg-white">
+                        <tbody class="divide-y divide-[#EAEAEA] bg-white">
                             {% for s in salones %}
-                            <tr class="hover:bg-slate-50 {% if salon_asignado and salon_asignado.id_salon == s.id_salon %}bg-indigo-50/60 font-semibold{% endif %}">
-                                <td class="px-3 py-2 font-medium text-slate-900">
+                            <tr class="hover:bg-[#FBFBFA] {% if salon_asignado and salon_asignado.id_salon == s.id_salon %}bg-[#F7F6F3] font-medium{% endif %}">
+                                <td class="px-3 py-2 font-medium text-[#111111]">
                                     {{ s.nombre }}
                                     {% if salon_asignado and salon_asignado.id_salon == s.id_salon %}
-                                    <span class="text-[10px] text-indigo-700 ml-1 font-bold">[Asignado]</span>
+                                    <span class="badge-spot badge-spot-blue ml-1 font-mono">[Asignado]</span>
                                     {% endif %}
                                 </td>
-                                <td class="px-3 py-2 text-slate-600">{{ s.tipo }}</td>
+                                <td class="px-3 py-2 text-[#787774]">{{ s.tipo }}</td>
                                 <td class="px-3 py-2 text-right font-mono">{{ s.capacidad_maxima }} personas</td>
-                                <td class="px-3 py-2 text-slate-600">{{ s.horario_disponible }}</td>
-                                <td class="px-3 py-2 text-right font-mono text-slate-700">{{ s.tarifa_referencial | clp }}</td>
+                                <td class="px-3 py-2 text-[#787774] font-mono">{{ s.horario_disponible }}</td>
+                                <td class="px-3 py-2 text-right font-mono text-[#111111]">{{ s.tarifa_referencial | clp }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -441,37 +454,37 @@
     </div>
 
     <!-- Panel de Validacion Robusta (Cruce de ID con Adjuntos / Efecto ID) -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-        <div class="border-b border-slate-200 pb-3">
-            <h2 class="text-base font-bold text-slate-900 tracking-tight">Validacion de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
-            <p class="text-xs text-slate-600 mt-0.5">
+    <div class="card-editorial p-6 bg-white space-y-4">
+        <div class="border-b border-[#EAEAEA] pb-3">
+            <h2 class="text-sm font-semibold text-[#111111]">Validacion de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
+            <p class="text-xs text-[#787774] mt-0.5">
                 Cotejo de integridad entre el identificador del portal de compras y los archivos de bases tecnicas o administrativas adjuntas (prevencion del Efecto ID).
             </p>
         </div>
 
         {% if lic.validacion_adjuntos == 'Valida' %}
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+        <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 space-y-2">
             <div class="flex items-center space-x-2">
-                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300">
+                <span class="badge-spot badge-spot-neutral">
                     ID Verificado
                 </span>
-                <span class="text-xs font-semibold text-slate-700">Consistencia Documental Acreditada</span>
+                <span class="text-xs font-medium text-[#111111]">Consistencia Documental Acreditada</span>
             </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
+            <p class="text-xs text-[#787774] leading-relaxed">
                 El identificador registrado en la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) coincide de manera precisa con el correlativo interno consignado en los archivos descargables, anexos contractuales y bases administrativas. No se registran discrepancias de identificacion.
             </p>
         </div>
         {% else %}
-        <div class="bg-amber-50 border-l-4 border-amber-500 rounded-r-lg p-4 space-y-2">
+        <div class="p-4 rounded-[6px] border text-xs space-y-2" style="background: var(--pastel-yellow-bg); border-color: #F3E0A9; color: var(--pastel-yellow-text);">
             <div class="flex items-center space-x-2">
-                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                <span class="badge-spot badge-spot-yellow">
                     Discrepancia ID
                 </span>
-                <span class="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                <span class="font-semibold uppercase tracking-wide">
                     Conflicto en TDR y Archivos Adjuntos Detectado
                 </span>
             </div>
-            <p class="text-xs text-amber-900 leading-relaxed">
+            <p class="leading-relaxed">
                 Se ha constatado una discordancia entre el identificador de la ficha maestra (<strong>{{ lic.id_licitacion }}</strong>) y los rotulos en los documentos adjuntos de bases. Esta desalineacion genera riesgo de subsanacion o eventual inadmisibilidad administrativa. Es obligatorio emitir una consulta formal a traves del foro de Mercado Publico previo al envio de la propuesta.
             </p>
         </div>
@@ -479,21 +492,21 @@
     </div>
 
     <!-- Panel de Checklist de Admisibilidad Administrativa Formal -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-        <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div class="card-editorial p-6 bg-white space-y-4">
+        <div class="border-b border-[#EAEAEA] pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-                <h2 class="text-base font-bold text-slate-900 tracking-tight">Checklist de Admisibilidad Administrativa Formal</h2>
-                <p class="text-xs text-slate-600 mt-0.5">
-                    Verificacion de antecedentes legales obligatorios para personas juridicas segun la Ley N° 19.886 de Bases sobre Contratos Administrativos.
+                <h2 class="text-sm font-semibold text-[#111111]">Checklist de Admisibilidad Administrativa Formal</h2>
+                <p class="text-xs text-[#787774] mt-0.5">
+                    Verificacion de antecedentes legales obligatorios para personas juridicas segun la Ley N 19.886 de Bases sobre Contratos Administrativos.
                 </p>
             </div>
             <div>
                 {% if lic.tiene_anexo4 and lic.tiene_escrituras and lic.tiene_poderes and lic.tiene_vigencias %}
-                <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span class="badge-spot badge-spot-green">
                     Admisibilidad Administrativa Completa
                 </span>
                 {% else %}
-                <span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                <span class="badge-spot badge-spot-yellow">
                     Antecedentes Pendientes
                 </span>
                 {% endif %}
@@ -501,31 +514,31 @@
         </div>
 
         <!-- Tabla Formal de Verificacion Documental -->
-        <div class="overflow-x-auto border border-slate-200 rounded-lg">
-            <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
-                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+        <div class="overflow-x-auto border border-[#EAEAEA] rounded-[6px]">
+            <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
+                <thead class="bg-[#FBFBFA] text-[#787774] font-medium uppercase text-[10px] tracking-wider">
                     <tr>
                         <th scope="col" class="px-4 py-3">Documento / Antecedente Obligatorio</th>
                         <th scope="col" class="px-4 py-3">Fundamento Normativo y Operativo</th>
                         <th scope="col" class="px-4 py-3 text-center">Estado de Cumplimiento</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 bg-white">
+                <tbody class="divide-y divide-[#EAEAEA] bg-white">
                     <!-- Item 1: Anexo 4 -->
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                    <tr class="hover:bg-[#FBFBFA] transition-colors">
+                        <td class="px-4 py-3 font-medium text-[#111111] whitespace-nowrap">
                             Anexo 4 - Declaracion Jurada y Pacto de Integridad
                         </td>
-                        <td class="px-4 py-3 text-slate-600">
+                        <td class="px-4 py-3 text-[#787774]">
                             Declaracion jurada de no haber incurrido en conductas sancionadas por el articulo 4 de la Ley 19.886 y aceptacion expresa del pacto de integridad.
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_anexo4 %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span class="badge-spot badge-spot-green">
                                 Presente / Aprobado
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                            <span class="badge-spot badge-spot-red">
                                 Pendiente / Exigido
                             </span>
                             {% endif %}
@@ -533,20 +546,20 @@
                     </tr>
 
                     <!-- Item 2: Escrituras -->
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                    <tr class="hover:bg-[#FBFBFA] transition-colors">
+                        <td class="px-4 py-3 font-medium text-[#111111] whitespace-nowrap">
                             Escrituras Sociales y Estatutos Vigentes
                         </td>
-                        <td class="px-4 py-3 text-slate-600">
+                        <td class="px-4 py-3 text-[#787774]">
                             Copia autorizada de escritura publica de constitucion de sociedad, reformas estatutarias e inscripcion en Registro de Comercio.
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_escrituras %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span class="badge-spot badge-spot-green">
                                 Presente / Aprobado
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                            <span class="badge-spot badge-spot-red">
                                 Pendiente / Exigido
                             </span>
                             {% endif %}
@@ -554,20 +567,20 @@
                     </tr>
 
                     <!-- Item 3: Poderes -->
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                    <tr class="hover:bg-[#FBFBFA] transition-colors">
+                        <td class="px-4 py-3 font-medium text-[#111111] whitespace-nowrap">
                             Poderes de Representacion Legal
                         </td>
-                        <td class="px-4 py-3 text-slate-600">
+                        <td class="px-4 py-3 text-[#787774]">
                             Personeria y facultades notariales vigentes que habilitan al apoderado para suscribir ofertas y contratos en nombre de la sociedad.
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_poderes %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span class="badge-spot badge-spot-green">
                                 Presente / Aprobado
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                            <span class="badge-spot badge-spot-red">
                                 Pendiente / Exigido
                             </span>
                             {% endif %}
@@ -575,20 +588,20 @@
                     </tr>
 
                     <!-- Item 4: Vigencias -->
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
+                    <tr class="hover:bg-[#FBFBFA] transition-colors">
+                        <td class="px-4 py-3 font-medium text-[#111111] whitespace-nowrap">
                             Certificados de Vigencia de la Sociedad
                         </td>
-                        <td class="px-4 py-3 text-slate-600">
+                        <td class="px-4 py-3 text-[#787774]">
                             Certificado de vigencia de la sociedad y del poder otorgado por el Conservador de Bienes Raices (antiguedad no mayor a 60 dias corridos).
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_vigencias %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span class="badge-spot badge-spot-green">
                                 Presente / Aprobado
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                            <span class="badge-spot badge-spot-red">
                                 Pendiente / Exigido
                             </span>
                             {% endif %}
@@ -600,51 +613,51 @@
     </div>
 
     <!-- Sintesis de Terminos de Referencia (TDR) -->
-    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
-        <div class="border-b border-slate-200 pb-3">
-            <h2 class="text-base font-bold text-slate-900 tracking-tight">Sintesis de Terminos de Referencia (TDR)</h2>
-            <p class="text-xs text-slate-600 mt-0.5">
+    <div class="card-editorial p-6 bg-white space-y-4">
+        <div class="border-b border-[#EAEAEA] pb-3">
+            <h2 class="text-sm font-semibold text-[#111111]">Sintesis de Terminos de Referencia (TDR)</h2>
+            <p class="text-xs text-[#787774] mt-0.5">
                 Especificaciones tecnicas, alcance operativo y requerimientos de servicio formalizados por el organismo licitante.
             </p>
         </div>
 
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-            <div class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+        <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
+            <div class="text-[10px] font-semibold text-[#787774] uppercase tracking-wider mb-1">
                 Descripcion del Requerimiento Tecnico
             </div>
-            <p class="text-xs text-slate-800 leading-relaxed whitespace-pre-line">
+            <p class="text-xs text-[#111111] leading-relaxed whitespace-pre-line">
                 {{ lic.descripcion_tdr or 'No se registra descripcion detallada de TDR en las bases cargadas.' }}
             </p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-            <div class="border border-slate-200 rounded p-3 bg-white">
-                <span class="text-slate-500 font-medium">Categoria Operativa:</span>
-                <div class="font-semibold text-slate-800 mt-0.5">{{ lic.categoria }}</div>
+            <div class="border border-[#EAEAEA] rounded-[6px] p-3 bg-white">
+                <span class="text-[#787774] text-[11px] block">Categoria Operativa:</span>
+                <div class="font-medium text-[#111111] mt-0.5">{{ lic.categoria }}</div>
             </div>
-            <div class="border border-slate-200 rounded p-3 bg-white">
-                <span class="text-slate-500 font-medium">Modalidad Contractual:</span>
-                <div class="font-semibold text-slate-800 mt-0.5">{{ lic.modalidad }}</div>
+            <div class="border border-[#EAEAEA] rounded-[6px] p-3 bg-white">
+                <span class="text-[#787774] text-[11px] block">Modalidad Contractual:</span>
+                <div class="font-medium text-[#111111] mt-0.5">{{ lic.modalidad }}</div>
             </div>
-            <div class="border border-slate-200 rounded p-3 bg-white">
-                <span class="text-slate-500 font-medium">Plaza / Region:</span>
-                <div class="font-semibold text-slate-800 mt-0.5">{{ lic.region }}</div>
+            <div class="border border-[#EAEAEA] rounded-[6px] p-3 bg-white">
+                <span class="text-[#787774] text-[11px] block">Plaza / Region:</span>
+                <div class="font-medium text-[#111111] mt-0.5">{{ lic.region }}</div>
             </div>
         </div>
     </div>
 
     <!-- Barra de Navegacion Inferior -->
-    <div class="flex items-center justify-between border-t border-slate-200 pt-4 text-xs">
-        <a href="{{ url_for('dashboard') }}" class="text-blue-900 hover:text-blue-950 font-semibold hover:underline">
-            Volver al Tablero Principal
+    <div class="flex items-center justify-between border-t border-[#EAEAEA] pt-4 text-xs">
+        <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5 inline-block">
+            Volver a Licitaciones
         </a>
-        <div class="flex items-center space-x-4">
-            <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="text-slate-700 hover:text-slate-900 font-medium hover:underline">
+        <div class="flex items-center space-x-3">
+            <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="text-[#111111] hover:underline font-medium">
                 Editar Registro
             </a>
-            <span class="text-slate-300">|</span>
+            <span class="text-[#EAEAEA]">|</span>
             <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
-                <button type="submit" class="text-red-700 hover:text-red-900 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer">
+                <button type="submit" class="text-[#9F2F2D] hover:underline bg-transparent border-0 p-0 cursor-pointer">
                     Eliminar
                 </button>
             </form>

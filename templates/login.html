@@ -3,50 +3,50 @@
 {% block title %}Iniciar Sesion - Hotel Plaza San Francisco{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
-        <div>
-            <div class="inline-block px-2.5 py-1 rounded bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider mb-2">
-                Acceso Corporativo
-            </div>
-            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Iniciar Sesion</h2>
-            <p class="mt-2 text-sm text-slate-600">
-                Modulo de evaluacion comercial y postulacion a licitaciones del Estado.
+<div class="flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-6 card-editorial p-8 bg-white">
+        <div class="space-y-1">
+            <span class="badge-spot badge-spot-neutral">Acceso Corporativo</span>
+            <h1 class="text-2xl sm:text-3xl font-serif font-normal text-[#111111] tracking-tight pt-1">
+                Iniciar Sesion
+            </h1>
+            <p class="text-xs text-[#787774] leading-relaxed">
+                Plataforma de evaluacion comercial y postulacion a licitaciones del Estado.
             </p>
         </div>
 
-        <div class="bg-slate-50 border border-slate-200 rounded p-4 text-xs text-slate-700">
-            <span class="block font-semibold text-slate-900 mb-1">Credenciales de Demostracion:</span>
-            <div class="mt-2 space-y-1">
-                <div class="flex justify-between items-center py-1 border-b border-slate-200">
-                    <span class="text-slate-600 font-medium">Usuario:</span>
-                    <span class="font-mono bg-white px-2 py-0.5 rounded border border-slate-300 text-slate-900 font-semibold">admin</span>
+        <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 text-xs text-[#111111]">
+            <span class="block font-medium text-[#111111] text-[11px] uppercase tracking-wide mb-2">Credenciales de Demostracion:</span>
+            <div class="space-y-1.5">
+                <div class="flex justify-between items-center py-1 border-b border-[#EAEAEA]">
+                    <span class="text-[#787774] text-xs">Usuario:</span>
+                    <span class="font-mono bg-white px-2 py-0.5 rounded border border-[#EAEAEA] text-[#111111] font-semibold text-xs">admin</span>
                 </div>
                 <div class="flex justify-between items-center py-1">
-                    <span class="text-slate-600 font-medium">Contrasena:</span>
-                    <span class="font-mono bg-white px-2 py-0.5 rounded border border-slate-300 text-slate-900 font-semibold">admin123</span>
+                    <span class="text-[#787774] text-xs">Contrasena:</span>
+                    <span class="font-mono bg-white px-2 py-0.5 rounded border border-[#EAEAEA] text-[#111111] font-semibold text-xs">admin123</span>
                 </div>
             </div>
         </div>
 
-        <form class="mt-6 space-y-4" action="{{ url_for('login') }}" method="POST">
+        <form class="space-y-4" action="{{ url_for('login') }}" method="POST">
             <div>
-                <label for="username" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Usuario</label>
+                <label for="username" class="block text-xs font-medium text-[#111111] mb-1">Usuario</label>
                 <input id="username" name="username" type="text" required
-                    class="appearance-none rounded w-full px-3 py-2 border border-slate-300 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    class="rounded w-full px-3 py-2 border border-[#EAEAEA] bg-[#FBFBFA] placeholder-[#787774] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white text-xs transition-colors"
                     placeholder="admin">
             </div>
 
             <div>
-                <label for="password" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Contrasena</label>
+                <label for="password" class="block text-xs font-medium text-[#111111] mb-1">Contrasena</label>
                 <input id="password" name="password" type="password" required
-                    class="appearance-none rounded w-full px-3 py-2 border border-slate-300 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    class="rounded w-full px-3 py-2 border border-[#EAEAEA] bg-[#FBFBFA] placeholder-[#787774] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white text-xs transition-colors"
                     placeholder="admin123">
             </div>
 
-            <div>
+            <div class="pt-2">
                 <button type="submit"
-                    class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                    class="w-full btn-primary py-2.5 text-xs font-medium uppercase tracking-wider">
                     Iniciar Sesion
                 </button>
             </div>
