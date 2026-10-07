@@ -1,210 +1,143 @@
-# Asistente Virtual para Licitaciones de Mercado Publico
+<div align="center">
 
-Prototipo Funcional de Prospeccion Comercial, Evaluacion Presupuestaria y Calificacion de Procesos Estatales.
+# Copilot de Licitaciones y Operaciones Hoteleras
 
-**Iniciativa de Colaboracion Institucional:**
-- **Entidad Beneficiaria:** Hotel Plaza San Francisco (Santiago de Chile)
-- **Programa Academico:** Vinculacion con el Medio (VcM) - Escuela de Administracion y Negocios, DUOC UC
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Framework](https://img.shields.io/badge/Framework-Flask_3.0-111111?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
+[![Base de Datos](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Tests](https://img.shields.io/badge/Tests-94_Aprobadas-10B981?style=flat-square)](tests)
+[![Interfaz](https://img.shields.io/badge/UI-Minimalist_Editorial-111111?style=flat-square)](templates)
+[![Normativa](https://img.shields.io/badge/Mercado_Publico-Ley_19.886-0284C7?style=flat-square)](https://www.mercadopublico.cl/)
 
----
+> Plataforma web para prospeccion comercial, control preventivo de costos, verificacion de aforo y agenda de salones para adquisiciones del Estado.
 
-## 1. Resumen Ejecutivo y Objetivos del Sistema
+**Hotel Plaza San Francisco** | **Programa de Vinculacion con el Medio (VcM) DUOC UC**
 
-El **Asistente Virtual para Licitaciones** es una plataforma web corporativa desarrollada para optimizar y sistematizar la deteccion, analisis y seguimiento de oportunidades comerciales de adquisicion estatal a traves del portal Mercado Publico de Chile (ChileCompra / Ley N 19.886).
+[Inicio Rapido](#inicio-rapido) • [Caracteristicas](#caracteristicas-principales) • [Arquitectura](#arquitectura-del-sistema) • [Agenda de Salones](#catalogo-y-agenda-de-salones) • [Testing](#suite-de-pruebas-automatizadas)
 
-### 1.1. Diagnostico Operativo Previo
-Antes de esta implementacion, el equipo de ventas corporativas y gestion de eventos del Hotel Plaza San Francisco ejecutaba un proceso de prospeccion manual caracterizado por:
-- **Ineficiencia Semantica y Dispersion:** Perdida de licitaciones relevantes debido a la rigidez de busqueda en portales oficiales y variaciones terminologicas (por ejemplo, "hospedaje" frente a "alojamiento", o "banqueteria" frente a "coffee break").
-- **Alto Costo en Horas-Hombre:** Revision manual diaria de hasta 10 paginas de resultados (1 a 2 horas diarias), retrasando la formulacion de propuestas y cediendo ventaja competitiva a otros oferentes.
-- **Inconsistencia de Datos ("Efecto ID"):** Frecuentes discrepancias entre los identificadores visibles en la ficha resumen del portal y los archivos y anexos descargables reales, provocando busquedas infructuosas.
-- **Sobrecarga Administrativa en Procesos Inviables:** Ausencia de un filtro preliminar que contrastara el presupuesto maximo disponible del organismo mandante contra los costos operativos reales del hotel antes de iniciar la elaboracion de antecedentes.
-
-### 1.2. Proposito de la Solucion
-El prototipo centraliza las oportunidades detectadas, permitiendo:
-1. Focalizar la prospeccion en los rubros prioritarios de **Alojamiento** y **Eventos / Catering**.
-2. Priorizar oportunidades de **Compra Agil** bajo el limite normativo de hasta $6.900.000 CLP.
-3. Contrastar de manera preventiva los presupuestos oficiales contra los costos base del hotel, advirtiendo margenes negativos o inviabilidad economica.
-4. Auditar de manera preliminar los requisitos administrativos de admisibilidad (Anexo 4 de Pactos de Integridad, Escrituras, Poderes y Vigencias) para mitigar el riesgo de inadmisibilidad.
-5. Gestionar el avance de cada oportunidad a traves de un embudo comercial estructurado.
+</div>
 
 ---
 
-## 2. Restricciones Operativas y Principios de Diseno
+## Descripcion General
 
-### 2.1. Arquitectura de Ejecucion 100% Web en Python
-- **Mandato de Diseno:** La totalidad de la solucion funciona exclusivamente como aplicacion web (Flask) accesible desde el navegador institucional.
-- **Justificacion Tecnica e Historica:** Durante las etapas preliminares del proyecto (Fase 1), los scripts locales y aplicaciones de escritorio ejecutadas en estaciones de trabajo fueron bloqueados por las politicas de seguridad perimetral, suites antivirus y firewalls corporativos del hotel.
-- **Prohibicion Explicita:** Queda terminantemente prohibida la creacion o distribucion de scripts ejecutables locales en los puestos operativos del hotel. Todo procesamiento se realiza en el servidor web.
+El **Copilot de Licitaciones y Operaciones Hoteleras** es una solucion web disenada para el equipo comercial y de eventos del Hotel Plaza San Francisco (Santiago de Chile), desarrollada en alianza con la Escuela de Administracion y Negocios de DUOC UC.
 
-### 2.2. Politica Estricta de Supresion Total de Emojis
-- **Norma Institucional:** Se erradica de forma total y absoluta el uso de emojis o iconografia informal en la interfaz de usuario, botones, insignias (badges), mensajes de retroalimentacion (flash), registros de consola (logs) y documentacion tecnica.
-- **Formalidad Corporativa:** Todos los estados del sistema, alertas operativas y estados de validacion se comunican exclusivamente mediante nomenclatura formal de negocios, codigos de texto e indicadores de interfaz sobrios.
+El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el embudo de oportunidades de adquisicion estatal (ChileCompra / Ley N 19.886), evaluando la viabilidad economica de cada proceso, auditando requisitos administrativos de admisibilidad y coordinando la disponibilidad fisica de salones y aforos.
 
-### 2.3. Identidad Visual Corporativa
-- **Paleta de Colores:** Diseñada con Tailwind CSS CDN utilizando una combinacion sobria de azul marino profundo (`slate-900`, `blue-950`), gris pizarra (`slate-700`, `slate-600`, `slate-100`) y acentos institucionales formales (`emerald-700`, `amber-700`, `rose-700`).
-- **Orientacion al Usuario:** Interfaz simplificada para uso inmediato por parte de ejecutivos de cuentas y personal de eventos sin formacion tecnica en programacion.
+> [!NOTE]
+> **Contexto Operativo:**
+> El proceso manual previo implicaba la revision diaria de hasta 10 paginas de resultados de busqueda en el portal estatal, con riesgo constante de inconsistencias documentales ("Efecto ID"), colisiones de fechas en la agenda del hotel y desgaste administrativo en ofertas con costos superiores al presupuesto oficial.
 
 ---
 
-## 3. Modulos Funcionales del Prototipo
+## Caracteristicas Principales
 
-El prototipo consta de 4 modulos principales completamente articulados:
+### 1. Embudo Comercial y Prospeccion Focalizada
+* **Segmentacion por Rubros Clave:** Filtro de oportunidades en las unidades de negocio estrategicas: **Alojamiento** (delegaciones, hospedaje) y **Eventos / Catering** (jornadas de planificacion, seminarios, banquetes).
+* **Priorizacion Compra Agil:** Marcador automatico para procesos bajo la modalidad Compra Agil con limite normativo vigente de hasta **$6.900.000 CLP**.
+* **Filtro de Geolocalizacion:** Prioridad estricta para requerimientos en la **Region Metropolitana (Santiago)**.
+* **Ciclo de Conversion de 5 Etapas:** Seguimiento de estado (`Identificada`, `Calificada`, `Participada`, `Adjudicada`, `Descartada`) con metricas financieras en tiempo real (monto total identificado, costo base proyectado y margen estimado).
 
-### 3.1. Modulo de Autenticacion Corporativa y Control de Acceso
-- **Proteccion de Vistas:** Implementacion del decorador `@login_required` sobre todas las rutas operativas (`/`, `/licitaciones`, `/licitaciones/nueva`, fichas de detalle, edicion y eliminacion). Cualquier solicitud anonima es redirigida a `/login`.
-- **Credenciales Demo Integradas:**
-  - **Usuario:** `admin`
-  - **Contrasena:** `admin123`
-- **Gestion de Sesion:** Manejo seguro de sesion mediante `flask.session` con clave criptografica y cierre de sesion formal (`/logout`).
+### 2. Control Financiero Preventivo y Admisibilidad Legal
+* **Alerta de Inviabilidad Presupuestaria:** Cruce automatico entre el presupuesto mandante publicado y el costo base operativo del hotel. Si el costo supera el presupuesto disponible, el sistema emite una alerta formal preventiva para evitar licitaciones a perdida.
+* **Auditoria Documental ("Efecto ID"):** Cotejo cruzado entre el identificador publicado en el portal y los correlativos de las bases descargables adjuntas.
+* **Checklist de Admisibilidad (Ley N 19.886):** Verificacion de 4 antecedentes administrativos habilitantes para prevenir causales de inadmisibilidad:
+  1. Anexo 4 (Declaracion Jurada y Pacto de Integridad).
+  2. Escrituras Sociales y Estatutos Vigentes.
+  3. Poderes de Representacion Legal.
+  4. Certificados de Vigencia de la Sociedad (antiguedad menor a 60 dias).
 
-### 3.2. Tablero Principal de Gestion Comercial (Dashboard)
-- **Embudo Comercial de 5 Etapas:**
-  1. *Identificada:* Oportunidad detectada por rubro y plaza geografica.
-  2. *Calificada:* Evaluacion economica y documental preliminar aprobada.
-  3. *Participada:* Oferta tecnica y economica ingresada formalmente en Mercado Publico.
-  4. *Adjudicada:* Proceso ganado por el hotel.
-  5. *Descartada:* Desestimada por margen insuficiente, inviabilidad operativa o vencimiento.
-- **Metricas Consolidadas en Tiempo Real:** Contadores agregados por cada etapa del embudo comercial y consolidacion financiera total (Presupuesto total identificado en CLP, Costo base proyectado y Margen estimado).
-- **Motor de Filtrado Multicriterio:** Capacidad de filtrado combinable por parametros GET:
-  - Busqueda por texto (titulo, organismo o identificador de licitacion).
-  - Categoria comercial (Alojamiento, Eventos / Catering).
-  - Modalidad de adquisicion (Compra Agil, Licitacion Publica).
-  - Region geografica (Region Metropolitana, Valparaiso, OHiggins, etc.).
-  - Estado en el embudo comercial.
-- **Tabla de Oportunidades:** Listado relacional ordenado cronologicamente segun proximidad de la fecha de cierre de ofertas, con identificador oficial, organismo mandante, categoria, montos formateados en pesos chilenos (CLP) y badges de estado.
+### 3. Gestion de Salones, Aforo y Agenda de Ocupacion
+* **Catalogo de Espacios:** Fichas tecnicas de los 5 salones del Hotel Plaza San Francisco:
+  - *Gran Salon San Francisco (Plenario):* Capacidad de 300 personas.
+  - *Salon Colonial (Banquete / Eventos):* Capacidad de 150 personas.
+  - *Salon Alameda (Seminario / Conferencias):* Capacidad de 80 personas.
+  - *Salon Londres (Reuniones / Taller):* Capacidad de 40 personas.
+  - *Salon Directorio Ejecutivo:* Capacidad de 20 personas.
+* **Validacion de Aforo y Sobrecupo:** Verificacion entre la cantidad de asistentes solicitada y la capacidad del salon asignado, recomendando alternativas compatibles en caso de sobrecupo.
+* **Agenda de Ocupacion y Reservas (Bookings):** Cronograma de fechas ocupadas con detalle de organismo contratante, asistentes, franja horaria y estado (`Confirmada`, `Tentativa`, `Bloqueo Interno`).
+* **Motor de Deteccion de Colisiones:** Validacion matematica de cruce de fechas que impide la doble reserva de un mismo espacio en fechas solapadas y alerta en tiempo real en la ficha de licitacion.
+* **Bloqueo Directo desde Licitacion:** Boton para transferir en un clic los datos del proceso licitatorio al formulario de reserva del hotel.
 
-### 3.3. Ficha de Detalle y Evaluacion Integral
-- **Identificacion y Metadatos:** Consulta completa de organismo mandante, region, modalidad, cronograma de publicacion y fecha limite de cierre.
-- **Control Presupuestario Preventivo:**
-  - Calculo automatico en pantalla de `Margen Bruto = Presupuesto Mandante - Costo Base Hotel`.
-  - Calculo porcentual de margen sobre el presupuesto disponible.
-  - Generacion de **Alerta de Inviabilidad Economica** en tonos de advertencia formal si el costo operativo supera el presupuesto oficial, evitando desgaste administrativo en propuestas a perdida.
-- **Checklist de Admisibilidad Administrativa (Ley N 19.886):**
-  - Verificacion obligatoria de los antecedentes habilitantes requeridos en bases:
-    1. Anexo 4 (Declaracion Jurada y Pacto de Integridad).
-    2. Escrituras Publicas de constitucion societaria.
-    3. Poderes de representacion legal vigentes.
-    4. Certificados de vigencia emitidos por el Conservador de Bienes Raices.
-  - Indicador global de admisibilidad: `Cumplimiento Total` o `Faltan Requisitos Relevantes`.
-- **Dimensionamiento Operativo, Aforo y Salones del Hotel:**
-  - Evaluacion comparativa entre la cantidad estimada de personas requeridas y la capacidad maxima de los salones del hotel.
-  - Generacion de **Alerta de Inviabilidad Operativa: Aforo Excedido** `[CRIT]` con reporte de sobrecupo y sugerencia automatica de salones del hotel con capacidad suficiente.
-  - Indicador de **Capacidad Adecuada** `[OK]` cuando el salon cubre el aforo solicitado.
-  - Catalogo integrado de infraestructura de salones del Hotel Plaza San Francisco (aforo maximo, tipo de formato, horario operativo y tarifas referenciales).
-- **Auditoria Documental ("Efecto ID"):**
-  - Verificacion de consistencia entre el identificador visible y los documentos adjuntos (`Valida` vs `Error ID / Discrepancia`).
-- **Gestion de Avance de Etapa:** Selector directo para actualizar el estado del embudo comercial con confirmacion visual mediante mensajes flash.
-
-### 3.4. Modulo CRUD (Gestion de Licitaciones)
-- **Creacion Segura (`/licitaciones/nueva`):**
-  - Registro preventivo de la ruta antes de la captura dinamica de parametros (`/licitaciones/<id_licitacion>`) para evitar colisiones de enrutamiento en Flask.
-  - Formulario organizado en 7 bloques tematicos: Identificacion y Organismo, Categoria y Modalidad, Dimensionamiento Operativo y Horarios, Evaluacion Economica, Fechas Criticas, Checklist de Admisibilidad y Extracto de TDR.
-  - Validacion estricta en servidor: verificacion de campos obligatorios, integridad de valores enteros en CLP y rechazo de identificadores duplicados.
-- **Edicion Controlada (`/licitaciones/<id_licitacion>/editar`):**
-  - Bloqueo en solo lectura del identificador oficial para resguardar la trazabilidad de la oportunidad.
-  - Actualizacion dinamica de montos, aforo de asistentes, horarios, salon asignado, checklist documental, estado y descripcion tecnica.
-- **Eliminacion Segura (`/licitaciones/<id_licitacion>/eliminar`):**
-  - Operacion procesada exclusivamente mediante metodo POST autenticado.
-  - Modal de confirmacion con indicacion explicita del codigo de la licitacion antes de confirmar la baja en la base de datos.
-
-### 3.5. Modulo de Catalogo de Salones y Agenda de Ocupacion (Bookings)
-- **Catalogo de Infraestructura (`/salones`):**
-  - Galeria tecnica de salones del Hotel Plaza San Francisco (Gran Salon San Francisco, Salon Colonial, Salon Alameda, Salon Londres, Salon Directorio Ejecutivo).
-  - Indicadores clave en tiempo real: salones activos, capacidad maxima instalada (plazas simultaneas) y total de reservas registradas.
-  - Especificacion por espacio: aforo maximo, tipo de formato de evento, horarios operativos, tarifas diarias referenciales en CLP, ubicacion en el hotel y equipamiento audiovisual completo.
-- **Ficha Tecnica Individual de Salon (`/salones/<id_salon>`):**
-  - Desglose de capacidades segun formato de montaje: Plenario/Auditorio (100%), Banquete (70%), Escuela (50%) y Mesa de Directorio (30%).
-  - Inventario de equipamiento disponible (pantallas LED 4K, microfonia, proyectores laser, cabinas de interpretacion, climatizacion central y conectividad dedicada).
-  - Agenda cronologica exclusiva del salon con listado de fechas contratadas, clientes y licitaciones asociadas.
-- **Agenda Centralizada de Reservas y Disponibilidad:**
-  - Tabla relacional con fechas de inicio y fin, organismo/cliente que tiene el espacio contratado (booked), tipo de actividad, franja horaria y aforo estimado.
-  - Filtro interactivo por salon y buscador por texto de cliente o numero de licitacion.
-  - Estados operativos de reserva: `Confirmada`, `Tentativa` y `Bloqueo Interno` (mantenimiento o sesiones del directorio).
-- **Cruce Preventivo de Disponibilidad con Licitaciones:**
-  - Cruce automatico entre la fecha de cierre/evento de la licitacion y el calendario de reservas del salon asignado.
-  - Alerta inmediata en la ficha de detalle de la licitacion si existe colision de fechas con un evento previamente contratado.
+### 4. Diseno Editorial Minimalista (Minimalist UI)
+* **Paleta Calida Monocroma:** Lienzo suave `#FBFBFA` con tarjetas blancas planas `#FFFFFF` y bordes micro-precisos de `1px solid #EAEAEA`.
+* **Jerarquia Tipografica:** Titulares en *Newsreader Serif*, controles en *Geist Sans* y metadatos en *Geist Mono*.
+* **Bento Grid Asimetrico:** Tablero principal con paneles de conversion y atajos fisicos de teclado `<kbd>/</kbd>`.
 
 ---
 
-## 4. Reglas de Negocio y Parametros Normativos Modelados
+## Requisitos Operativos y Principios de Diseno
 
-| Regla de Negocio | Parametro / Criterio | Aplicacion en el Sistema |
-| :--- | :--- | :--- |
-| **Matriz de Rubros Prioritarios** | Alojamiento / Eventos y Catering | Clasificacion de oportunidades segun habitacion/estadia vs salones/banqueteria. |
-| **Dimensionamiento y Control de Aforo** | Cantidad de Asistentes vs Capacidad de Salon | Alerta de sobrecupo operativo si la cantidad de personas excede la capacidad maxima del salon seleccionado. |
-| **Cruce de Disponibilidad y Agenda de Salones** | Rango de fechas de licitacion vs reservas tomadas | Alerta preventiva de colision si el salon se encuentra booked por otro cliente u organismo en la fecha requerida. |
-| **Gestion de Jornada y Horarios** | Modalidad horaria (Jornada completa, media jornada, cenas) | Especificacion formal de la franja horaria requerida para la evaluacion de disponibilidad del salon. |
-| **Geolocalizacion Primaria** | Region Metropolitana (Santiago Centro) | Prioridad en la captacion de eventos y estadias en el radio de cobertura del hotel. |
-| **Tope Normativo Compra Agil** | Hasta 6.900.000 CLP | Distincion automatica de procesos de compra rapida segun normativa vigente de compras publicas. |
-| **Consistencia Documental ("Efecto ID")** | Cotejo de ID contra bases adjuntas | Deteccion de licitaciones con errores de publicacion en el portal oficial para evitar descalificaciones. |
-| **Causales de Inadmisibilidad** | 4 antecedentes habilitantes obligatorios | Auditoria de Anexo 4 (Pacto de Integridad), Escrituras, Poderes y Certificados de Vigencia. |
-| **Control de Rentabilidad Minima** | Presupuesto Mandante vs Costo Hotel | Generacion de alerta de inviabilidad si el costo base supera el presupuesto asignado por el comprador. |
+> [!IMPORTANT]
+> **Directriz de Arquitectura 100% Web:**
+> Queda prohibida la distribucion o ejecucion de scripts locales o ejecutables en los puestos de trabajo del hotel. Toda la plataforma opera exclusivamente a traves del navegador web institucional servido por Flask, mitigando bloqueos por politicas de seguridad perimetral corporativa.
+
+> [!IMPORTANT]
+> **Politica Estricta de Cero Emojis:**
+> De acuerdo con la normativa corporativa del proyecto, queda estrictamente prohibido el uso de caracteres o iconos emoji en codigo, plantillas, mensajes flash, registros de consola y documentacion. Todos los estados se expresan mediante nomenclatura formal y badges de texto estandarizados (`[OK]`, `[WARN]`, `[CRIT]`, `[INFO]`).
 
 ---
 
-## 5. Arquitectura del Repositorio de Codigo
+## Arquitectura del Sistema
 
 ```text
 C:\Licitaciones\
-|-- app.py                    # Controlador principal Flask (enrutamiento, autenticacion, logica CRUD)
-|-- database.py               # Capa de persistencia relacional SQLite y funciones de consulta
-|-- run.py                    # Script de inicio oficial del servidor web local
-|-- requirements.txt          # Dependencias minimas del entorno Python (Flask)
-|-- ESPECIFICACION_REQUERIMIENTOS.md  # Documento base de requerimientos tecnicos y operacionales
-|-- README.md                 # Manual formal del sistema, arquitectura y procedimientos
-|-- templates/                # Vistas renderizadas en servidor con Jinja2 y Tailwind CSS
-|   |-- base.html             # Plantilla estructural corporativa (encabezado, navegacion, mensajes)
-|   |-- login.html            # Pantalla de inicio de sesion corporativa
-|   |-- dashboard.html        # Tablero principal de gestion comercial y embudo
-|   |-- detail.html           # Ficha de detalle, evaluacion economica y checklist
-|   |-- form.html             # Formulario unificado de creacion y edicion de licitaciones
-|   |-- salones.html          # Catalogo de salones y agenda de ocupacion / reservas
-|   |-- salon_detail.html     # Ficha tecnica de salon, capacidades por montaje y cronograma
-|   `-- 404.html              # Pantalla formal de recurso no encontrado
-`-- tests/                    # Suite completa de pruebas automatizadas
-    |-- __init__.py           # Inicializador del paquete de pruebas
-    |-- test_auth.py          # Pruebas de autenticacion, control de sesion y rutas protegidas
-    |-- test_database.py      # Pruebas de la capa SQLite (inicializacion, seed, consultas, CRUD)
-    |-- test_dashboard.py     # Pruebas de metricas de embudo y filtros multicriterio
-    |-- test_detail.py        # Pruebas de evaluacion financiera, checklist y cambio de estado
-    |-- test_crud_flow.py     # Pruebas integrales de creacion, edicion, eliminacion y validaciones
-    |-- test_salones.py       # Pruebas del catalogo de salones, ficha tecnica, filtros y conflictos
-    |-- test_run.py           # Pruebas del script de inicio run.py y mensajes de consola
-    `-- test_emoji_compliance.py # Auditoria automatizada de ausencia total de emojis en el repositorio
+|-- app.py                     # Controlador central Flask (rutas, auth, validaciones CRUD y reservas)
+|-- database.py                # Capa relacional SQLite (esquema, consultas, seed, cruce de colisiones)
+|-- run.py                     # Script de inicio oficial para entorno de ejecucion
+|-- requirements.txt           # Dependencias minimas del sistema (Flask >= 3.0.0)
+|-- ESPECIFICACION_REQUERIMIENTOS.md # Especificacion formal de reglas de negocio
+|-- README.md                  # Manual tecnico y documentacion general del proyecto
+|-- templates/                 # Plantillas HTML con Jinja2 y tokens Minimalist UI
+|   |-- base.html              # Layout corporativo base, navegacion superior y CSS unificado
+|   |-- login.html             # Acceso autenticado y credenciales demo
+|   |-- dashboard.html         # Tablero Bento Grid con embudo de conversion y filtros
+|   |-- detail.html            # Ficha de detalle, evaluacion financiera, checklist y aforo
+|   |-- form.html              # Formulario modular de licitaciones (creacion y edicion)
+|   |-- salones.html           # Catalogo de infraestructura y agenda de reservas
+|   |-- salon_detail.html      # Ficha monografica por salon, montajes y cronograma
+|   |-- reserva_form.html      # Formulario para registro, edicion y bloqueo de fechas
+|   `-- 404.html               # Vista formal de recurso no encontrado
+`-- tests/                     # Suite de pruebas automatizadas (TDD)
+    |-- test_auth.py           # Autenticacion y proteccion de rutas
+    |-- test_database.py       # Persistencia relacional, seeds y filtros
+    |-- test_dashboard.py      # Metricas comerciales y filtros multicriterio
+    |-- test_detail.py         # Evaluacion de margenes, checklist y alertas
+    |-- test_crud_flow.py      # Flujo CRUD completo de licitaciones
+    |-- test_salones.py        # Catalogo de salones, reservas, colisiones y acciones
+    |-- test_run.py            # Modulo de arranque del servidor
+    `-- test_emoji_compliance.py # Auditoria regex de ausencia total de emojis
 ```
 
 ---
 
-## 6. Instrucciones de Instalacion y Puesta en Marcha
+## Inicio Rapido
 
-### 6.1. Requisitos Previos
-- **Python:** Version 3.10 o superior (verificado en Python 3.12).
-- **Sistema Operativo:** Compatible con Windows, Linux y macOS.
-- **Navegador Web:** Edge, Chrome, Firefox o Safari con conexion a internet para la carga de Tailwind CSS via CDN.
+### 1. Requisitos Previos
+* **Python:** 3.10 o superior (verificado en Python 3.12).
+* **Navegador Web:** Edge, Chrome, Firefox o Safari.
 
-### 6.2. Instalacion de Dependencias
-Abra un terminal en la raiz del proyecto y ejecute:
+### 2. Instalacion de Dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-*Nota: La unica dependencia externa requerida es `Flask>=3.0.0`. El motor de persistencia utiliza `sqlite3` incluido en la biblioteca estandar de Python.*
+> [!TIP]
+> La unica dependencia de terceros requerida es `Flask>=3.0.0`. El motor de persistencia utiliza `sqlite3` provisto por la biblioteca estandar de Python.
 
-### 6.3. Inicio del Servidor Web
-Ejecute el script de inicio oficial:
+### 3. Puesta en Marcha del Servidor
 
 ```bash
 python run.py
 ```
 
-El script inicializara automaticamente la base de datos `licitaciones.db` con los datos de demostracion preconfigurados si aun no existe, e iniciara el servidor web corporativo.
-
-En la consola se visualizara un mensaje formal con el siguiente formato:
+Al iniciarse, el servidor verifica automaticamente la base de datos `licitaciones.db`, inicializa las tablas relacionales y siembra los registros de prueba si no existen.
 
 ```text
 ========================================================================
-  ASISTENTE VIRTUAL PARA LICITACIONES (MERCADO PUBLICO)
+  COPILOT DE LICITACIONES Y OPERACIONES HOTELERAS
   Hotel Plaza San Francisco | Programa VcM DUOC UC
 ========================================================================
 [INFO] Inicializando motor de persistencia SQLite...
@@ -216,51 +149,51 @@ En la consola se visualizara un mensaje formal con el siguiente formato:
     - Usuario:         admin
     - Contrasena:      admin123
 ========================================================================
-[INFO] Servidor web iniciado en modo local. Presione CTRL+C para detener.
-========================================================================
 ```
 
-### 6.4. Acceso al Sistema
-1. Abra su navegador web e ingrese a la direccion: `http://127.0.0.1:5000`
-2. El sistema lo redirigira a la pantalla de acceso corporativo (`/login`).
+### 4. Acceso al Sistema
+1. Abra su navegador en: `http://127.0.0.1:5000`
+2. El sistema redirigira a la pantalla de autenticacion.
 3. Ingrese con las credenciales demo:
-   - **Usuario:** `admin`
-   - **Contrasena:** `admin123`
-4. Presione **Iniciar Sesion** para ingresar al Tablero Principal.
+   * **Usuario:** `admin`
+   * **Contrasena:** `admin123`
 
 ---
 
-## 7. Suite de Verificacion Automatizada (Testing)
+## Catalogo y Agenda de Salones
 
-El sistema cuenta con una suite completa de pruebas unitarias y de integracion desarrolladas bajo la metodologia Test-Driven Development (TDD).
+| Identificador | Salon | Formato Principal | Aforo Maximo | Horario Operativo | Ubicacion |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| `SALON-PLENARIO` | Gran Salon San Francisco | Plenario / Conferencia | 300 | 08:00 - 23:00 hrs | Nivel Subterraneo |
+| `SALON-COLONIAL` | Salon Colonial | Banquete / Eventos | 150 | 08:00 - 23:00 hrs | Piso 1 - Hall Central |
+| `SALON-ALAMEDA` | Salon Alameda | Seminario / Conferencias | 80 | 08:30 - 20:00 hrs | Piso 2 - Ala Poniente |
+| `SALON-LONDRES` | Salon Londres | Reuniones / Taller | 40 | 08:30 - 19:30 hrs | Piso 2 - Ala Ejecutiva |
+| `SALON-DIRECTORIO` | Salon Directorio Ejecutivo | Directorio / Mesa Ejecutiva | 20 | 08:00 - 20:00 hrs | Piso 3 - Area Presidencial |
 
-### 7.1. Ejecucion de la Suite Completa
-Para ejecutar la totalidad de las pruebas automatizadas del proyecto, ejecute en la raiz del repositorio:
+---
+
+## Suite de Pruebas Automatizadas
+
+El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 94 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, prevencion de colisiones y cumplimiento normativo.
+
+### Ejecutar Todas las Pruebas
 
 ```bash
 python -m unittest discover tests
 ```
 
-### 7.2. Cobertura de Pruebas
-La suite ejecuta 83 pruebas automatizadas organizadas en 8 modulos de prueba:
-1. `tests/test_auth.py`: Valida el bloqueo de accesos no autorizados en todas las rutas, renderizado de credenciales demo, validacion de errores en formulario de login, inicio exitoso de sesion y cierre formal de sesion.
-2. `tests/test_database.py`: Verifica la creacion del esquema SQLite, carga inicial de datos (seed), consultas por identificador, calculo de metricas agregadas del embudo, filtros multicriterio, insercion, modificacion y eliminacion de registros.
-3. `tests/test_dashboard.py`: Evalua el calculo de totales por etapa del embudo comercial, totales monetarios, filtros por categoria, modalidad, region y texto, asi como el ordenamiento cronologico por fecha de cierre.
-4. `tests/test_detail.py`: Comprueba el calculo de margenes brutos y porcentuales, disparo de alerta por costo hotel superior al presupuesto mandante, verificacion de causales de inadmisibilidad documental (Anexo 4, escrituras, poderes, vigencias), validacion de adjuntos y transicion de estados en el embudo comercial.
-5. `tests/test_crud_flow.py`: Audita el flujo completo de creacion (`/licitaciones/nueva`), prevencion de colision con rutas dinamicas, rechazo de IDs duplicados, validaciones de campos requeridos y formatos monetarios, edicion protegida y eliminacion confirmada por POST.
-6. `tests/test_salones.py`: Evalua la visualizacion del catalogo de salones, navegacion a fichas tecnicas, ordenamiento de capacidades, filtros por espacio y buscador por texto en la agenda de reservas, logica relacional de cruce de disponibilidad y deteccion de conflictos de fecha.
-7. `tests/test_run.py`: Valida la invocacion correcta del inicializador de base de datos y arranque de servidor en `run.py`, la emision de mensajes formales de consola y la ausencia de emojis en la salida estandar.
-8. `tests/test_emoji_compliance.py`: Realiza un escaneo exhaustivo en todo el repositorio (archivos `.py`, `.html`, `.md`, `.txt`) mediante expresiones regulares unicode para asegurar la supresion total y absoluta de emojis segun la restriccion de diseno corporativo.
+### Resultado de la Suite Completa
 
----
+```text
+Ran 94 tests in 2.105s
 
-## 8. Verificacion de Ausencia de Emojis
-
-Para auditar de forma independiente que ningun archivo de codigo, plantilla o documentacion contenga caracteres emoji, se puede ejecutar el siguiente comando en terminal:
-
-```bash
-python -c "import os, re; p = re.compile(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\u2300-\u23ff]|[\u2b50\u2b55\u2934\u2935\u25aa\u25ab\u25b6\u25c0\u25fb-\u25fe]'); [print(f'Alerta en: {os.path.join(r, f)}') for r, d, fs in os.walk('.') if not any(x in r for x in ['.git', '__pycache__', '.superpowers']) for f in fs if f.endswith(('.py', '.html', '.md', '.txt')) and p.search(open(os.path.join(r, f), encoding='utf-8').read())]; print('Auditoria de emojis completada exitosamente.')"
+OK
 ```
 
-El resultado esperado es la confirmacion de 0 alertas y la salida:
-`Auditoria de emojis completada exitosamente.`
+### Auditoria de Cumplimiento de Cero Emojis
+
+Para ejecutar el escaneo independiente de expresiones regulares sobre la totalidad del repositorio:
+
+```bash
+python -m unittest tests/test_emoji_compliance.py
+```
