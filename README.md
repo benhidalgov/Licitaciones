@@ -86,6 +86,11 @@ El prototipo consta de 4 modulos principales completamente articulados:
     3. Poderes de representacion legal vigentes.
     4. Certificados de vigencia emitidos por el Conservador de Bienes Raices.
   - Indicador global de admisibilidad: `Cumplimiento Total` o `Faltan Requisitos Relevantes`.
+- **Dimensionamiento Operativo, Aforo y Salones del Hotel:**
+  - Evaluacion comparativa entre la cantidad estimada de personas requeridas y la capacidad maxima de los salones del hotel.
+  - Generacion de **Alerta de Inviabilidad Operativa: Aforo Excedido** `[CRIT]` con reporte de sobrecupo y sugerencia automatica de salones del hotel con capacidad suficiente.
+  - Indicador de **Capacidad Adecuada** `[OK]` cuando el salon cubre el aforo solicitado.
+  - Catalogo integrado de infraestructura de salones del Hotel Plaza San Francisco (aforo maximo, tipo de formato, horario operativo y tarifas referenciales).
 - **Auditoria Documental ("Efecto ID"):**
   - Verificacion de consistencia entre el identificador visible y los documentos adjuntos (`Valida` vs `Error ID / Discrepancia`).
 - **Gestion de Avance de Etapa:** Selector directo para actualizar el estado del embudo comercial con confirmacion visual mediante mensajes flash.
@@ -93,14 +98,31 @@ El prototipo consta de 4 modulos principales completamente articulados:
 ### 3.4. Modulo CRUD (Gestion de Licitaciones)
 - **Creacion Segura (`/licitaciones/nueva`):**
   - Registro preventivo de la ruta antes de la captura dinamica de parametros (`/licitaciones/<id_licitacion>`) para evitar colisiones de enrutamiento en Flask.
-  - Formulario organizado en 6 bloques tematicos: Identificacion y Organismo, Categoria y Modalidad, Evaluacion Economica, Fechas Criticas, Checklist de Admisibilidad y Extracto de TDR.
+  - Formulario organizado en 7 bloques tematicos: Identificacion y Organismo, Categoria y Modalidad, Dimensionamiento Operativo y Horarios, Evaluacion Economica, Fechas Criticas, Checklist de Admisibilidad y Extracto de TDR.
   - Validacion estricta en servidor: verificacion de campos obligatorios, integridad de valores enteros en CLP y rechazo de identificadores duplicados.
 - **Edicion Controlada (`/licitaciones/<id_licitacion>/editar`):**
   - Bloqueo en solo lectura del identificador oficial para resguardar la trazabilidad de la oportunidad.
-  - Actualizacion dinamica de montos, checklist documental, estado y descripcion tecnica.
+  - Actualizacion dinamica de montos, aforo de asistentes, horarios, salon asignado, checklist documental, estado y descripcion tecnica.
 - **Eliminacion Segura (`/licitaciones/<id_licitacion>/eliminar`):**
   - Operacion procesada exclusivamente mediante metodo POST autenticado.
   - Modal de confirmacion con indicacion explicita del codigo de la licitacion antes de confirmar la baja en la base de datos.
+
+### 3.5. Modulo de Catalogo de Salones y Agenda de Ocupacion (Bookings)
+- **Catalogo de Infraestructura (`/salones`):**
+  - Galeria tecnica de salones del Hotel Plaza San Francisco (Gran Salon San Francisco, Salon Colonial, Salon Alameda, Salon Londres, Salon Directorio Ejecutivo).
+  - Indicadores clave en tiempo real: salones activos, capacidad maxima instalada (plazas simultaneas) y total de reservas registradas.
+  - Especificacion por espacio: aforo maximo, tipo de formato de evento, horarios operativos, tarifas diarias referenciales en CLP, ubicacion en el hotel y equipamiento audiovisual completo.
+- **Ficha Tecnica Individual de Salon (`/salones/<id_salon>`):**
+  - Desglose de capacidades segun formato de montaje: Plenario/Auditorio (100%), Banquete (70%), Escuela (50%) y Mesa de Directorio (30%).
+  - Inventario de equipamiento disponible (pantallas LED 4K, microfonia, proyectores laser, cabinas de interpretacion, climatizacion central y conectividad dedicada).
+  - Agenda cronologica exclusiva del salon con listado de fechas contratadas, clientes y licitaciones asociadas.
+- **Agenda Centralizada de Reservas y Disponibilidad:**
+  - Tabla relacional con fechas de inicio y fin, organismo/cliente que tiene el espacio contratado (booked), tipo de actividad, franja horaria y aforo estimado.
+  - Filtro interactivo por salon y buscador por texto de cliente o numero de licitacion.
+  - Estados operativos de reserva: `Confirmada`, `Tentativa` y `Bloqueo Interno` (mantenimiento o sesiones del directorio).
+- **Cruce Preventivo de Disponibilidad con Licitaciones:**
+  - Cruce automatico entre la fecha de cierre/evento de la licitacion y el calendario de reservas del salon asignado.
+  - Alerta inmediata en la ficha de detalle de la licitacion si existe colision de fechas con un evento previamente contratado.
 
 ---
 
@@ -109,6 +131,9 @@ El prototipo consta de 4 modulos principales completamente articulados:
 | Regla de Negocio | Parametro / Criterio | Aplicacion en el Sistema |
 | :--- | :--- | :--- |
 | **Matriz de Rubros Prioritarios** | Alojamiento / Eventos y Catering | Clasificacion de oportunidades segun habitacion/estadia vs salones/banqueteria. |
+| **Dimensionamiento y Control de Aforo** | Cantidad de Asistentes vs Capacidad de Salon | Alerta de sobrecupo operativo si la cantidad de personas excede la capacidad maxima del salon seleccionado. |
+| **Cruce de Disponibilidad y Agenda de Salones** | Rango de fechas de licitacion vs reservas tomadas | Alerta preventiva de colision si el salon se encuentra booked por otro cliente u organismo en la fecha requerida. |
+| **Gestion de Jornada y Horarios** | Modalidad horaria (Jornada completa, media jornada, cenas) | Especificacion formal de la franja horaria requerida para la evaluacion de disponibilidad del salon. |
 | **Geolocalizacion Primaria** | Region Metropolitana (Santiago Centro) | Prioridad en la captacion de eventos y estadias en el radio de cobertura del hotel. |
 | **Tope Normativo Compra Agil** | Hasta 6.900.000 CLP | Distincion automatica de procesos de compra rapida segun normativa vigente de compras publicas. |
 | **Consistencia Documental ("Efecto ID")** | Cotejo de ID contra bases adjuntas | Deteccion de licitaciones con errores de publicacion en el portal oficial para evitar descalificaciones. |
@@ -133,6 +158,8 @@ C:\Licitaciones\
 |   |-- dashboard.html        # Tablero principal de gestion comercial y embudo
 |   |-- detail.html           # Ficha de detalle, evaluacion economica y checklist
 |   |-- form.html             # Formulario unificado de creacion y edicion de licitaciones
+|   |-- salones.html          # Catalogo de salones y agenda de ocupacion / reservas
+|   |-- salon_detail.html     # Ficha tecnica de salon, capacidades por montaje y cronograma
 |   `-- 404.html              # Pantalla formal de recurso no encontrado
 `-- tests/                    # Suite completa de pruebas automatizadas
     |-- __init__.py           # Inicializador del paquete de pruebas
@@ -141,6 +168,7 @@ C:\Licitaciones\
     |-- test_dashboard.py     # Pruebas de metricas de embudo y filtros multicriterio
     |-- test_detail.py        # Pruebas de evaluacion financiera, checklist y cambio de estado
     |-- test_crud_flow.py     # Pruebas integrales de creacion, edicion, eliminacion y validaciones
+    |-- test_salones.py       # Pruebas del catalogo de salones, ficha tecnica, filtros y conflictos
     |-- test_run.py           # Pruebas del script de inicio run.py y mensajes de consola
     `-- test_emoji_compliance.py # Auditoria automatizada de ausencia total de emojis en el repositorio
 ```
@@ -214,14 +242,15 @@ python -m unittest discover tests
 ```
 
 ### 7.2. Cobertura de Pruebas
-La suite ejecuta mas de 60 pruebas automatizadas organizadas en 7 modulos de prueba:
+La suite ejecuta 83 pruebas automatizadas organizadas en 8 modulos de prueba:
 1. `tests/test_auth.py`: Valida el bloqueo de accesos no autorizados en todas las rutas, renderizado de credenciales demo, validacion de errores en formulario de login, inicio exitoso de sesion y cierre formal de sesion.
 2. `tests/test_database.py`: Verifica la creacion del esquema SQLite, carga inicial de datos (seed), consultas por identificador, calculo de metricas agregadas del embudo, filtros multicriterio, insercion, modificacion y eliminacion de registros.
 3. `tests/test_dashboard.py`: Evalua el calculo de totales por etapa del embudo comercial, totales monetarios, filtros por categoria, modalidad, region y texto, asi como el ordenamiento cronologico por fecha de cierre.
 4. `tests/test_detail.py`: Comprueba el calculo de margenes brutos y porcentuales, disparo de alerta por costo hotel superior al presupuesto mandante, verificacion de causales de inadmisibilidad documental (Anexo 4, escrituras, poderes, vigencias), validacion de adjuntos y transicion de estados en el embudo comercial.
 5. `tests/test_crud_flow.py`: Audita el flujo completo de creacion (`/licitaciones/nueva`), prevencion de colision con rutas dinamicas, rechazo de IDs duplicados, validaciones de campos requeridos y formatos monetarios, edicion protegida y eliminacion confirmada por POST.
-6. `tests/test_run.py`: Valida la invocacion correcta del inicializador de base de datos y arranque de servidor en `run.py`, la emision de mensajes formales de consola y la ausencia de emojis en la salida estandar.
-7. `tests/test_emoji_compliance.py`: Realiza un escaneo exhaustivo en todo el repositorio (archivos `.py`, `.html`, `.md`, `.txt`) mediante expresiones regulares unicode para asegurar la supresion total y absoluta de emojis segun la restriccion de diseno corporativo.
+6. `tests/test_salones.py`: Evalua la visualizacion del catalogo de salones, navegacion a fichas tecnicas, ordenamiento de capacidades, filtros por espacio y buscador por texto en la agenda de reservas, logica relacional de cruce de disponibilidad y deteccion de conflictos de fecha.
+7. `tests/test_run.py`: Valida la invocacion correcta del inicializador de base de datos y arranque de servidor en `run.py`, la emision de mensajes formales de consola y la ausencia de emojis en la salida estandar.
+8. `tests/test_emoji_compliance.py`: Realiza un escaneo exhaustivo en todo el repositorio (archivos `.py`, `.html`, `.md`, `.txt`) mediante expresiones regulares unicode para asegurar la supresion total y absoluta de emojis segun la restriccion de diseno corporativo.
 
 ---
 

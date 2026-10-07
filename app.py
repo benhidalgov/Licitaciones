@@ -16,6 +16,14 @@ VALID_ESTADOS = [
     "Descartada"
 ]
 
+VALID_JORNADAS = [
+    "Jornada Completa (8 hrs)",
+    "Media Jornada Manana (4 hrs)",
+    "Media Jornada Tarde (4 hrs)",
+    "Nocturno / Cena",
+    "Horario Especial"
+]
+
 
 def login_required(f):
     @wraps(f)
@@ -165,6 +173,21 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
 
     descripcion_tdr = form.get("descripcion_tdr", "").strip()
 
+    # Dimensionamiento operativo: Aforo, Jornada, Horarios y Salon
+    cantidad_asistentes_val = 0
+    cantidad_asistentes_str = form.get("cantidad_asistentes", "0").strip()
+    if cantidad_asistentes_str:
+        try:
+            cantidad_asistentes_val = int(cantidad_asistentes_str)
+            if cantidad_asistentes_val < 0:
+                errors.append("La Cantidad de Asistentes debe ser un valor numerico mayor o igual a cero.")
+        except (ValueError, TypeError):
+            errors.append("La Cantidad de Asistentes debe ser un valor numerico entero.")
+
+    tipo_jornada = form.get("tipo_jornada", "").strip() or "Jornada Completa (8 hrs)"
+    horario_evento = form.get("horario_evento", "").strip() or "08:30 a 18:30 hrs"
+    id_salon_asignado = form.get("id_salon_asignado", "").strip()
+
     data = {
         "id_licitacion": id_licitacion,
         "titulo": titulo,
@@ -182,7 +205,11 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
         "tiene_vigencias": tiene_vigencias,
         "fecha_publicacion": fecha_publicacion,
         "fecha_cierre": fecha_cierre,
-        "descripcion_tdr": descripcion_tdr
+        "descripcion_tdr": descripcion_tdr,
+        "cantidad_asistentes": cantidad_asistentes_val,
+        "tipo_jornada": tipo_jornada,
+        "horario_evento": horario_evento,
+        "id_salon_asignado": id_salon_asignado
     }
     return data, errors
 
@@ -192,6 +219,7 @@ def parse_and_validate_licitacion_form(form, is_create=True, existing_id=None):
 @app.route("/licitaciones/nueva", methods=["GET", "POST"])
 @login_required
 def crear_licitacion():
+    salones = database.get_all_salones()
     if request.method == "POST":
         data, errors = parse_and_validate_licitacion_form(request.form, is_create=True)
         if errors:
@@ -200,10 +228,13 @@ def crear_licitacion():
             form_view_data = dict(data)
             form_view_data["presupuesto_mandante"] = request.form.get("presupuesto_mandante", "")
             form_view_data["costo_base_hotel"] = request.form.get("costo_base_hotel", "")
+            form_view_data["cantidad_asistentes"] = request.form.get("cantidad_asistentes", "0")
             return render_template(
                 "form.html",
                 mode="create",
                 lic=form_view_data,
+                salones=salones,
+                valid_jornadas=VALID_JORNADAS,
                 valid_estados=VALID_ESTADOS,
                 user=session.get("user")
             )
@@ -215,7 +246,7 @@ def crear_licitacion():
         "id_licitacion": "",
         "titulo": "",
         "organismo": "",
-        "categoria": "Alojamiento",
+        "categoria": "Eventos / Catering",
         "modalidad": "Compra Agil",
         "region": "Region Metropolitana (Santiago)",
         "presupuesto_mandante": "",
@@ -228,12 +259,18 @@ def crear_licitacion():
         "tiene_vigencias": 1,
         "fecha_publicacion": "",
         "fecha_cierre": "",
-        "descripcion_tdr": ""
+        "descripcion_tdr": "",
+        "cantidad_asistentes": 0,
+        "tipo_jornada": "Jornada Completa (8 hrs)",
+        "horario_evento": "08:30 a 18:30 hrs",
+        "id_salon_asignado": ""
     }
     return render_template(
         "form.html",
         mode="create",
         lic=default_lic,
+        salones=salones,
+        valid_jornadas=VALID_JORNADAS,
         valid_estados=VALID_ESTADOS,
         user=session.get("user")
     )
@@ -253,6 +290,30 @@ def licitacion_detalle(id_licitacion):
     deficit = abs(diferencia) if es_inviable else 0
     margen_porcentaje = round((diferencia / presupuesto) * 100, 1) if presupuesto > 0 else 0
 
+    # Dimensionamiento de Capacidad, Aforo y Salones
+    salones = database.get_all_salones()
+    asistentes = lic.get("cantidad_asistentes") or 0
+    salon_id = lic.get("id_salon_asignado") or ""
+    salon_asignado = database.get_salon_by_id(salon_id) if salon_id else None
+
+    excede_aforo = False
+    sobrecupo = 0
+    if salon_asignado and asistentes > 0:
+        capacidad_max = salon_asignado["capacidad_maxima"]
+        if asistentes > capacidad_max:
+            excede_aforo = True
+            sobrecupo = asistentes - capacidad_max
+
+    salones_compatibles = []
+    if asistentes > 0:
+        salones_compatibles = database.get_salones_aptos(asistentes)
+
+    # Cruce de agenda y disponibilidad con reservas existentes
+    conflictos_agenda = []
+    if salon_id and lic.get("fecha_cierre"):
+        fecha_ref = lic["fecha_cierre"]
+        conflictos_agenda = database.get_conflictos_reserva(salon_id, fecha_ref, fecha_ref)
+
     return render_template(
         "detail.html",
         lic=lic,
@@ -260,6 +321,12 @@ def licitacion_detalle(id_licitacion):
         es_inviable=es_inviable,
         deficit=deficit,
         margen_porcentaje=margen_porcentaje,
+        salon_asignado=salon_asignado,
+        excede_aforo=excede_aforo,
+        sobrecupo=sobrecupo,
+        salones_compatibles=salones_compatibles,
+        conflictos_agenda=conflictos_agenda,
+        salones=salones,
         valid_estados=VALID_ESTADOS,
         user=session.get("user")
     )
@@ -272,6 +339,7 @@ def editar_licitacion(id_licitacion):
     if not lic:
         abort(404)
 
+    salones = database.get_all_salones()
     if request.method == "POST":
         data, errors = parse_and_validate_licitacion_form(request.form, is_create=False, existing_id=id_licitacion)
         if errors:
@@ -280,10 +348,13 @@ def editar_licitacion(id_licitacion):
             form_view_data = dict(data)
             form_view_data["presupuesto_mandante"] = request.form.get("presupuesto_mandante", "")
             form_view_data["costo_base_hotel"] = request.form.get("costo_base_hotel", "")
+            form_view_data["cantidad_asistentes"] = request.form.get("cantidad_asistentes", "0")
             return render_template(
                 "form.html",
                 mode="edit",
                 lic=form_view_data,
+                salones=salones,
+                valid_jornadas=VALID_JORNADAS,
                 valid_estados=VALID_ESTADOS,
                 user=session.get("user")
             )
@@ -297,6 +368,8 @@ def editar_licitacion(id_licitacion):
         "form.html",
         mode="edit",
         lic=dict(lic),
+        salones=salones,
+        valid_jornadas=VALID_JORNADAS,
         valid_estados=VALID_ESTADOS,
         user=session.get("user")
     )
@@ -328,6 +401,44 @@ def cambiar_estado_licitacion(id_licitacion):
     database.update_licitacion(id_licitacion, {"estado_embudo": nuevo_estado})
     flash(f"Estado en el embudo comercial actualizado exitosamente a '{nuevo_estado}' para la licitacion {id_licitacion}.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+
+@app.route("/salones")
+@login_required
+def salones_catalogo():
+    salones = database.get_all_salones()
+    filtro_salon = request.args.get("salon", "").strip() or None
+    q = request.args.get("q", "").strip() or None
+    reservas = database.get_all_reservas(id_salon=filtro_salon, q=q)
+
+    total_salones = len(salones)
+    total_reservas = len(reservas)
+    capacidad_total = sum(s["capacidad_maxima"] for s in salones)
+
+    return render_template(
+        "salones.html",
+        salones=salones,
+        reservas=reservas,
+        filtro_salon=filtro_salon or "",
+        q=q or "",
+        total_salones=total_salones,
+        total_reservas=total_reservas,
+        capacidad_total=capacidad_total,
+        user=session.get("user")
+    )
+
+
+@app.route("/salones/<id_salon>")
+@login_required
+def salon_detalle(id_salon):
+    salon = database.get_salon_detalle(id_salon)
+    if not salon:
+        abort(404)
+    return render_template(
+        "salon_detail.html",
+        salon=salon,
+        user=session.get("user")
+    )
 
 
 @app.errorhandler(404)

@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Catalogo de Salones y Agenda de Ocupacion - Hotel Plaza San Francisco{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Migas de Pan y Encabezado Superior -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+        <nav class="flex items-center space-x-2 text-xs text-slate-500 font-medium">
+            <a href="{{ url_for('dashboard') }}" class="hover:text-slate-900 transition-colors">Tablero Principal</a>
+            <span class="text-slate-400">/</span>
+            <span class="text-slate-800 font-semibold">Salones y Agenda de Ocupacion</span>
+        </nav>
+        <div class="flex items-center space-x-3">
+            <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm">
+                Volver a Licitaciones
+            </a>
+            <a href="{{ url_for('crear_licitacion') }}" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded transition-colors shadow-sm">
+                Nueva Licitacion
+            </a>
+        </div>
+    </div>
+
+    <!-- Banner Principal Informativo -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="space-y-1 max-w-3xl">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-900 border border-blue-200">
+                        Infraestructura Hotelera
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        Hotel Plaza San Francisco
+                    </span>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                    Catalogo de Salones y Agenda de Ocupacion
+                </h1>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Gestion centralizada de aforos, equipamiento tecnico y cronograma de fechas contratadas (booked) para optimizar la formulacion de propuestas en Mercado Publico y eventos corporativos.
+                </p>
+            </div>
+
+            <!-- Resumen Metrico Rapido -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 min-w-[280px]">
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 text-center">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Salones</div>
+                    <div class="text-lg font-bold font-mono text-slate-900 mt-0.5">{{ total_salones }}</div>
+                    <div class="text-[10px] text-slate-500">Espacios activos</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 text-center">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Capacidad Total</div>
+                    <div class="text-lg font-bold font-mono text-slate-900 mt-0.5">{{ capacidad_total }}</div>
+                    <div class="text-[10px] text-slate-500">Plazas simultaneas</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 text-center col-span-2 sm:col-span-1">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Reservas Activas</div>
+                    <div class="text-lg font-bold font-mono text-indigo-900 mt-0.5">{{ total_reservas }}</div>
+                    <div class="text-[10px] text-slate-500">Fechas tomadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCION 1: Catalogo de Salones (Tarjetas con Placeholders) -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 tracking-tight">Catalogo de Infraestructura de Salones</h2>
+                <p class="text-xs text-slate-500">Caracteristicas tecnicas, formatos de montaje, aforos maximos y tarifas de referencia.</p>
+            </div>
+            <span class="text-xs text-slate-500 font-medium font-mono">{{ salones|length }} salones disponibles</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for s in salones %}
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden">
+                <div class="p-5 space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200 uppercase tracking-wide">
+                                {{ s.tipo }}
+                            </span>
+                            <h3 class="text-base font-bold text-slate-900 mt-1">
+                                <a href="/salones/{{ s.id_salon }}" class="hover:text-blue-900 transition-colors">
+                                    {{ s.nombre }}
+                                </a>
+                            </h3>
+                        </div>
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-mono font-bold bg-indigo-50 text-indigo-900 border border-indigo-200 whitespace-nowrap">
+                            {{ s.capacidad_maxima }} pers.
+                        </span>
+                    </div>
+
+                    <div class="text-xs text-slate-600 space-y-1">
+                        <div>
+                            <span class="font-semibold text-slate-700">Ubicacion:</span>
+                            <span>{{ s.ubicacion or 'Edificio Central' }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-700">Horario operativo:</span>
+                            <span class="font-mono text-slate-800">{{ s.horario_disponible }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-700">Tarifa referencial:</span>
+                            <span class="font-mono text-slate-900 font-bold">{{ s.tarifa_referencial | clp }} / jornada</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed pt-1 border-t border-slate-100">
+                        {{ s.descripcion or 'Espacio formal acondicionado para eventos gubernamentales y reuniones corporativas.' }}
+                    </p>
+
+                    <div class="bg-slate-50 p-2.5 rounded border border-slate-200 text-[11px] text-slate-600 space-y-0.5">
+                        <span class="font-semibold text-slate-800 block">Equipamiento integrado:</span>
+                        <span class="line-clamp-2 text-slate-500">{{ s.equipamiento or 'Equipamiento estandar hotelero.' }}</span>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                    <a href="/salones?salon={{ s.id_salon }}" class="text-xs font-semibold text-blue-900 hover:underline">
+                        Ver Agenda de Fechas
+                    </a>
+                    <a href="/salones/{{ s.id_salon }}" class="inline-flex items-center px-3 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-100 transition-colors shadow-xs">
+                        Ficha Tecnica
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- SECCION 2: Agenda de Ocupacion (Fechas Ocupadas y Clientes Booked) -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm space-y-4 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 tracking-tight">Agenda de Ocupacion de Salones (Fechas Contratadas y Reservas)</h2>
+                <p class="text-xs text-slate-500">Registro cronologico de eventos confirmados, licitaciones vinculadas y bloqueos preventivos.</p>
+            </div>
+            <div class="text-xs text-slate-600 font-mono">
+                Total de reservas mostradas: <strong class="text-slate-900">{{ reservas|length }}</strong>
+            </div>
+        </div>
+
+        <!-- Filtros de la Agenda -->
+        <form method="GET" action="{{ url_for('salones_catalogo') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+            <div>
+                <label for="salon" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    Filtrar por Salon:
+                </label>
+                <select
+                    id="salon"
+                    name="salon"
+                    class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500"
+                >
+                    <option value="">[TODOS LOS SALONES]</option>
+                    {% for sl in salones %}
+                    <option value="{{ sl.id_salon }}" {% if filtro_salon == sl.id_salon %}selected{% endif %}>
+                        {{ sl.nombre }} ({{ sl.capacidad_maxima }} pers.)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="q" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    Buscar Cliente u Organismo:
+                </label>
+                <input
+                    type="text"
+                    id="q"
+                    name="q"
+                    value="{{ q }}"
+                    placeholder="Ejemplo: Turismo, Banco Central, GORE..."
+                    class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500"
+                >
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <button
+                    type="submit"
+                    class="px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded transition-colors shadow-sm cursor-pointer"
+                >
+                    Aplicar Filtros
+                </button>
+                <a
+                    href="{{ url_for('salones_catalogo') }}"
+                    class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded transition-colors"
+                >
+                    Limpiar
+                </a>
+            </div>
+        </form>
+
+        <!-- Tabla de Reservas / Fechas Booked -->
+        {% if reservas %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider">
+                    <tr>
+                        <th scope="col" class="px-4 py-3">Salon</th>
+                        <th scope="col" class="px-4 py-3">Cliente / Organismo (Booked Por)</th>
+                        <th scope="col" class="px-4 py-3">Tipo de Evento</th>
+                        <th scope="col" class="px-4 py-3">Fechas de Ocupacion</th>
+                        <th scope="col" class="px-4 py-3">Horario</th>
+                        <th scope="col" class="px-4 py-3 text-right">Aforo</th>
+                        <th scope="col" class="px-4 py-3 text-center">Estado</th>
+                        <th scope="col" class="px-4 py-3">Observaciones y Enlaces</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                    {% for r in reservas %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <!-- Salon -->
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <a href="/salones/{{ r.id_salon }}" class="font-bold text-slate-900 hover:text-blue-900">
+                                {{ r.nombre_salon }}
+                            </a>
+                            <div class="text-[11px] text-slate-500">
+                                {{ r.tipo_salon }} (Max: {{ r.capacidad_salon }} pers.)
+                            </div>
+                        </td>
+
+                        <!-- Cliente / Organismo -->
+                        <td class="px-4 py-3 max-w-xs">
+                            <div class="font-bold text-slate-900">
+                                {{ r.organismo_o_empresa }}
+                            </div>
+                            <div class="text-slate-600 text-[11px]">
+                                {{ r.cliente_evento }}
+                            </div>
+                        </td>
+
+                        <!-- Tipo de Evento -->
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                                {{ r.tipo_evento }}
+                            </span>
+                        </td>
+
+                        <!-- Fechas -->
+                        <td class="px-4 py-3 whitespace-nowrap font-mono text-slate-800">
+                            {% if r.fecha_inicio == r.fecha_fin %}
+                            <strong>{{ r.fecha_inicio }}</strong>
+                            {% else %}
+                            <div>{{ r.fecha_inicio }}</div>
+                            <div class="text-slate-500 text-[11px]">al {{ r.fecha_fin }}</div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Horario -->
+                        <td class="px-4 py-3 whitespace-nowrap text-slate-600 font-mono text-[11px]">
+                            {{ r.horario }}
+                        </td>
+
+                        <!-- Aforo -->
+                        <td class="px-4 py-3 whitespace-nowrap text-right font-mono font-semibold text-slate-900">
+                            {{ r.asistentes_estimados }} pers.
+                        </td>
+
+                        <!-- Estado -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            {% if r.estado_reserva == 'Confirmada' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                Confirmada
+                            </span>
+                            {% elif r.estado_reserva == 'Tentativa' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                Tentativa
+                            </span>
+                            {% elif r.estado_reserva == 'Bloqueo Interno' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                                Bloqueo Interno
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">
+                                {{ r.estado_reserva }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Observaciones y Enlaces -->
+                        <td class="px-4 py-3 text-[11px] text-slate-600 max-w-xs">
+                            <div>{{ r.observaciones }}</div>
+                            {% if r.id_licitacion %}
+                            <div class="mt-1">
+                                <a href="/licitaciones/{{ r.id_licitacion }}" class="inline-flex items-center font-mono font-bold text-blue-900 hover:underline">
+                                    [Licitacion: {{ r.id_licitacion }}]
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+            <p class="text-xs font-medium">No se encontraron reservas registradas para los criterios seleccionados.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

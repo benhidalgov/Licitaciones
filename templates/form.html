@@ -206,10 +206,92 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
             </div>
         </div>
 
-        <!-- 3. Evaluacion Economica -->
+        <!-- 3. Dimensionamiento Operativo, Aforo y Horarios -->
         <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
             <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">3. Evaluacion Economica</h2>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">3. Dimensionamiento Operativo, Aforo y Horarios</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Capacidad requerida, cantidad estimada de asistentes, franja horaria y salon propuesto.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="cantidad_asistentes" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                        Cantidad Estimada de Personas / Aforo
+                    </label>
+                    <input
+                        type="number"
+                        id="cantidad_asistentes"
+                        name="cantidad_asistentes"
+                        value="{{ lic.cantidad_asistentes if lic.cantidad_asistentes is defined and lic.cantidad_asistentes is not none else 0 }}"
+                        placeholder="Ejemplo: 80"
+                        min="0"
+                        step="1"
+                        class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                    <p class="text-[11px] text-slate-500 mt-1">Numero de personas que utilizaran el salon o dependencias del hotel.</p>
+                </div>
+
+                <div>
+                    <label for="id_salon_asignado" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                        Salon Sugerido / Asignado
+                    </label>
+                    <select
+                        id="id_salon_asignado"
+                        name="id_salon_asignado"
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                        <option value="">[SIN ASIGNAR / PENDIENTE DE EVALUACION]</option>
+                        {% for salon in salones %}
+                        <option value="{{ salon.id_salon }}" {% if lic.id_salon_asignado == salon.id_salon %}selected{% endif %}>
+                            {{ salon.nombre }} (Aforo Max: {{ salon.capacidad_maxima }} pers. - {{ salon.tipo }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">Espacio del Hotel Plaza San Francisco asignado a la propuesta.</p>
+                </div>
+
+                <div>
+                    <label for="tipo_jornada" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                        Tipo de Jornada
+                    </label>
+                    <select
+                        id="tipo_jornada"
+                        name="tipo_jornada"
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                        {% for jor in valid_jornadas %}
+                        <option value="{{ jor }}" {% if lic.tipo_jornada == jor %}selected{% endif %}>{{ jor }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-1">Regimen de uso del salon segun especificaciones de las bases.</p>
+                </div>
+
+                <div>
+                    <label for="horario_evento" class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                        Horario Estimado del Evento
+                    </label>
+                    <input
+                        type="text"
+                        id="horario_evento"
+                        name="horario_evento"
+                        value="{{ lic.horario_evento or '' }}"
+                        placeholder="Ejemplo: 08:30 a 18:30 hrs"
+                        class="w-full text-xs px-3 py-2 border border-slate-300 rounded bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                    >
+                    <p class="text-[11px] text-slate-500 mt-1">Franja horaria especificada por el organismo licitante.</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded p-3 text-xs text-slate-600">
+                <span class="font-semibold text-slate-800">Regla Operativa de Aforo:</span>
+                Si la cantidad de asistentes solicitada excede la capacidad maxima del salon, el sistema generara una alerta de sobrecupo y sugerira los salones compatibles del hotel.
+            </div>
+        </div>
+
+        <!-- 4. Evaluacion Economica -->
+        <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+            <div class="border-b border-slate-200 pb-3">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">4. Evaluacion Economica</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Control presupuestario preventivo para cautelar la rentabilidad operativa del hotel.</p>
             </div>
 
@@ -257,10 +339,10 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
             </div>
         </div>
 
-        <!-- 4. Fechas Criticas -->
+        <!-- 5. Fechas Criticas -->
         <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
             <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">4. Fechas Criticas</h2>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">5. Fechas Criticas</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Cronograma de plazos administrativos y recepcion de ofertas.</p>
             </div>
 
@@ -297,10 +379,10 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
             </div>
         </div>
 
-        <!-- 5. Validacion Robusta y Checklist de Admisibilidad -->
+        <!-- 6. Validacion Robusta y Checklist de Admisibilidad -->
         <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
             <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">5. Validacion Robusta y Checklist de Admisibilidad</h2>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">6. Validacion Robusta y Checklist de Admisibilidad</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Cotejo de integridad documental (Efecto ID) y antecedentes legales exigidos por la Ley 19.886.</p>
             </div>
 
@@ -397,10 +479,10 @@ Editar Licitacion {{ lic.id_licitacion }} - Gestion Comercial
             </div>
         </div>
 
-        <!-- 6. Descripcion o extracto de TDR -->
+        <!-- 7. Descripcion o Extracto de TDR -->
         <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
             <div class="border-b border-slate-200 pb-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">6. Descripcion o Extracto de TDR</h2>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">7. Descripcion o Extracto de TDR</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Sintesis tecnica de los requerimientos, alcances y especificaciones del servicio.</p>
             </div>
 

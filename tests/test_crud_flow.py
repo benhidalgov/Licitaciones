@@ -288,6 +288,92 @@ class TestCrudFlow(unittest.TestCase):
         response = self.client.post("/licitaciones/NO-EXISTE-999/eliminar")
         self.assertEqual(response.status_code, 404)
 
+    def test_create_licitacion_with_capacity_and_salon(self):
+        payload = {
+            "id_licitacion": "6666-33-COT26",
+            "titulo": "Encuentro de Investigadores Cientificos",
+            "organismo": "Ministerio de Ciencia",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana (Santiago)",
+            "presupuesto_mandante": "5200000",
+            "costo_base_hotel": "4100000",
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Valida",
+            "tiene_anexo4": "1",
+            "tiene_escrituras": "1",
+            "tiene_poderes": "1",
+            "tiene_vigencias": "1",
+            "fecha_publicacion": "2026-09-20",
+            "fecha_cierre": "2026-09-28",
+            "descripcion_tdr": "Seminario de difusion con coctel.",
+            "cantidad_asistentes": "80",
+            "tipo_jornada": "Jornada Completa (8 hrs)",
+            "horario_evento": "08:30 a 18:30 hrs",
+            "id_salon_asignado": "SALON-ALAMEDA"
+        }
+        response = self.client.post("/licitaciones/nueva", data=payload, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        item = database.get_licitacion_by_id("6666-33-COT26")
+        self.assertIsNotNone(item)
+        self.assertEqual(item["cantidad_asistentes"], 80)
+        self.assertEqual(item["tipo_jornada"], "Jornada Completa (8 hrs)")
+        self.assertEqual(item["horario_evento"], "08:30 a 18:30 hrs")
+        self.assertEqual(item["id_salon_asignado"], "SALON-ALAMEDA")
+
+    def test_create_licitacion_negative_asistentes_error(self):
+        payload = {
+            "id_licitacion": "6666-NEG-COT26",
+            "titulo": "Evento con Asistentes Negativos",
+            "organismo": "Ministerio de Salud",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana (Santiago)",
+            "presupuesto_mandante": "5000000",
+            "costo_base_hotel": "4000000",
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Valida",
+            "fecha_publicacion": "2026-09-20",
+            "fecha_cierre": "2026-09-28",
+            "cantidad_asistentes": "-15"
+        }
+        response = self.client.post("/licitaciones/nueva", data=payload, follow_redirects=True)
+        html = response.data.decode("utf-8")
+        self.assertIn("mayor o igual a cero", html)
+
+    def test_edit_licitacion_update_capacity_and_salon(self):
+        payload = {
+            "titulo": "Servicio de Banqueteria y Salones Jornada de Planificacion Estrategica",
+            "organismo": "Subsecretaria de Turismo",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana (Santiago)",
+            "presupuesto_mandante": "5800000",
+            "costo_base_hotel": "4200000",
+            "estado_embudo": "Calificada",
+            "validacion_adjuntos": "Valida",
+            "tiene_anexo4": "1",
+            "tiene_escrituras": "1",
+            "tiene_poderes": "1",
+            "tiene_vigencias": "1",
+            "fecha_publicacion": "2026-09-12",
+            "fecha_cierre": "2026-09-20",
+            "descripcion_tdr": "Actualizado para mayor capacidad",
+            "cantidad_asistentes": "140",
+            "tipo_jornada": "Media Jornada Tarde (4 hrs)",
+            "horario_evento": "14:00 a 19:00 hrs",
+            "id_salon_asignado": "SALON-COLONIAL"
+        }
+        response = self.client.post("/licitaciones/1058-12-COT24/editar", data=payload, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        item = database.get_licitacion_by_id("1058-12-COT24")
+        self.assertEqual(item["cantidad_asistentes"], 140)
+        self.assertEqual(item["id_salon_asignado"], "SALON-COLONIAL")
+        self.assertEqual(item["tipo_jornada"], "Media Jornada Tarde (4 hrs)")
+        self.assertEqual(item["horario_evento"], "14:00 a 19:00 hrs")
+
     def test_no_emojis_in_crud_flow(self):
         emoji_pattern = re.compile(
             "[\U00010000-\U0010ffff]|"

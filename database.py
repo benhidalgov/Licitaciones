@@ -8,7 +8,8 @@ ALLOWED_COLUMNS = {
     "presupuesto_mandante", "costo_base_hotel", "estado_embudo",
     "validacion_adjuntos", "tiene_anexo4", "tiene_escrituras",
     "tiene_poderes", "tiene_vigencias", "fecha_publicacion",
-    "fecha_cierre", "descripcion_tdr"
+    "fecha_cierre", "descripcion_tdr",
+    "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado"
 }
 
 
@@ -22,6 +23,288 @@ def init_db() -> None:
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+
+        # 1. Tabla de Salones del Hotel
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS salones (
+                id_salon TEXT PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                tipo TEXT NOT NULL,
+                capacidad_maxima INTEGER NOT NULL,
+                horario_disponible TEXT NOT NULL,
+                tarifa_referencial INTEGER NOT NULL DEFAULT 0,
+                ubicacion TEXT NOT NULL DEFAULT '',
+                equipamiento TEXT NOT NULL DEFAULT '',
+                descripcion TEXT NOT NULL DEFAULT ''
+            )
+        """)
+        conn.commit()
+
+        # Migracion de columnas en caso de tabla preexistente
+        cursor.execute("PRAGMA table_info(salones)")
+        existing_salon_cols = {row[1] for row in cursor.fetchall()}
+        if "ubicacion" not in existing_salon_cols:
+            cursor.execute("ALTER TABLE salones ADD COLUMN ubicacion TEXT NOT NULL DEFAULT ''")
+        if "equipamiento" not in existing_salon_cols:
+            cursor.execute("ALTER TABLE salones ADD COLUMN equipamiento TEXT NOT NULL DEFAULT ''")
+        if "descripcion" not in existing_salon_cols:
+            cursor.execute("ALTER TABLE salones ADD COLUMN descripcion TEXT NOT NULL DEFAULT ''")
+        conn.commit()
+
+        cursor.execute("SELECT COUNT(*) FROM salones")
+        count_salones = cursor.fetchone()[0]
+        if count_salones == 0:
+            seed_salones = [
+                (
+                    "SALON-PLENARIO",
+                    "Gran Salon San Francisco (Plenario)",
+                    "Plenario / Conferencia",
+                    300,
+                    "08:00 - 23:00 hrs",
+                    850000,
+                    "Nivel Subterraneo - Centro de Convenciones",
+                    "Pantalla LED 4K, 4 proyectores laser, audio envolvente, cabinas de traduccion simultanea, climatizacion dual, microfonia inalambrica",
+                    "Espacio de maxima capacidad del Hotel Plaza San Francisco, configurable en montaje plenario, auditorio o cena de gala. Ideal para congresos de gran escala y foros gubernamentales."
+                ),
+                (
+                    "SALON-COLONIAL",
+                    "Salon Colonial",
+                    "Banquete / Eventos",
+                    150,
+                    "08:00 - 23:00 hrs",
+                    550000,
+                    "Piso 2 - Sector Oriente",
+                    "Proyector de alta resolucion, telon motorizado, iluminacion dimerizable, audio estereo, tarima desmontable, climatizacion independiente",
+                    "Salon clasico con terminaciones de estilo colonial y amplios ventanales. Especializado en almuerzos corporativos, cenas de clausura y ceremonias de premiacion."
+                ),
+                (
+                    "SALON-ALAMEDA",
+                    "Salon Alameda",
+                    "Seminario / Conferencias",
+                    80,
+                    "08:30 - 20:00 hrs",
+                    380000,
+                    "Piso 1 - Hall Principal",
+                    "Pantalla interactiva 85 pulgadas, streaming para transmision hibrida, microfono de atril y climatizacion automatica",
+                    "Espacio versatil ubicado a pasos del lobby central. Optimo para seminarios medianos, talleres de capacitacion tecnica y conferencias de prensa."
+                ),
+                (
+                    "SALON-LONDRES",
+                    "Salon Londres",
+                    "Reuniones / Taller",
+                    40,
+                    "08:30 - 19:30 hrs",
+                    260000,
+                    "Piso 2 - Ala Ejecutiva",
+                    "Pantalla Smart TV 75 pulgadas, camara para videoconferencia grupal, pizarra magnetica y conexion de red dedicada de alta velocidad",
+                    "Disenado para mesas redondas, sesiones de comite de expertos y jornadas de trabajo colaborativo de grupos de hasta 40 personas."
+                ),
+                (
+                    "SALON-DIRECTORIO",
+                    "Salon Directorio Ejecutivo",
+                    "Directorio / Mesa Ejecutiva",
+                    20,
+                    "08:00 - 20:00 hrs",
+                    190000,
+                    "Piso 3 - Area Presidencial",
+                    "Mesa de directorio ejecutiva en madera noble, pantalla 65 pulgadas para presentaciones, videoconferencia Polycom, coffeebar privado",
+                    "Ambiente exclusivo de alta privacidad para reuniones de directorio, juntas de accionistas y firmas protocolarias solemnes."
+                )
+            ]
+            cursor.executemany("""
+                INSERT INTO salones (
+                    id_salon, nombre, tipo, capacidad_maxima, horario_disponible, tarifa_referencial,
+                    ubicacion, equipamiento, descripcion
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, seed_salones)
+            conn.commit()
+        else:
+            # Actualizar detalles descriptivos en salones existentes
+            cursor.execute("""
+                UPDATE salones SET
+                    ubicacion = 'Nivel Subterraneo - Centro de Convenciones',
+                    equipamiento = 'Pantalla LED 4K, 4 proyectores laser, audio envolvente, cabinas de traduccion simultanea, climatizacion dual, microfonia inalambrica',
+                    descripcion = 'Espacio de maxima capacidad del Hotel Plaza San Francisco, configurable en montaje plenario, auditorio o cena de gala. Ideal para congresos de gran escala y foros gubernamentales.'
+                WHERE id_salon = 'SALON-PLENARIO' AND (ubicacion = '' OR ubicacion IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE salones SET
+                    ubicacion = 'Piso 2 - Sector Oriente',
+                    equipamiento = 'Proyector de alta resolucion, telon motorizado, iluminacion dimerizable, audio estereo, tarima desmontable, climatizacion independiente',
+                    descripcion = 'Salon clasico con terminaciones de estilo colonial y amplios ventanales. Especializado en almuerzos corporativos, cenas de clausura y ceremonias de premiacion.'
+                WHERE id_salon = 'SALON-COLONIAL' AND (ubicacion = '' OR ubicacion IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE salones SET
+                    ubicacion = 'Piso 1 - Hall Principal',
+                    equipamiento = 'Pantalla interactiva 85 pulgadas, streaming para transmision hibrida, microfono de atril y climatizacion automatica',
+                    descripcion = 'Espacio versatil ubicado a pasos del lobby central. Optimo para seminarios medianos, talleres de capacitacion tecnica y conferencias de prensa.'
+                WHERE id_salon = 'SALON-ALAMEDA' AND (ubicacion = '' OR ubicacion IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE salones SET
+                    ubicacion = 'Piso 2 - Ala Ejecutiva',
+                    equipamiento = 'Pantalla Smart TV 75 pulgadas, camara para videoconferencia grupal, pizarra magnetica y conexion de red dedicada de alta velocidad',
+                    descripcion = 'Disenado para mesas redondas, sesiones de comite de expertos y jornadas de trabajo colaborativo de grupos de hasta 40 personas.'
+                WHERE id_salon = 'SALON-LONDRES' AND (ubicacion = '' OR ubicacion IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE salones SET
+                    ubicacion = 'Piso 3 - Area Presidencial',
+                    equipamiento = 'Mesa de directorio ejecutiva en madera noble, pantalla 65 pulgadas para presentaciones, videoconferencia Polycom, coffeebar privado',
+                    descripcion = 'Ambiente exclusivo de alta privacidad para reuniones de directorio, juntas de accionistas y firmas protocolarias solemnes.'
+                WHERE id_salon = 'SALON-DIRECTORIO' AND (ubicacion = '' OR ubicacion IS NULL)
+            """)
+            conn.commit()
+
+        # 2. Tabla de Reservas y Ocupacion de Salones (Agenda / Bookings)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS reservas_salones (
+                id_reserva INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_salon TEXT NOT NULL,
+                cliente_evento TEXT NOT NULL,
+                organismo_o_empresa TEXT NOT NULL,
+                tipo_evento TEXT NOT NULL,
+                fecha_inicio TEXT NOT NULL,
+                fecha_fin TEXT NOT NULL,
+                horario TEXT NOT NULL,
+                asistentes_estimados INTEGER NOT NULL DEFAULT 0,
+                estado_reserva TEXT NOT NULL DEFAULT 'Confirmada',
+                id_licitacion TEXT NOT NULL DEFAULT '',
+                contacto_responsable TEXT NOT NULL DEFAULT '',
+                observaciones TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (id_salon) REFERENCES salones(id_salon)
+            )
+        """)
+        conn.commit()
+
+        cursor.execute("SELECT COUNT(*) FROM reservas_salones")
+        count_reservas = cursor.fetchone()[0]
+        if count_reservas == 0:
+            seed_reservas = [
+                (
+                    "SALON-ALAMEDA",
+                    "Jornada de Planificacion Estrategica de Turismo",
+                    "Subsecretaria de Turismo",
+                    "Licitacion Estatal (Compra Agil)",
+                    "2026-09-20",
+                    "2026-09-20",
+                    "08:30 a 18:30 hrs",
+                    80,
+                    "Confirmada",
+                    "1058-12-COT24",
+                    "Camila Morales - Jefatura de Eventos",
+                    "Bloqueo formal vinculado a orden de compra adjudicada. Servicio de coffee break continuo."
+                ),
+                (
+                    "SALON-PLENARIO",
+                    "Foro Regional de Sostenibilidad Urbana y Cambio Climatico",
+                    "Gobierno Regional Metropolitano de Santiago (GORE)",
+                    "Congreso Gubernamental",
+                    "2026-09-24",
+                    "2026-09-25",
+                    "08:00 a 18:00 hrs",
+                    250,
+                    "Confirmada",
+                    "805-19-LP24",
+                    "Rodrigo Valenzuela - Direccion de Comunicaciones GORE",
+                    "Uso de amplificacion total, cabinas de interpretacion y acreditacion de delegaciones."
+                ),
+                (
+                    "SALON-COLONIAL",
+                    "Encuentro Trimestral de Politica Financiera y Proyecciones",
+                    "Banco Central de Chile",
+                    "Evento Corporativo Institucional",
+                    "2026-09-22",
+                    "2026-09-22",
+                    "09:00 a 14:00 hrs",
+                    130,
+                    "Confirmada",
+                    "",
+                    "Patricia Silva - Departamento de Protocolo",
+                    "Montaje tipo auditorio con servicio de desayuno ejecutivo previo y coctel de cierre."
+                ),
+                (
+                    "SALON-LONDRES",
+                    "Sesion Mensual de Comite de Innovacion Industrial",
+                    "SOFOFA / Federacion Gremial",
+                    "Reunion Gremial Privada",
+                    "2026-09-23",
+                    "2026-09-23",
+                    "14:00 a 19:00 hrs",
+                    35,
+                    "Confirmada",
+                    "",
+                    "Ignacio Larrain - Coordinacion Sectorial",
+                    "Mesa en herradura, videoconferencia internacional y estacion permanente de cafe."
+                ),
+                (
+                    "SALON-DIRECTORIO",
+                    "Junta Extraordinaria de Directorio y Finanzas",
+                    "Hotel Plaza San Francisco (Directorio General)",
+                    "Bloqueo Interno / Sesion de Directorio",
+                    "2026-09-26",
+                    "2026-09-26",
+                    "08:30 a 13:30 hrs",
+                    18,
+                    "Confirmada",
+                    "",
+                    "Gerencia de Administracion y Finanzas",
+                    "Revision de presupuestos semestrales y politicas comerciales de licitaciones publicas."
+                ),
+                (
+                    "SALON-PLENARIO",
+                    "Mantencion Preventiva de Iluminacion Escenica y Climatizacion",
+                    "Servicios de Infraestructura Hotelera",
+                    "Bloqueo de Mantenimiento Operativo",
+                    "2026-09-29",
+                    "2026-09-30",
+                    "07:00 a 19:00 hrs",
+                    0,
+                    "Bloqueo Interno",
+                    "",
+                    "Jefatura Tecnica de Mantenimiento",
+                    "Calibracion tecnica de proyectores laser y revision de ductos de climatizacion central."
+                ),
+                (
+                    "SALON-COLONIAL",
+                    "Seminario de Gestion Presupuestaria del Sector Publico",
+                    "Direccion de Presupuestos (DIPRES)",
+                    "Licitacion Estatal (Compra Agil)",
+                    "2026-10-05",
+                    "2026-10-05",
+                    "08:30 a 13:00 hrs",
+                    120,
+                    "Tentativa",
+                    "1840-22-COT24",
+                    "Marcelo Fuentes - Adquisiciones DIPRES",
+                    "Pre-reserva en espera de adjudicacion final en portal Mercado Publico."
+                ),
+                (
+                    "SALON-ALAMEDA",
+                    "Conferencia Anual de Rectores Universitarios",
+                    "Consejo de Rectores de las Universidades Chilenas (CRUCH)",
+                    "Congreso Academico",
+                    "2026-10-10",
+                    "2026-10-11",
+                    "08:30 a 19:00 hrs",
+                    60,
+                    "Confirmada",
+                    "512-10-LE24",
+                    "Secretaria General CRUCH",
+                    "Jornada doble con uso continuo de pantalla interactiva y servicio gastronomico."
+                )
+            ]
+            cursor.executemany("""
+                INSERT INTO reservas_salones (
+                    id_salon, cliente_evento, organismo_o_empresa, tipo_evento,
+                    fecha_inicio, fecha_fin, horario, asistentes_estimados,
+                    estado_reserva, id_licitacion, contacto_responsable, observaciones
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, seed_reservas)
+            conn.commit()
+
+        # 2. Tabla de Licitaciones
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS licitaciones (
                 id_licitacion TEXT PRIMARY KEY,
@@ -40,9 +323,26 @@ def init_db() -> None:
                 tiene_vigencias INTEGER NOT NULL DEFAULT 1,
                 fecha_publicacion TEXT NOT NULL,
                 fecha_cierre TEXT NOT NULL,
-                descripcion_tdr TEXT
+                descripcion_tdr TEXT,
+                cantidad_asistentes INTEGER NOT NULL DEFAULT 0,
+                tipo_jornada TEXT NOT NULL DEFAULT '',
+                horario_evento TEXT NOT NULL DEFAULT '',
+                id_salon_asignado TEXT NOT NULL DEFAULT ''
             )
         """)
+        conn.commit()
+
+        # Migracion de columnas en caso de tabla preexistente
+        cursor.execute("PRAGMA table_info(licitaciones)")
+        existing_cols = {row[1] for row in cursor.fetchall()}
+        if "cantidad_asistentes" not in existing_cols:
+            cursor.execute("ALTER TABLE licitaciones ADD COLUMN cantidad_asistentes INTEGER NOT NULL DEFAULT 0")
+        if "tipo_jornada" not in existing_cols:
+            cursor.execute("ALTER TABLE licitaciones ADD COLUMN tipo_jornada TEXT NOT NULL DEFAULT ''")
+        if "horario_evento" not in existing_cols:
+            cursor.execute("ALTER TABLE licitaciones ADD COLUMN horario_evento TEXT NOT NULL DEFAULT ''")
+        if "id_salon_asignado" not in existing_cols:
+            cursor.execute("ALTER TABLE licitaciones ADD COLUMN id_salon_asignado TEXT NOT NULL DEFAULT ''")
         conn.commit()
 
         cursor.execute("SELECT COUNT(*) FROM licitaciones")
@@ -62,7 +362,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-09-12", "2026-09-20",
-                    "Arriendo de salon plenario para 80 asistentes con servicio de coctel y coffee break continuo."
+                    "Arriendo de salon plenario para 80 asistentes con servicio de coctel y coffee break continuo.",
+                    80,
+                    "Jornada Completa (8 hrs)",
+                    "08:30 a 18:30 hrs",
+                    "SALON-ALAMEDA"
                 ),
                 (
                     "723-4-LP24",
@@ -77,7 +381,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-09-08", "2026-09-28",
-                    "Alojamiento single superior para 35 expertos extranjeros durante 4 noches con desayuno y cena ejecutiva."
+                    "Alojamiento single superior para 35 expertos extranjeros durante 4 noches con desayuno y cena ejecutiva.",
+                    35,
+                    "Jornada Completa (8 hrs)",
+                    "09:00 a 18:00 hrs",
+                    "SALON-LONDRES"
                 ),
                 (
                     "1840-22-COT24",
@@ -92,7 +400,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-09-14", "2026-09-21",
-                    "Servicio de alimentacion para 120 personas. El presupuesto mandante queda por debajo del costo base hotel."
+                    "Servicio de alimentacion para 120 personas. El presupuesto mandante queda por debajo del costo base hotel.",
+                    120,
+                    "Media Jornada Manana (4 hrs)",
+                    "08:30 a 13:00 hrs",
+                    "SALON-COLONIAL"
                 ),
                 (
                     "512-10-LE24",
@@ -107,7 +419,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-08-25", "2026-09-15",
-                    "Bloqueo de 40 habitaciones ejecutivas y uso de salon de convenciones durante 2 jornadas."
+                    "Bloqueo de 40 habitaciones ejecutivas y uso de salon de convenciones durante 2 jornadas.",
+                    60,
+                    "Jornada Completa (8 hrs)",
+                    "08:30 a 19:00 hrs",
+                    "SALON-ALAMEDA"
                 ),
                 (
                     "930-15-LP23",
@@ -122,7 +438,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-08-01", "2026-08-20",
-                    "Cena de premiacion anual en salon principal para 150 colaboradores. Adjudicado con exito."
+                    "Cena de premiacion anual en salon principal para 150 colaboradores. Adjudicado con exito.",
+                    150,
+                    "Nocturno / Cena",
+                    "19:30 a 23:30 hrs",
+                    "SALON-COLONIAL"
                 ),
                 (
                     "440-8-COT24",
@@ -137,7 +457,11 @@ def init_db() -> None:
                     "Valida",
                     0, 1, 1, 1,
                     "2026-09-13", "2026-09-18",
-                    "Hospedaje por turnos rotativos. Nota: Falta Anexo 4 de Pacto de Integridad en bases iniciales."
+                    "Hospedaje por turnos rotativos. Nota: Falta Anexo 4 de Pacto de Integridad en bases iniciales.",
+                    20,
+                    "Horario Especial",
+                    "Turnos rotativos 24 hrs",
+                    ""
                 ),
                 (
                     "805-19-LP24",
@@ -152,7 +476,11 @@ def init_db() -> None:
                     "Error ID / Discrepancia",
                     1, 1, 1, 1,
                     "2026-09-11", "2026-09-24",
-                    "Alerta Efecto ID: El ID de la ficha resumen no coincide con el correlativo de las bases adjuntas."
+                    "Alerta Efecto ID: El ID de la ficha resumen no coincide con el correlativo de las bases adjuntas.",
+                    250,
+                    "Jornada Completa (8 hrs)",
+                    "08:00 a 18:00 hrs",
+                    "SALON-PLENARIO"
                 ),
                 (
                     "310-7-COT24",
@@ -167,7 +495,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-09-02", "2026-09-09",
-                    "Descartada por conflicto de disponibilidad de salones para la fecha requerida por el mandante."
+                    "Descartada por conflicto de disponibilidad de salones para la fecha requerida por el mandante.",
+                    70,
+                    "Media Jornada Tarde (4 hrs)",
+                    "15:00 a 19:30 hrs",
+                    "SALON-ALAMEDA"
                 ),
                 (
                     "620-14-LE24",
@@ -182,7 +514,11 @@ def init_db() -> None:
                     "Valida",
                     1, 1, 1, 1,
                     "2026-09-15", "2026-10-02",
-                    "Hospedaje para expositores internacionales y arriendo de salon plenario con cabinas de traduccion simultanea."
+                    "Hospedaje para expositores internacionales y arriendo de salon plenario con cabinas de traduccion simultanea.",
+                    180,
+                    "Jornada Completa (8 hrs)",
+                    "08:30 a 18:30 hrs",
+                    "SALON-PLENARIO"
                 )
             ]
             cursor.executemany("""
@@ -190,10 +526,178 @@ def init_db() -> None:
                     id_licitacion, titulo, organismo, categoria, modalidad, region,
                     presupuesto_mandante, costo_base_hotel, estado_embudo, validacion_adjuntos,
                     tiene_anexo4, tiene_escrituras, tiene_poderes, tiene_vigencias,
-                    fecha_publicacion, fecha_cierre, descripcion_tdr
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    fecha_publicacion, fecha_cierre, descripcion_tdr,
+                    cantidad_asistentes, tipo_jornada, horario_evento, id_salon_asignado
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, seed_data)
             conn.commit()
+        else:
+            # Enriquecer registros existentes que no tengan asignacion de salon
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 80, id_salon_asignado = 'SALON-ALAMEDA'
+                WHERE id_licitacion = '1058-12-COT24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 35, id_salon_asignado = 'SALON-LONDRES'
+                WHERE id_licitacion = '723-4-LP24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 120, id_salon_asignado = 'SALON-COLONIAL'
+                WHERE id_licitacion = '1840-22-COT24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 60, id_salon_asignado = 'SALON-ALAMEDA'
+                WHERE id_licitacion = '512-10-LE24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 150, id_salon_asignado = 'SALON-COLONIAL'
+                WHERE id_licitacion = '930-15-LP23' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 250, id_salon_asignado = 'SALON-PLENARIO'
+                WHERE id_licitacion = '805-19-LP24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 70, id_salon_asignado = 'SALON-ALAMEDA'
+                WHERE id_licitacion = '310-7-COT24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            cursor.execute("""
+                UPDATE licitaciones SET cantidad_asistentes = 180, id_salon_asignado = 'SALON-PLENARIO'
+                WHERE id_licitacion = '620-14-LE24' AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
+            """)
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def get_all_salones() -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT * FROM salones ORDER BY capacidad_maxima ASC").fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_salon_by_id(id_salon: str) -> Optional[Dict[str, Any]]:
+    if not id_salon:
+        return None
+    conn = get_db_connection()
+    try:
+        row = conn.execute("SELECT * FROM salones WHERE id_salon = ?", (id_salon,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_salones_aptos(capacidad_minima: int) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM salones WHERE capacidad_maxima >= ? ORDER BY capacidad_maxima ASC",
+            (capacidad_minima,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_all_reservas(
+    id_salon: Optional[str] = None,
+    fecha_desde: Optional[str] = None,
+    q: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        query = """
+            SELECT r.*,
+                   s.nombre AS nombre_salon,
+                   s.tipo AS tipo_salon,
+                   s.capacidad_maxima AS capacidad_salon,
+                   s.horario_disponible AS horario_salon,
+                   s.ubicacion AS ubicacion_salon
+            FROM reservas_salones r
+            LEFT JOIN salones s ON r.id_salon = s.id_salon
+            WHERE 1=1
+        """
+        params: List[Any] = []
+        if id_salon:
+            query += " AND r.id_salon = ?"
+            params.append(id_salon)
+        if fecha_desde:
+            query += " AND r.fecha_fin >= ?"
+            params.append(fecha_desde)
+        if q:
+            query += " AND (r.cliente_evento LIKE ? OR r.organismo_o_empresa LIKE ? OR r.tipo_evento LIKE ? OR r.id_licitacion LIKE ?)"
+            term = f"%{q}%"
+            params.extend([term, term, term, term])
+        query += " ORDER BY r.fecha_inicio ASC, r.id_reserva ASC"
+        rows = conn.execute(query, params).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_reservas_by_salon(id_salon: str) -> List[Dict[str, Any]]:
+    if not id_salon:
+        return []
+    return get_all_reservas(id_salon=id_salon)
+
+
+def get_conflictos_reserva(id_salon: str, fecha_inicio: str, fecha_fin: str) -> List[Dict[str, Any]]:
+    if not id_salon or not fecha_inicio or not fecha_fin:
+        return []
+    conn = get_db_connection()
+    try:
+        query = """
+            SELECT r.*,
+                   s.nombre AS nombre_salon
+            FROM reservas_salones r
+            LEFT JOIN salones s ON r.id_salon = s.id_salon
+            WHERE r.id_salon = ?
+              AND r.fecha_inicio <= ?
+              AND r.fecha_fin >= ?
+            ORDER BY r.fecha_inicio ASC
+        """
+        rows = conn.execute(query, (id_salon, fecha_fin, fecha_inicio)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_salon_detalle(id_salon: str) -> Optional[Dict[str, Any]]:
+    salon = get_salon_by_id(id_salon)
+    if not salon:
+        return None
+    reservas = get_reservas_by_salon(id_salon)
+    salon_dict = dict(salon)
+    salon_dict["reservas"] = reservas
+    salon_dict["total_reservas"] = len(reservas)
+    return salon_dict
+
+
+def create_reserva(data: Dict[str, Any]) -> int:
+    conn = get_db_connection()
+    try:
+        payload = dict(data)
+        payload.setdefault("asistentes_estimados", 0)
+        payload.setdefault("estado_reserva", "Confirmada")
+        payload.setdefault("id_licitacion", "")
+        payload.setdefault("contacto_responsable", "")
+        payload.setdefault("observaciones", "")
+        cursor = conn.execute("""
+            INSERT INTO reservas_salones (
+                id_salon, cliente_evento, organismo_o_empresa, tipo_evento,
+                fecha_inicio, fecha_fin, horario, asistentes_estimados,
+                estado_reserva, id_licitacion, contacto_responsable, observaciones
+            ) VALUES (
+                :id_salon, :cliente_evento, :organismo_o_empresa, :tipo_evento,
+                :fecha_inicio, :fecha_fin, :horario, :asistentes_estimados,
+                :estado_reserva, :id_licitacion, :contacto_responsable, :observaciones
+            )
+        """, payload)
+        conn.commit()
+        return cursor.lastrowid
     finally:
         conn.close()
 
@@ -206,22 +710,31 @@ def get_all_licitaciones(
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
-        query = "SELECT * FROM licitaciones WHERE 1=1"
+        query = """
+            SELECT l.*,
+                   s.nombre AS nombre_salon,
+                   s.capacidad_maxima AS capacidad_salon,
+                   s.tipo AS tipo_salon,
+                   s.horario_disponible AS horario_salon
+            FROM licitaciones l
+            LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
+            WHERE 1=1
+        """
         params: List[Any] = []
         if categoria:
-            query += " AND categoria = ?"
+            query += " AND l.categoria = ?"
             params.append(categoria)
         if modalidad:
-            query += " AND modalidad = ?"
+            query += " AND l.modalidad = ?"
             params.append(modalidad)
         if estado:
-            query += " AND estado_embudo = ?"
+            query += " AND l.estado_embudo = ?"
             params.append(estado)
         if q:
-            query += " AND (id_licitacion LIKE ? OR titulo LIKE ? OR organismo LIKE ?)"
+            query += " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ?)"
             term = f"%{q}%"
             params.extend([term, term, term])
-        query += " ORDER BY fecha_cierre ASC"
+        query += " ORDER BY l.fecha_cierre ASC"
         rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -231,10 +744,17 @@ def get_all_licitaciones(
 def get_licitacion_by_id(id_licitacion: str) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
     try:
-        row = conn.execute(
-            "SELECT * FROM licitaciones WHERE id_licitacion = ?",
-            (id_licitacion,)
-        ).fetchone()
+        query = """
+            SELECT l.*,
+                   s.nombre AS nombre_salon,
+                   s.capacidad_maxima AS capacidad_salon,
+                   s.tipo AS tipo_salon,
+                   s.horario_disponible AS horario_salon
+            FROM licitaciones l
+            LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
+            WHERE l.id_licitacion = ?
+        """
+        row = conn.execute(query, (id_licitacion,)).fetchone()
         return dict(row) if row else None
     finally:
         conn.close()
@@ -243,19 +763,26 @@ def get_licitacion_by_id(id_licitacion: str) -> Optional[Dict[str, Any]]:
 def create_licitacion(data: Dict[str, Any]) -> str:
     conn = get_db_connection()
     try:
+        payload = dict(data)
+        payload.setdefault("cantidad_asistentes", 0)
+        payload.setdefault("tipo_jornada", "")
+        payload.setdefault("horario_evento", "")
+        payload.setdefault("id_salon_asignado", "")
         conn.execute("""
             INSERT INTO licitaciones (
                 id_licitacion, titulo, organismo, categoria, modalidad, region,
                 presupuesto_mandante, costo_base_hotel, estado_embudo, validacion_adjuntos,
                 tiene_anexo4, tiene_escrituras, tiene_poderes, tiene_vigencias,
-                fecha_publicacion, fecha_cierre, descripcion_tdr
+                fecha_publicacion, fecha_cierre, descripcion_tdr,
+                cantidad_asistentes, tipo_jornada, horario_evento, id_salon_asignado
             ) VALUES (
                 :id_licitacion, :titulo, :organismo, :categoria, :modalidad, :region,
                 :presupuesto_mandante, :costo_base_hotel, :estado_embudo, :validacion_adjuntos,
                 :tiene_anexo4, :tiene_escrituras, :tiene_poderes, :tiene_vigencias,
-                :fecha_publicacion, :fecha_cierre, :descripcion_tdr
+                :fecha_publicacion, :fecha_cierre, :descripcion_tdr,
+                :cantidad_asistentes, :tipo_jornada, :horario_evento, :id_salon_asignado
             )
-        """, data)
+        """, payload)
         conn.commit()
         return str(data["id_licitacion"])
     finally:

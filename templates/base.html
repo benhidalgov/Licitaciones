@@ -18,8 +18,9 @@
                 </div>
                 <div class="flex items-center space-x-6">
                     {% if session.get('user') %}
-                    <nav class="hidden md:flex space-x-4">
+                    <nav class="hidden md:flex space-x-2">
                         <a href="{{ url_for('dashboard') }}" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-sm font-medium">Licitaciones</a>
+                        <a href="{{ url_for('salones_catalogo') }}" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-sm font-medium">Salones y Agenda</a>
                     </nav>
                     <div class="flex items-center space-x-4 pl-4 border-l border-slate-700">
                         <span class="text-xs text-slate-300 font-medium">Usuario: <strong class="text-white">{{ session.get('user') }}</strong></span>

@@ -188,6 +188,23 @@
                             <div class="text-[11px] text-slate-400">
                                 {{ lic.region }}
                             </div>
+                            {% if lic.cantidad_asistentes and lic.cantidad_asistentes > 0 %}
+                            <div class="mt-1 flex flex-wrap items-center gap-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                    Aforo: {{ lic.cantidad_asistentes }} pers.
+                                </span>
+                                {% if lic.nombre_salon %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    {{ lic.nombre_salon }}
+                                </span>
+                                {% endif %}
+                                {% if lic.tipo_jornada %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
+                                    {{ lic.tipo_jornada }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </td>
 
                         <!-- Categoria y Modalidad -->

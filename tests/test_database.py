@@ -197,6 +197,90 @@ class TestDatabase(unittest.TestCase):
     def test_update_empty_data_returns_false(self):
         self.assertFalse(database.update_licitacion("1058-12-COT24", {}))
 
+    def test_salones_catalog_loaded(self):
+        salones = database.get_all_salones()
+        self.assertGreaterEqual(len(salones), 5)
+        ids = {s["id_salon"] for s in salones}
+        self.assertIn("SALON-PLENARIO", ids)
+        self.assertIn("SALON-COLONIAL", ids)
+        self.assertIn("SALON-ALAMEDA", ids)
+        self.assertIn("SALON-DIRECTORIO", ids)
+
+        # Verificar campos obligatorios del catalogo
+        for s in salones:
+            self.assertTrue(s["nombre"])
+            self.assertTrue(s["tipo"])
+            self.assertGreater(s["capacidad_maxima"], 0)
+            self.assertTrue(s["horario_disponible"])
+
+    def test_get_salon_by_id(self):
+        plenario = database.get_salon_by_id("SALON-PLENARIO")
+        self.assertIsNotNone(plenario)
+        self.assertEqual(plenario["capacidad_maxima"], 300)
+        self.assertEqual(plenario["nombre"], "Gran Salon San Francisco (Plenario)")
+
+        inexistente = database.get_salon_by_id("SALON-INEXISTENTE")
+        self.assertIsNone(inexistente)
+
+        vacio = database.get_salon_by_id("")
+        self.assertIsNone(vacio)
+
+    def test_get_salones_aptos(self):
+        aptos_50 = database.get_salones_aptos(50)
+        self.assertTrue(all(s["capacidad_maxima"] >= 50 for s in aptos_50))
+
+        aptos_200 = database.get_salones_aptos(200)
+        self.assertEqual(len(aptos_200), 1)
+        self.assertEqual(aptos_200[0]["id_salon"], "SALON-PLENARIO")
+
+        aptos_500 = database.get_salones_aptos(500)
+        self.assertEqual(len(aptos_500), 0)
+
+    def test_create_and_update_licitacion_with_capacity_and_salon(self):
+        data = {
+            "id_licitacion": "TEST-CAPACIDAD-01",
+            "titulo": "Seminario Regional de Capacitacion",
+            "organismo": "Ministerio de Economia",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana (Santiago)",
+            "presupuesto_mandante": 5000000,
+            "costo_base_hotel": 3800000,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Valida",
+            "tiene_anexo4": 1,
+            "tiene_escrituras": 1,
+            "tiene_poderes": 1,
+            "tiene_vigencias": 1,
+            "fecha_publicacion": "2026-10-01",
+            "fecha_cierre": "2026-10-15",
+            "descripcion_tdr": "Uso de salon plenario",
+            "cantidad_asistentes": 120,
+            "tipo_jornada": "Media Jornada Manana (4 hrs)",
+            "horario_evento": "08:30 a 13:00 hrs",
+            "id_salon_asignado": "SALON-COLONIAL"
+        }
+        database.create_licitacion(data)
+
+        creada = database.get_licitacion_by_id("TEST-CAPACIDAD-01")
+        self.assertIsNotNone(creada)
+        self.assertEqual(creada["cantidad_asistentes"], 120)
+        self.assertEqual(creada["tipo_jornada"], "Media Jornada Manana (4 hrs)")
+        self.assertEqual(creada["horario_evento"], "08:30 a 13:00 hrs")
+        self.assertEqual(creada["id_salon_asignado"], "SALON-COLONIAL")
+        self.assertEqual(creada["nombre_salon"], "Salon Colonial")
+        self.assertEqual(creada["capacidad_salon"], 150)
+
+        # Actualizar asignacion de salon y aforo
+        database.update_licitacion("TEST-CAPACIDAD-01", {
+            "cantidad_asistentes": 200,
+            "id_salon_asignado": "SALON-PLENARIO"
+        })
+        actualizada = database.get_licitacion_by_id("TEST-CAPACIDAD-01")
+        self.assertEqual(actualizada["cantidad_asistentes"], 200)
+        self.assertEqual(actualizada["id_salon_asignado"], "SALON-PLENARIO")
+        self.assertEqual(actualizada["nombre_salon"], "Gran Salon San Francisco (Plenario)")
+
 
 if __name__ == "__main__":
     unittest.main()

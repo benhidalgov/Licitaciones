@@ -165,6 +165,59 @@ class TestDetail(unittest.TestCase):
         self.assertIn("Compra Agil", html)
         self.assertIn("6.900.000 CLP", html)
 
+    def test_detail_capacity_panel_adequate(self):
+        # 1058-12-COT24 has 80 personas, SALON-ALAMEDA (capacidad: 80)
+        response = self.client.get("/licitaciones/1058-12-COT24")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+
+        self.assertIn("Dimensionamiento Operativo, Aforo y Horarios de Salones", html)
+        self.assertIn("80 personas", html)
+        self.assertIn("Salon Alameda", html)
+        self.assertIn("Capacidad Adecuada", html)
+
+    def test_detail_capacity_exceeded_alert(self):
+        # Crear licitacion con sobrecupo (100 asistentes en salon de 40)
+        database.create_licitacion({
+            "id_licitacion": "TEST-SOBRECUPO-01",
+            "titulo": "Encuentro Regional Aforo Excedido",
+            "organismo": "Ministerio de Energia",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana (Santiago)",
+            "presupuesto_mandante": 6000000,
+            "costo_base_hotel": 4000000,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Valida",
+            "tiene_anexo4": 1,
+            "tiene_escrituras": 1,
+            "tiene_poderes": 1,
+            "tiene_vigencias": 1,
+            "fecha_publicacion": "2026-10-01",
+            "fecha_cierre": "2026-10-15",
+            "descripcion_tdr": "Taller",
+            "cantidad_asistentes": 100,
+            "tipo_jornada": "Jornada Completa (8 hrs)",
+            "horario_evento": "08:30 a 18:30 hrs",
+            "id_salon_asignado": "SALON-LONDRES"  # Capacidad: 40
+        })
+
+        response = self.client.get("/licitaciones/TEST-SOBRECUPO-01")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+
+        self.assertIn("Alerta de Inviabilidad Operativa: Aforo Excedido", html)
+        self.assertIn("sobrecupo de", html)
+        self.assertIn("60 personas", html)
+
+    def test_detail_capacity_unassigned_salon(self):
+        # 440-8-COT24 no tiene salon asignado inicialmente
+        response = self.client.get("/licitaciones/440-8-COT24")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+
+        self.assertIn("Salon Pendiente de Asignacion", html)
+
     def test_detail_no_emojis(self):
         emoji_pattern = re.compile(
             "[\U00010000-\U0010ffff]|"
