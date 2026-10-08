@@ -61,6 +61,31 @@ class TestDashboard(unittest.TestCase):
         # Should NOT include Banqueteria / Eventos tender
         self.assertNotIn("1058-12-COT24", html)
 
+    def test_filtro_miles(self):
+        env = flask_app.app.jinja_env
+        self.assertEqual(env.filters["miles"](1234567), "1.234.567")
+        self.assertEqual(env.filters["miles"](46), "46")
+        self.assertEqual(env.filters["miles"]("no-numero"), "no-numero")
+
+    def test_tope_compra_agil_editable_en_tablero(self):
+        response = self.client.post(
+            "/ajustes/tope_compra_agil",
+            data={"tope_compra_agil": "7.500.000"},
+            follow_redirects=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(database.get_tope_compra_agil(), 7500000)
+        self.assertIn("7.500.000", response.data.decode("utf-8"))
+
+        # Valor invalido no altera el tope guardado
+        bad = self.client.post(
+            "/ajustes/tope_compra_agil",
+            data={"tope_compra_agil": "no-numero"},
+            follow_redirects=True
+        )
+        self.assertEqual(database.get_tope_compra_agil(), 7500000)
+        self.assertIn("numero entero mayor a cero", bad.data.decode("utf-8"))
+
     def test_dashboard_filter_modalidad(self):
         response = self.client.get("/?modalidad=Compra+Agil")
         self.assertEqual(response.status_code, 200)

@@ -111,9 +111,8 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         id="cliente_evento"
                         name="cliente_evento"
                         value="{{ reserva.cliente_evento or '' }}"
-                        placeholder="Ejemplo: Jornada de Planificacion Estrategica Anual"
                         required
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-neutral-400 mt-1">Denominacion descriptiva del evento corporativo o licitacion.</p>
                 </div>
@@ -127,9 +126,8 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         id="organismo_o_empresa"
                         name="organismo_o_empresa"
                         value="{{ reserva.organismo_o_empresa or '' }}"
-                        placeholder="Ejemplo: Subsecretaria de Turismo"
                         required
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-neutral-400 mt-1">Institucion mandante o cliente contratante.</p>
                 </div>
@@ -143,8 +141,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         id="tipo_evento"
                         name="tipo_evento"
                         value="{{ reserva.tipo_evento or 'Seminario / Reunion' }}"
-                        placeholder="Seminario, Banquete, Conferencia, Mesa de Trabajo"
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-neutral-400 mt-1">Modalidad de uso y distribucion del montaje.</p>
                 </div>
@@ -198,8 +195,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         id="horario"
                         name="horario"
                         value="{{ reserva.horario or '08:30 a 18:30 hrs' }}"
-                        placeholder="Ejemplo: 08:30 a 18:30 hrs"
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-neutral-400 mt-1">Franja operativa diaria de prestacion del servicio.</p>
                 </div>
@@ -215,7 +211,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         value="{{ reserva.asistentes_estimados or 0 }}"
                         min="0"
                         step="1"
-                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                        class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-neutral-400 mt-1">Cantidad aproximada de participantes.</p>
                 </div>
@@ -263,8 +259,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         id="contacto_responsable"
                         name="contacto_responsable"
                         value="{{ reserva.contacto_responsable or '' }}"
-                        placeholder="Nombre, cargo o email del contacto"
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-neutral-400 mt-1">Persona de enlace tecnico u organizador del evento.</p>
                 </div>
@@ -277,8 +272,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         id="observaciones"
                         name="observaciones"
                         rows="3"
-                        placeholder="Especificaciones tecnicas de montaje, requerimientos de alimentacion, coffee break o instrucciones especificas..."
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors leading-relaxed"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors leading-relaxed"
                     >{{ reserva.observaciones or '' }}</textarea>
                     <p class="text-[11px] text-neutral-400 mt-1">Notas de apoyo para el personal de operaciones y banqueteria.</p>
                 </div>

@@ -128,6 +128,15 @@ def format_clp(value):
 app.jinja_env.globals["format_clp"] = format_clp
 
 
+@app.template_filter("miles")
+def format_miles(value):
+    """Separador de miles estilo chileno: 1234567 -> 1.234.567"""
+    try:
+        return f"{int(value):,}".replace(",", ".")
+    except (ValueError, TypeError):
+        return str(value)
+
+
 @app.route("/")
 @app.route("/licitaciones")
 @login_required
@@ -145,6 +154,7 @@ def dashboard():
     )
     metrics = database.get_funnel_metrics()
     ticket_configurado = bool(mercado_publico.get_ticket())
+    tope_compra_agil = database.get_tope_compra_agil()
 
     return render_template(
         "dashboard.html",
@@ -155,6 +165,7 @@ def dashboard():
         estado=estado or "",
         q=q or "",
         ticket_configurado=ticket_configurado,
+        tope_compra_agil=tope_compra_agil,
         user=session.get("user")
     )
 
@@ -210,6 +221,7 @@ def licitacion_detalle(id_licitacion):
         salones_compatibles=salones_compatibles,
         conflictos_agenda=conflictos_agenda,
         salones=salones,
+        tope_compra_agil=database.get_tope_compra_agil(),
         valid_estados=VALID_ESTADOS,
         user=session.get("user")
     )
@@ -241,6 +253,24 @@ def cambiar_estado_licitacion(id_licitacion):
     database.update_licitacion(id_licitacion, {"estado_embudo": nuevo_estado})
     flash(f"Estado en el embudo comercial actualizado exitosamente a '{nuevo_estado}' para la licitacion {id_licitacion}.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+
+@app.route("/ajustes/tope_compra_agil", methods=["POST"])
+@login_required
+def guardar_tope_compra_agil():
+    # Acepta formato chileno ("6.900.000") y numerico plano ("6900000")
+    bruto = request.form.get("tope_compra_agil", "")
+    digitos = bruto.replace(".", "").replace("$", "").replace(" ", "")
+    try:
+        valor = int(digitos)
+    except ValueError:
+        valor = 0
+    if valor <= 0:
+        flash("El tope de Compra Agil debe ser un numero entero mayor a cero.", "error")
+    else:
+        database.set_tope_compra_agil(valor)
+        flash(f"Tope de Compra Agil actualizado a {format_clp(valor)}.", "success")
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/licitaciones/sincronizar", methods=["GET", "POST"])

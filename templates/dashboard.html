@@ -42,7 +42,7 @@
                 Metricas del Embudo Comercial
             </h2>
             <span class="text-xs text-[#787774]">
-                Total Oportunidades: <strong class="font-mono text-[#111111]">{{ metrics.Total }}</strong>
+                Total Oportunidades: <strong class="font-mono text-[#111111]">{{ metrics.Total | miles }}</strong>
             </span>
         </div>
 
@@ -55,10 +55,24 @@
                 </div>
                 <div class="my-4">
                     <div class="text-xs font-medium text-[#787774] uppercase tracking-wide">Compra Agil</div>
-                    <div class="text-3xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Compra_Agil }}</div>
+                    <div class="text-3xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Compra_Agil | miles }}</div>
                 </div>
-                <div class="text-[11px] text-[#787774] pt-2 border-t border-[#EAEAEA]">
-                    Tope 6.900.000 CLP (Adquisicion simplificada sin comision)
+                <div class="text-[11px] text-[#787774] pt-2 border-t border-[#EAEAEA] space-y-2">
+                    <div>(Adquisicion simplificada sin comision)</div>
+                    <form id="tope-compra-agil" method="POST" action="{{ url_for('guardar_tope_compra_agil') }}" class="flex items-center gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <label for="tope_compra_agil" class="text-[10px] uppercase tracking-wide">Tope CLP:</label>
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            pattern="[0-9.]+"
+                            id="tope_compra_agil"
+                            name="tope_compra_agil"
+                            value="{{ tope_compra_agil | miles }}"
+                            class="w-32 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
+                        >
+                        <button type="submit" class="btn-secondary text-xs px-3 py-1">Guardar</button>
+                    </form>
                 </div>
             </div>
 
@@ -70,7 +84,7 @@
                 </div>
                 <div class="my-3">
                     <div class="text-xs font-medium text-[#787774]">Total Identificadas</div>
-                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Identificada }}</div>
+                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Identificada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#787774]">Deteccion inicial</div>
             </div>
@@ -83,7 +97,7 @@
                 </div>
                 <div class="my-3">
                     <div class="text-xs font-medium text-[#787774]">Calificadas</div>
-                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Calificada }}</div>
+                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Calificada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#787774]">TDR y aforo viable</div>
             </div>
@@ -96,7 +110,7 @@
                 </div>
                 <div class="my-3">
                     <div class="text-xs font-medium text-[#787774]">Participadas</div>
-                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Participada }}</div>
+                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Participada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#787774]">Oferta enviada</div>
             </div>
@@ -109,11 +123,11 @@
                 </div>
                 <div class="my-3">
                     <div class="text-xs font-medium text-[#346538]">Adjudicadas</div>
-                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Adjudicada }}</div>
+                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Adjudicada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#787774] flex items-center justify-between pt-1 border-t border-[#EAEAEA]">
                     <span>Descartadas:</span>
-                    <span class="font-mono font-semibold text-[#111111]">{{ metrics.Descartada }}</span>
+                    <span class="font-mono font-semibold text-[#111111]">{{ metrics.Descartada | miles }}</span>
                 </div>
             </div>
         </div>
@@ -162,7 +176,7 @@
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
                     >
                         <option value="">Todas las Modalidades</option>
-                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope 6.9M CLP)</option>
+                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope {{ tope_compra_agil | clp }})</option>
                         <option value="Licitacion Publica" {% if modalidad == 'Licitacion Publica' %}selected{% endif %}>Licitacion Publica</option>
                     </select>
                 </div>
@@ -188,7 +202,7 @@
 
             <div class="flex items-center justify-between pt-3 border-t border-[#EAEAEA]">
                 <div class="text-xs text-[#787774]">
-                    Resultados encontrados: <strong class="font-mono text-[#111111]">{{ licitaciones|length }}</strong>
+                    Resultados encontrados: <strong class="font-mono text-[#111111]">{{ licitaciones|length | miles }}</strong>
                 </div>
                 <div class="flex items-center space-x-2">
                     {% if categoria or modalidad or estado or q %}
@@ -259,7 +273,7 @@
                             {% if lic.cantidad_asistentes and lic.cantidad_asistentes > 0 %}
                             <div class="mt-1 flex flex-wrap items-center gap-1">
                                 <span class="badge-spot badge-spot-neutral">
-                                    Aforo: {{ lic.cantidad_asistentes }} pers.
+                                    Aforo: {{ lic.cantidad_asistentes | miles }} pers.
                                 </span>
                                 {% if lic.nombre_salon %}
                                 <span class="badge-spot badge-spot-blue">

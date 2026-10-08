@@ -26,6 +26,15 @@ def init_db() -> None:
     try:
         cursor = conn.cursor()
 
+        # Ajustes de negocio editables desde la interfaz (tope de Compra Agil, etc.)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ajustes (
+                clave TEXT PRIMARY KEY,
+                valor INTEGER NOT NULL
+            )
+        """)
+        conn.commit()
+
         # 1. Tabla de Salones del Hotel
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS salones (
@@ -838,5 +847,31 @@ def get_funnel_metrics() -> Dict[str, int]:
             metrics[r["estado_embudo"]] = r["total"]
             metrics["Total"] += r["total"]
         return metrics
+    finally:
+        conn.close()
+
+
+TOPE_COMPRA_AGIL_DEFECTO = 6900000
+
+
+def get_tope_compra_agil() -> int:
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT valor FROM ajustes WHERE clave = 'tope_compra_agil'"
+        ).fetchone()
+        return int(row["valor"]) if row else TOPE_COMPRA_AGIL_DEFECTO
+    finally:
+        conn.close()
+
+
+def set_tope_compra_agil(valor: int) -> None:
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('tope_compra_agil', ?)",
+            (int(valor),)
+        )
+        conn.commit()
     finally:
         conn.close()

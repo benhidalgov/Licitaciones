@@ -181,7 +181,7 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
     monto_estimado = int(item.get("MontoEstimado") or 0)
     codigo_upper = codigo.upper()
 
-    if "COT" in codigo_upper or "-CO" in codigo_upper or (0 < monto_estimado <= 6900000):
+    if "COT" in codigo_upper or "-CO" in codigo_upper or (0 < monto_estimado <= database.get_tope_compra_agil()):
         modalidad = "Compra Agil"
     else:
         modalidad = "Licitacion Publica"

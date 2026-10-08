@@ -233,13 +233,13 @@
                 Marco Normativo: Modalidad Compra Agil (Mercado Publico)
             </div>
             <p class="leading-relaxed">
-                Esta oportunidad se canaliza mediante Compra Agil, mecanismo de contratacion simplificada con un limite normativo maximo de <strong>6.900.000 CLP</strong> (referencial a 100 UTM segun la Ley 19.886 y sus decretos reglamentarios).
+                Esta oportunidad se canaliza mediante Compra Agil, mecanismo de contratacion simplificada con un limite normativo maximo de <strong>{{ tope_compra_agil | clp }}</strong> (referencial a 100 UTM segun la Ley 19.886 y sus decretos reglamentarios).
             </p>
             <div class="pt-1 font-semibold">
-                {% if lic.presupuesto_mandante <= 6900000 %}
+                {% if lic.presupuesto_mandante <= tope_compra_agil %}
                 Cumplimiento normativo validado: El presupuesto de {{ lic.presupuesto_mandante | clp }} se ajusta plenamente al rango legal para compras agiles sin comision evaluadora extensa.
                 {% else %}
-                Advertencia legal: El presupuesto asignado ({{ lic.presupuesto_mandante | clp }}) supera el tope normativo de 6.900.000 CLP establecido para la modalidad Compra Agil.
+                Advertencia legal: El presupuesto asignado ({{ lic.presupuesto_mandante | clp }}) supera el tope normativo de {{ tope_compra_agil | clp }} establecido para la modalidad Compra Agil.
                 {% endif %}
             </div>
         </div>

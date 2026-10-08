@@ -83,6 +83,25 @@ INVALID_LINE_WITHOUT_EQUALS
         self.assertEqual(res["modalidad"], "Compra Agil")
         self.assertLessEqual(res["presupuesto_mandante"], 6900000)
 
+    def test_tope_compra_agil_configurable(self):
+        database.set_tope_compra_agil(1000000)
+        self.assertEqual(database.get_tope_compra_agil(), 1000000)
+
+        item = {
+            "CodigoExterno": "1100-44-LP24",
+            "Nombre": "Servicio de coffee break y salones",
+            "FechaCierre": "2026-10-18T18:00:00",
+            "FechaCreacion": "2026-10-05T09:00:00",
+            "Descripcion": "Banqueteria y arriendo de salon para 50 personas",
+            "Comprador": {
+                "NombreOrganismo": "Servicio de Evaluacion Ambiental",
+                "RegionUnidad": "Region Metropolitana"
+            },
+            "MontoEstimado": 4200000
+        }
+        # Con tope de 1.000.000 CLP el mismo monto deja de calificar como Compra Agil
+        self.assertEqual(mercado_publico.filtrar_y_clasificar_licitacion(item)["modalidad"], "Licitacion Publica")
+
     def test_filtrar_y_clasificar_descarte_no_relevante(self):
         item = {
             "CodigoExterno": "999-88-LP24",
