@@ -26,7 +26,7 @@
                         surface: '#FFFFFF',
                         borderSubtle: '#EAEAEA',
                         ink: '#111111',
-                        muted: '#787774',
+                        muted: '#6E6D6A',
                     }
                 }
             }
@@ -40,7 +40,7 @@
             --surface: #FFFFFF;
             --border-subtle: #EAEAEA;
             --ink: #111111;
-            --muted: #787774;
+            --muted: #6E6D6A;
 
             /* Spot Pastels Desaturados */
             --pastel-green-bg: #EDF3EC;
@@ -92,7 +92,7 @@
             font-family: 'Geist Mono', monospace;
             font-size: 10px;
             padding: 1px 5px;
-            color: #787774;
+            color: #6E6D6A;
             box-shadow: 0 1px 0 rgba(0,0,0,0.04);
         }
 
@@ -144,7 +144,7 @@
 
         .btn-ghost {
             background: transparent;
-            color: #787774;
+            color: #6E6D6A;
             border: 1px solid transparent;
         }
         .btn-ghost:hover {
@@ -167,9 +167,50 @@
             border-radius: 8px;
             transition: border-color 200ms ease;
         }
+
+        /* Capa ambiente: manchas radiales calidas a minima opacidad (Protocolo 6) */
+        .ambient-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(640px 420px at 18% 12%, rgba(149, 100, 0, 0.03), transparent 70%),
+                radial-gradient(720px 480px at 82% 78%, rgba(31, 108, 159, 0.03), transparent 70%);
+        }
+
+        /* Entrada al viewport: solo transform y opacity (Protocolo 7) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+            transition-delay: calc(var(--index, 0) * 80ms);
+        }
+        .reveal.reveal-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        main { position: relative; z-index: 1; }
+
+        .btn-primary:disabled, .btn-secondary:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+        }
     </style>
 </head>
 <body class="min-h-full flex flex-col font-sans antialiased" style="background-color: var(--canvas);">
+    <!-- Capa Ambiente de Profundidad, sin interaccion -->
+    <div class="ambient-layer" aria-hidden="true"></div>
+
     <!-- Header Utilitario Minimalista de Perfil Bajo -->
     <header class="bg-white border-b border-[#EAEAEA] sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -182,7 +223,7 @@
                             <span class="text-sm font-semibold tracking-tight text-[#111111]">
                                 Hotel Plaza San Francisco
                             </span>
-                            <span class="text-[11px] text-[#787774] font-medium leading-none -mt-0.5">
+                            <span class="text-[11px] text-[#6E6D6A] font-medium leading-none -mt-0.5">
                                 Mercado Publico | DUOC UC VcM
                             </span>
                         </div>
@@ -193,19 +234,16 @@
                 <div class="flex items-center space-x-4">
                     {% if session.get('user') %}
                     <nav class="hidden md:flex items-center space-x-1">
-                        <a href="{{ url_for('dashboard') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['dashboard', 'licitacion_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                        <a href="{{ url_for('dashboard') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['dashboard', 'licitacion_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
                             Licitaciones
                         </a>
-                        <a href="{{ url_for('salones_catalogo') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['salones_catalogo', 'salon_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                        <a href="{{ url_for('salones_catalogo') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['salones_catalogo', 'salon_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
                             Salones y Agenda
-                        </a>
-                        <a href="{{ url_for('dashboard') }}#tope-compra-agil" class="px-3 py-1 text-xs font-medium rounded transition-colors text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]">
-                            Ajustes
                         </a>
                     </nav>
 
                     <div class="flex items-center space-x-3 pl-3 border-l border-[#EAEAEA]">
-                        <span class="text-[11px] text-[#787774]">
+                        <span class="text-[11px] text-[#6E6D6A]">
                             Usuario: <span class="font-mono font-medium text-[#111111]">{{ session.get('user') }}</span>
                         </span>
                         <form method="POST" action="{{ url_for('logout') }}" class="inline">
@@ -257,10 +295,63 @@
 
     <!-- Footer Utilitario Minimalista -->
     <footer class="border-t border-[#EAEAEA] bg-transparent py-5 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#787774] gap-2">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6E6D6A] gap-2">
             <span>Hotel Plaza San Francisco y DUOC UC - Vinculacion con el Medio (VcM)</span>
             <span class="font-mono text-[11px]">Plataforma de Gestion Comercial de Licitaciones</span>
         </div>
     </footer>
+
+    <!-- Entrada al viewport con IntersectionObserver (Protocolo 7) -->
+    <script>
+        (function () {
+            var targets = document.querySelectorAll('main > *');
+            if (!targets.length || !('IntersectionObserver' in window)) return;
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('reveal-in');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -10% 0px' });
+            targets.forEach(function (el, i) {
+                el.style.setProperty('--index', i);
+                el.classList.add('reveal');
+                io.observe(el);
+            });
+        })();
+    </script>
+
+    <!-- Comportamiento compartido: envio unico y atajo de busqueda -->
+    <script>
+        (function () {
+            // Evita doble click en Sincronizar mientras la consulta corre
+            var form = document.getElementById('form-sincronizar');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (form.dataset.enviando) { e.preventDefault(); return; }
+                    form.dataset.enviando = '1';
+                    if (btn) {
+                        btn.disabled = true;
+                        var label = btn.querySelector('span');
+                        if (label) label.textContent = 'Consultando Mercado Publico...';
+                    }
+                });
+            }
+
+            // "/" enfoca el buscador, si la pagina lo tiene
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+                var t = e.target;
+                if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+                var q = document.getElementById('filter-q');
+                if (!q) return;
+                e.preventDefault();
+                q.focus();
+                q.select();
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -137,6 +137,9 @@ def format_miles(value):
         return str(value)
 
 
+MAX_PAGINA = 25
+
+
 @app.route("/")
 @app.route("/licitaciones")
 @login_required
@@ -146,11 +149,20 @@ def dashboard():
     estado = request.args.get("estado", "").strip() or None
     q = request.args.get("q", "").strip() or None
 
+    # Filtros no vacios, reutilizados para construir los enlaces del paginador
+    filtros = {
+        k: v for k, v in dict(categoria=categoria, modalidad=modalidad, estado=estado, q=q).items()
+        if v
+    }
+
+    total = database.count_licitaciones(**filtros)
+    paginas = max(1, -(-total // MAX_PAGINA))  # division entera hacia arriba
+    pagina = min(max(1, request.args.get("pagina", 1, type=int)), paginas)
+
     licitaciones = database.get_all_licitaciones(
-        categoria=categoria,
-        modalidad=modalidad,
-        estado=estado,
-        q=q
+        limit=MAX_PAGINA,
+        offset=(pagina - 1) * MAX_PAGINA,
+        **filtros
     )
     metrics = database.get_funnel_metrics()
     ticket_configurado = bool(mercado_publico.get_ticket())
@@ -164,6 +176,10 @@ def dashboard():
         modalidad=modalidad or "",
         estado=estado or "",
         q=q or "",
+        total=total,
+        pagina=pagina,
+        paginas=paginas,
+        filtros=filtros,
         ticket_configurado=ticket_configurado,
         tope_compra_agil=tope_compra_agil,
         user=session.get("user")
@@ -293,10 +309,21 @@ def salones_catalogo():
     salones = database.get_all_salones()
     filtro_salon = request.args.get("salon", "").strip() or None
     q = request.args.get("q", "").strip() or None
-    reservas = database.get_all_reservas(id_salon=filtro_salon, q=q)
+
+    filtros = dict(id_salon=filtro_salon, q=q)
+    filtros = {k: v for k, v in filtros.items() if v}
+
+    total_reservas = database.count_reservas(**filtros)
+    paginas = max(1, -(-total_reservas // MAX_PAGINA))
+    pagina = min(max(1, request.args.get("pagina", 1, type=int)), paginas)
+
+    reservas = database.get_all_reservas(
+        limit=MAX_PAGINA,
+        offset=(pagina - 1) * MAX_PAGINA,
+        **filtros
+    )
 
     total_salones = len(salones)
-    total_reservas = len(reservas)
     capacidad_total = sum(s["capacidad_maxima"] for s in salones)
 
     return render_template(
@@ -308,6 +335,9 @@ def salones_catalogo():
         total_salones=total_salones,
         total_reservas=total_reservas,
         capacidad_total=capacidad_total,
+        pagina=pagina,
+        paginas=paginas,
+        filtros={k: v for k, v in {"salon": filtro_salon, "q": q}.items() if v},
         user=session.get("user")
     )
 

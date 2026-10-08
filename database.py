@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "licitaciones.db")
 
@@ -554,13 +554,53 @@ def get_salones_aptos(capacidad_minima: int) -> List[Dict[str, Any]]:
         conn.close()
 
 
-def get_all_reservas(
+def _filtros_reservas(
     id_salon: Optional[str] = None,
     fecha_desde: Optional[str] = None,
     q: Optional[str] = None
+) -> Tuple[str, List[Any]]:
+    """WHERE compartido entre listado y conteo: los filtros no pueden divergir."""
+    where = " WHERE 1=1"
+    params: List[Any] = []
+    if id_salon:
+        where += " AND r.id_salon = ?"
+        params.append(id_salon)
+    if fecha_desde:
+        where += " AND r.fecha_fin >= ?"
+        params.append(fecha_desde)
+    if q:
+        where += " AND (r.cliente_evento LIKE ? OR r.organismo_o_empresa LIKE ? OR r.tipo_evento LIKE ? OR r.id_licitacion LIKE ?)"
+        term = f"%{q}%"
+        params.extend([term, term, term, term])
+    return where, params
+
+
+def count_reservas(
+    id_salon: Optional[str] = None,
+    fecha_desde: Optional[str] = None,
+    q: Optional[str] = None
+) -> int:
+    where, params = _filtros_reservas(id_salon, fecha_desde, q)
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS total FROM reservas_salones r" + where, params
+        ).fetchone()
+        return int(row["total"])
+    finally:
+        conn.close()
+
+
+def get_all_reservas(
+    id_salon: Optional[str] = None,
+    fecha_desde: Optional[str] = None,
+    q: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: int = 0
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
+        where, params = _filtros_reservas(id_salon, fecha_desde, q)
         query = """
             SELECT r.*,
                    s.nombre AS nombre_salon,
@@ -570,20 +610,10 @@ def get_all_reservas(
                    s.ubicacion AS ubicacion_salon
             FROM reservas_salones r
             LEFT JOIN salones s ON r.id_salon = s.id_salon
-            WHERE 1=1
-        """
-        params: List[Any] = []
-        if id_salon:
-            query += " AND r.id_salon = ?"
-            params.append(id_salon)
-        if fecha_desde:
-            query += " AND r.fecha_fin >= ?"
-            params.append(fecha_desde)
-        if q:
-            query += " AND (r.cliente_evento LIKE ? OR r.organismo_o_empresa LIKE ? OR r.tipo_evento LIKE ? OR r.id_licitacion LIKE ?)"
-            term = f"%{q}%"
-            params.extend([term, term, term, term])
-        query += " ORDER BY r.fecha_inicio ASC, r.id_reserva ASC"
+        """ + where + " ORDER BY r.fecha_inicio ASC, r.id_reserva ASC"
+        if limit is not None:
+            query += " LIMIT ? OFFSET ?"
+            params = params + [int(limit), int(offset)]
         rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -705,14 +735,59 @@ def create_reserva(data: Dict[str, Any]) -> int:
 
 
 
-def get_all_licitaciones(
+def _filtros_licitaciones(
     categoria: Optional[str] = None,
     modalidad: Optional[str] = None,
     estado: Optional[str] = None,
     q: Optional[str] = None
+) -> Tuple[str, List[Any]]:
+    """Construye el WHERE compartido entre listado y conteo (evita divergencia)."""
+    where = " WHERE 1=1"
+    params: List[Any] = []
+    if categoria:
+        where += " AND l.categoria = ?"
+        params.append(categoria)
+    if modalidad:
+        where += " AND l.modalidad = ?"
+        params.append(modalidad)
+    if estado:
+        where += " AND l.estado_embudo = ?"
+        params.append(estado)
+    if q:
+        where += " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ?)"
+        term = f"%{q}%"
+        params.extend([term, term, term])
+    return where, params
+
+
+def count_licitaciones(
+    categoria: Optional[str] = None,
+    modalidad: Optional[str] = None,
+    estado: Optional[str] = None,
+    q: Optional[str] = None
+) -> int:
+    where, params = _filtros_licitaciones(categoria, modalidad, estado, q)
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS total FROM licitaciones l" + where, params
+        ).fetchone()
+        return int(row["total"])
+    finally:
+        conn.close()
+
+
+def get_all_licitaciones(
+    categoria: Optional[str] = None,
+    modalidad: Optional[str] = None,
+    estado: Optional[str] = None,
+    q: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: int = 0
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
+        where, params = _filtros_licitaciones(categoria, modalidad, estado, q)
         query = """
             SELECT l.*,
                    s.nombre AS nombre_salon,
@@ -721,23 +796,10 @@ def get_all_licitaciones(
                    s.horario_disponible AS horario_salon
             FROM licitaciones l
             LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
-            WHERE 1=1
-        """
-        params: List[Any] = []
-        if categoria:
-            query += " AND l.categoria = ?"
-            params.append(categoria)
-        if modalidad:
-            query += " AND l.modalidad = ?"
-            params.append(modalidad)
-        if estado:
-            query += " AND l.estado_embudo = ?"
-            params.append(estado)
-        if q:
-            query += " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ?)"
-            term = f"%{q}%"
-            params.extend([term, term, term])
-        query += " ORDER BY l.fecha_cierre ASC"
+        """ + where + " ORDER BY l.fecha_cierre ASC"
+        if limit is not None:
+            query += " LIMIT ? OFFSET ?"
+            params = params + [int(limit), int(offset)]
         rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
     finally:

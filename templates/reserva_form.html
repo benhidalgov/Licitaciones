@@ -14,9 +14,9 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EAEAEA] pb-4">
         <nav class="flex items-center space-x-2 text-xs text-neutral-500 font-mono">
             <a href="{{ url_for('dashboard') }}" class="hover:text-neutral-900 transition-colors">Tablero</a>
-            <span class="text-neutral-300">/</span>
+            <span class="text-[#6E6D6A]">/</span>
             <a href="{{ url_for('salones_catalogo') }}" class="hover:text-neutral-900 transition-colors">Salones y Agenda</a>
-            <span class="text-neutral-300">/</span>
+            <span class="text-[#6E6D6A]">/</span>
             {% if mode == 'create' %}
             <span class="text-neutral-900 font-semibold">Nueva Reserva</span>
             {% else %}
@@ -32,7 +32,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
 
     <!-- Titulo Principal -->
     <div class="card-editorial p-6">
-        <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-1">
+        <span class="text-[10px] font-mono uppercase tracking-widest text-[#6E6D6A] block mb-1">
             {% if mode == 'create' %}Agenda y Control de Bloqueos / Nuevo Registro{% else %}Modificacion de Reserva / Auditoria{% endif %}
         </span>
         <h1 class="text-xl sm:text-2xl font-serif text-neutral-900 tracking-tight">
@@ -80,7 +80,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[11px] text-neutral-400 mt-1">Espacio fisico asignado para la prestacion del servicio.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Espacio fisico asignado para la prestacion del servicio.</p>
                 </div>
 
                 <div>
@@ -99,7 +99,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[11px] text-neutral-400 mt-1">Nivel de compromiso de la fecha en la agenda.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Nivel de compromiso de la fecha en la agenda.</p>
                 </div>
 
                 <div class="sm:col-span-2">
@@ -114,7 +114,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Denominacion descriptiva del evento corporativo o licitacion.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Denominacion descriptiva del evento corporativo o licitacion.</p>
                 </div>
 
                 <div>
@@ -129,7 +129,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Institucion mandante o cliente contratante.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Institucion mandante o cliente contratante.</p>
                 </div>
 
                 <div>
@@ -143,7 +143,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         value="{{ reserva.tipo_evento or 'Seminario / Reunion' }}"
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Modalidad de uso y distribucion del montaje.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Modalidad de uso y distribucion del montaje.</p>
                 </div>
             </div>
         </div>
@@ -168,7 +168,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Dia de inicio de la ocupacion o montaje.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Dia de inicio de la ocupacion o montaje.</p>
                 </div>
 
                 <div>
@@ -183,7 +183,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Dia final de uso del espacio.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Dia final de uso del espacio.</p>
                 </div>
 
                 <div>
@@ -197,7 +197,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         value="{{ reserva.horario or '08:30 a 18:30 hrs' }}"
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Franja operativa diaria de prestacion del servicio.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Franja operativa diaria de prestacion del servicio.</p>
                 </div>
 
                 <div>
@@ -213,7 +213,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         step="1"
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Cantidad aproximada de participantes.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Cantidad aproximada de participantes.</p>
                 </div>
             </div>
 
@@ -247,7 +247,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[11px] text-neutral-400 mt-1">Vincula esta reserva a una oportunidad del embudo de compras publicas.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Vincula esta reserva a una oportunidad del embudo de compras publicas.</p>
                 </div>
 
                 <div>
@@ -261,7 +261,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         value="{{ reserva.contacto_responsable or '' }}"
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-neutral-400 mt-1">Persona de enlace tecnico u organizador del evento.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Persona de enlace tecnico u organizador del evento.</p>
                 </div>
 
                 <div class="sm:col-span-2">
@@ -274,7 +274,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         rows="3"
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors leading-relaxed"
                     >{{ reserva.observaciones or '' }}</textarea>
-                    <p class="text-[11px] text-neutral-400 mt-1">Notas de apoyo para el personal de operaciones y banqueteria.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Notas de apoyo para el personal de operaciones y banqueteria.</p>
                 </div>
             </div>
         </div>
