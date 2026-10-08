@@ -52,13 +52,6 @@ class TestDashboard(unittest.TestCase):
         self.assertIn("Adjudicadas", html)
         self.assertIn("Compra Agil", html)
 
-    def test_dashboard_new_tender_button(self):
-        response = self.client.get("/")
-        self.assertEqual(response.status_code, 200)
-        html = response.data.decode("utf-8")
-        self.assertIn("Registrar Nueva Licitacion", html)
-        self.assertIn("/licitaciones/nueva", html)
-
     def test_dashboard_filter_category(self):
         response = self.client.get("/?categoria=Alojamiento")
         self.assertEqual(response.status_code, 200)
@@ -137,9 +130,7 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("/licitaciones/1058-12-COT24", html)
-        self.assertIn("/licitaciones/1058-12-COT24/editar", html)
         self.assertIn("Ver Detalle", html)
-        self.assertIn("Editar", html)
         self.assertIn("Eliminar", html)
 
     def test_dashboard_no_emojis(self):

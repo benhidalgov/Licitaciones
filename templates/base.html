@@ -193,7 +193,7 @@
                 <div class="flex items-center space-x-4">
                     {% if session.get('user') %}
                     <nav class="hidden md:flex items-center space-x-1">
-                        <a href="{{ url_for('dashboard') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['dashboard', 'licitacion_detalle', 'editar_licitacion', 'crear_licitacion'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                        <a href="{{ url_for('dashboard') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['dashboard', 'licitacion_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
                             Licitaciones
                         </a>
                         <a href="{{ url_for('salones_catalogo') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['salones_catalogo', 'salon_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#787774] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">

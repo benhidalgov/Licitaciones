@@ -1,30 +1,8 @@
 import os
 import unittest
-from unittest import mock
 import app as flask_app
 import database
 
-
-VALID_LICITACION_FORM = {
-    "id_licitacion": "9999-1-COT26",
-    "titulo": "Solicitud de Validacion de Formulario",
-    "organismo": "Organismo de Prueba",
-    "categoria": "Alojamiento",
-    "modalidad": "Compra Agil",
-    "region": "Region Metropolitana (Santiago)",
-    "presupuesto_mandante": "1000000",
-    "costo_base_hotel": "500000",
-    "estado_embudo": "Identificada",
-    "validacion_adjuntos": "Valida",
-    "tiene_anexo4": "1",
-    "fecha_publicacion": "2026-11-01",
-    "fecha_cierre": "2026-11-10",
-    "descripcion_tdr": "Descripcion de prueba.",
-    "cantidad_asistentes": "10",
-    "tipo_jornada": "Jornada Completa (8 hrs)",
-    "horario_evento": "08:30 a 18:30 hrs",
-    "id_salon_asignado": ""
-}
 
 VALID_RESERVA_FORM = {
     "id_salon": "SALON-LONDRES",
@@ -67,64 +45,10 @@ class TestValidation(unittest.TestCase):
             except PermissionError:
                 pass
 
-    def _post_licitacion(self, **overrides):
-        data = dict(VALID_LICITACION_FORM)
-        data.update(overrides)
-        return self.client.post("/licitaciones/nueva", data=data)
-
     def _post_reserva(self, **overrides):
         data = dict(VALID_RESERVA_FORM)
         data.update(overrides)
         return self.client.post("/reservas/nueva", data=data)
-
-    def test_invalid_categoria_rejected(self):
-        response = self._post_licitacion(categoria="Categoria Inventada")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Categoria", response.data)
-        self.assertIn(b"invalida", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_invalid_modalidad_rejected(self):
-        response = self._post_licitacion(modalidad="Modalidad Inventada")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Modalidad", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_invalid_validacion_adjuntos_rejected(self):
-        response = self._post_licitacion(validacion_adjuntos="Cualquier Cosa")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Validacion de adjuntos", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_invalid_tipo_jornada_rejected(self):
-        response = self._post_licitacion(tipo_jornada="Jornada de 300 hrs")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Tipo de jornada", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_fecha_with_invalid_format_rejected(self):
-        response = self._post_licitacion(fecha_publicacion="15/11/2026")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"formato AAAA-MM-DD", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_fecha_cierre_before_publicacion_rejected(self):
-        response = self._post_licitacion(fecha_publicacion="2026-11-10", fecha_cierre="2026-11-01")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Fecha de Cierre no puede ser anterior", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_nonexistent_salon_asignado_rejected(self):
-        response = self._post_licitacion(id_salon_asignado="SALON-QUE-NO-EXISTE")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"no existe en el catalogo", response.data)
-        self.assertIsNone(database.get_licitacion_by_id("9999-1-COT26"))
-
-    def test_duplicate_id_race_returns_error_not_500(self):
-        with mock.patch("database.get_licitacion_by_id", return_value=None):
-            response = self._post_licitacion(id_licitacion="1058-12-COT24")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"ya existe en el sistema", response.data)
 
     def test_reserva_with_nonexistent_salon_rejected(self):
         response = self._post_reserva(id_salon="SALON-QUE-NO-EXISTE")

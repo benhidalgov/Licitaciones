@@ -64,8 +64,9 @@ class TestDetail(unittest.TestCase):
 
         # Navigation links
         self.assertIn("/licitaciones", html)
-        self.assertIn("/licitaciones/1058-12-COT24/editar", html)
         self.assertIn("/licitaciones/1058-12-COT24/eliminar", html)
+        self.assertIn("DetailsAcquisition.aspx?idlicitacion=1058-12-COT24", html)
+        self.assertIn("Ver ficha original en Mercado Publico", html)
 
     def test_view_detail_not_found(self):
         response = self.client.get("/licitaciones/NO-EXISTE-999")

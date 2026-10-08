@@ -94,7 +94,6 @@ C:\Licitaciones\
 |   |-- login.html             # Acceso autenticado y credenciales demo
 |   |-- dashboard.html         # Tablero Bento Grid con embudo de conversion y filtros
 |   |-- detail.html            # Ficha de detalle, evaluacion financiera, checklist y aforo
-|   |-- form.html              # Formulario modular de licitaciones (creacion y edicion)
 |   |-- salones.html           # Catalogo de infraestructura y agenda de reservas
 |   |-- salon_detail.html      # Ficha monografica por salon, montajes y cronograma
 |   |-- reserva_form.html      # Formulario para registro, edicion y bloqueo de fechas
@@ -104,7 +103,7 @@ C:\Licitaciones\
     |-- test_database.py       # Persistencia relacional, seeds y filtros
     |-- test_dashboard.py      # Metricas comerciales y filtros multicriterio
     |-- test_detail.py         # Evaluacion de margenes, checklist y alertas
-    |-- test_crud_flow.py      # Flujo CRUD completo de licitaciones
+    |-- test_crud_flow.py      # Eliminacion de licitaciones y rutas manuales retiradas
     |-- test_salones.py        # Catalogo de salones, reservas, colisiones y acciones
     |-- test_run.py            # Modulo de arranque del servidor
     `-- test_emoji_compliance.py # Auditoria regex de ausencia total de emojis

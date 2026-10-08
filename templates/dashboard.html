@@ -32,9 +32,6 @@
                 </button>
             </form>
 
-            <a href="/licitaciones/nueva" class="btn-primary text-xs px-4 py-2 inline-flex items-center space-x-2">
-                <span>Registrar Nueva Licitacion</span>
-            </a>
         </div>
     </div>
 
@@ -377,10 +374,6 @@
                             <div class="flex items-center justify-center space-x-1.5 text-[11px]">
                                 <a href="/licitaciones/{{ lic.id_licitacion }}" class="text-[#111111] hover:underline font-medium">
                                     Ver Detalle
-                                </a>
-                                <span class="text-[#EAEAEA]">|</span>
-                                <a href="/licitaciones/{{ lic.id_licitacion }}/editar" class="text-[#787774] hover:text-[#111111] hover:underline">
-                                    Editar
                                 </a>
                                 <span class="text-[#EAEAEA]">|</span>
                                 <form method="POST" action="/licitaciones/{{ lic.id_licitacion }}/eliminar" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">
