@@ -290,6 +290,24 @@ class TestDetail(unittest.TestCase):
         res = self.client.get("/licitaciones/NO-EXISTE-01/ficha.md")
         self.assertEqual(res.status_code, 404)
 
+    @patch("mercado_publico.consultar_url_adjuntos")
+    def test_adjuntos_redirige_al_visor_oficial(self, mock_adj):
+        mock_adj.return_value = "https://www.mercadopublico.cl/Procurement/Modules/Attachment/ViewAttachment.aspx?enc=XYZ"
+        res = self.client.get("/licitaciones/1058-12-COT24/adjuntos")
+        self.assertEqual(res.status_code, 302)
+        self.assertIn("ViewAttachment.aspx?enc=XYZ", res.headers["Location"])
+
+    @patch("mercado_publico.consultar_url_adjuntos")
+    def test_adjuntos_degrada_a_ficha_oficial(self, mock_adj):
+        mock_adj.return_value = None
+        res = self.client.get("/licitaciones/1058-12-COT24/adjuntos")
+        self.assertEqual(res.status_code, 302)
+        self.assertIn("idlicitacion=1058-12-COT24", res.headers["Location"])
+
+    def test_adjuntos_no_encontrada(self):
+        res = self.client.get("/licitaciones/NO-EXISTE-01/adjuntos")
+        self.assertEqual(res.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -173,6 +173,22 @@ INVALID_LINE_WITHOUT_EQUALS
         res_ph = mercado_publico.consultar_licitacion("1058-12-COT24", ticket="TU_TICKET_AQUI")
         self.assertIsNone(res_ph)
 
+    @patch("mercado_publico._fetch_url")
+    def test_consultar_url_adjuntos_extrae_token(self, mock_fetch):
+        # El HTML real usa rutas relativas y entidades; el regex busca ViewAttachment.aspx?enc=
+        mock_fetch.return_value = b"<img onclick=\"open(&#39;../Attachment/ViewAttachment.aspx?enc=AbC123%2Fz-x&#39;,'x')\"/>"
+        url = mercado_publico.consultar_url_adjuntos("1058-12-COT24")
+        self.assertEqual(
+            url,
+            "https://www.mercadopublico.cl/Procurement/Modules/Attachment/ViewAttachment.aspx?enc=AbC123%2Fz-x"
+        )
+        self.assertIn("idlicitacion=1058-12-COT24", mock_fetch.call_args[0][0])
+
+    @patch("mercado_publico._fetch_url")
+    def test_consultar_url_adjuntos_sin_token(self, mock_fetch):
+        mock_fetch.return_value = b"<html><body>Sin anexos</body></html>"
+        self.assertIsNone(mercado_publico.consultar_url_adjuntos("1058-12-COT24"))
+
     @patch("urllib.request.urlopen")
     def test_sincronizar_licitaciones_mock(self, mock_urlopen):
         fake_batch_response = {

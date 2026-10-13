@@ -21,6 +21,7 @@ import database
 logger = logging.getLogger(__name__)
 
 MERCADO_PUBLICO_BASE_URL = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
+MP_FICHA_URL = "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion="
 
 PATRON_ALOJAMIENTO = re.compile(
     r"\b(hospedaje|alojamiento|habitacion|habitaciones|pernoctacion|hotel|hoteles|hoteleria)\b",
@@ -270,6 +271,23 @@ def consultar_licitacion(codigo: str, ticket: Optional[str] = None) -> Optional[
     except Exception as exc:
         logger.error(f"Error decodificando respuesta para {codigo}: {exc}")
         return None
+
+
+# El token "enc" se extrae del HTML publico de la ficha del portal: si ChileCompra
+# cambia el marcado o pone reCAPTCHA tambien en la ficha, esto deja de funcionar
+# y hay que degradar al link directo de la ficha oficial.
+def consultar_url_adjuntos(codigo: str) -> Optional[str]:
+    """
+    Retorna la URL del visor oficial de anexos (ViewAttachment.aspx) de la
+    licitacion, extraida de la ficha web publica. No requiere ticket.
+    """
+    raw = _fetch_url(f"{MP_FICHA_URL}{codigo.strip()}", timeout=30)
+    if not raw:
+        return None
+    match = re.search(r"ViewAttachment\.aspx\?enc=([A-Za-z0-9%+/_-]+)", raw.decode("utf-8", errors="replace"))
+    if not match:
+        return None
+    return f"https://www.mercadopublico.cl/Procurement/Modules/Attachment/ViewAttachment.aspx?enc={match.group(1)}"
 
 
 def consultar_licitaciones_fecha(fecha: str, ticket: Optional[str] = None) -> List[Dict[str, Any]]:

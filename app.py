@@ -293,6 +293,18 @@ def refrescar_licitacion(id_licitacion):
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
 
+@app.route("/licitaciones/<id_licitacion>/adjuntos")
+@login_required
+def adjuntos_licitacion(id_licitacion):
+    if not database.get_licitacion_by_id(id_licitacion):
+        abort(404)
+    url_adj = mercado_publico.consultar_url_adjuntos(id_licitacion)
+    if not url_adj:
+        flash("No se pudo obtener el visor de anexos; abriendo la ficha oficial.", "info")
+        url_adj = f"{mercado_publico.MP_FICHA_URL}{id_licitacion}"
+    return redirect(url_adj)
+
+
 @app.route("/licitaciones/<id_licitacion>/ficha.md")
 @login_required
 def ficha_md(id_licitacion):

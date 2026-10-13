@@ -21,6 +21,9 @@
             <a href="{{ mp_url }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
                 Ver en Mercado Publico
             </a>
+            <a href="{{ url_for('adjuntos_licitacion', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
+                Ver documentos
+            </a>
             <a href="{{ url_for('ficha_md', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
                 Ver ficha MD
             </a>
