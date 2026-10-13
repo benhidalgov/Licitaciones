@@ -4,7 +4,7 @@ import secrets
 import time
 from datetime import date
 from functools import wraps
-from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, make_response, redirect, render_template, request, session, url_for
 import database
 import mercado_publico
 
@@ -271,6 +271,41 @@ def cambiar_estado_licitacion(id_licitacion):
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
 
+@app.route("/licitaciones/<id_licitacion>/refrescar", methods=["POST"])
+@login_required
+def refrescar_licitacion(id_licitacion):
+    lic = database.get_licitacion_by_id(id_licitacion)
+    if not lic:
+        abort(404)
+
+    detalle = mercado_publico.consultar_licitacion(id_licitacion)
+    reclasificada = mercado_publico.filtrar_y_clasificar_licitacion(detalle) if detalle else None
+    if reclasificada is None:
+        flash("No se pudo refrescar: la API no respondio o la licitacion ya no supera el filtro (moneda no CLP o sin pertinencia hotelera).", "error")
+        return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+    # Preserva los campos que el equipo gestiona localmente en la app
+    for campo in ("estado_embudo", "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado"):
+        reclasificada[campo] = lic[campo]
+
+    database.update_licitacion(id_licitacion, reclasificada)
+    flash(f"Ficha {id_licitacion} refrescada desde Mercado Publico.", "success")
+    return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+
+@app.route("/licitaciones/<id_licitacion>/ficha.md")
+@login_required
+def ficha_md(id_licitacion):
+    lic = database.get_licitacion_by_id(id_licitacion)
+    if not lic:
+        abort(404)
+    respuesta = make_response(render_template("ficha.md", lic=lic))
+    respuesta.headers["Content-Type"] = "text/markdown; charset=utf-8"
+    if request.args.get("descargar"):
+        respuesta.headers["Content-Disposition"] = f"attachment; filename=ficha_{id_licitacion}.md"
+    return respuesta
+
+
 @app.route("/ajustes/tope_compra_agil", methods=["POST"])
 @login_required
 def guardar_tope_compra_agil():
@@ -293,7 +328,8 @@ def guardar_tope_compra_agil():
 @login_required
 def sincronizar_licitaciones_route():
     fecha = request.form.get("fecha", "").strip() or request.args.get("fecha", "").strip() or None
-    resumen = mercado_publico.sincronizar_licitaciones(fecha=fecha)
+    # Sin fecha explicita sincroniza la ultima semana; con fecha, solo ese dia
+    resumen = mercado_publico.sincronizar_licitaciones(fecha=fecha, dias=1 if fecha else 7)
     if resumen.get("total_guardadas", 0) > 0:
         flash(f"[OK] {resumen['mensaje']}", "success")
     elif resumen.get("total_consultadas", 0) > 0:

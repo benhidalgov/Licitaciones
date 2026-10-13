@@ -1,6 +1,7 @@
 import os
 import re
 import unittest
+from unittest.mock import patch
 import app as flask_app
 import database
 
@@ -234,6 +235,60 @@ class TestDetail(unittest.TestCase):
             html = response.data.decode("utf-8")
             matches = emoji_pattern.findall(html)
             self.assertEqual(matches, [], f"Found emojis in detail view for {tender_id}: {matches}")
+
+    @patch("mercado_publico.consultar_licitacion")
+    def test_refrescar_licitacion_actualiza_desde_api(self, mock_consultar):
+        # La ficha real trae montos/fechas anidados en Fechas y Moneda en la raiz
+        mock_consultar.return_value = {
+            "CodigoExterno": "1058-12-COT24",
+            "Nombre": "Servicio de Banqueteria y Salones Jornada de Planificacion Estrategica",
+            "CodigoEstado": 6,
+            "Estado": "Cerrada",
+            "FechaCierre": "2026-10-30T15:00:00",
+            "Descripcion": "Arriendo de salon plenario para 80 asistentes",
+            "Moneda": "CLP",
+            "Comprador": {
+                "NombreOrganismo": "Subsecretaria de Turismo",
+                "RegionUnidad": "Region Metropolitana"
+            },
+            "Fechas": {"MontoEstimado": 6100000.0, "FechaCreacion": "2026-10-01T00:00:00"}
+        }
+        # El estado del embudo lo gestiona el equipo: el refresco no debe pisarlo
+        database.update_licitacion("1058-12-COT24", {"estado_embudo": "Participada"})
+
+        res = self.client.post("/licitaciones/1058-12-COT24/refrescar", follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        lic = database.get_licitacion_by_id("1058-12-COT24")
+        self.assertEqual(lic["presupuesto_mandante"], 6100000)
+        self.assertEqual(lic["costo_base_hotel"], 4575000)
+        self.assertEqual(lic["fecha_cierre"], "2026-10-30")
+        self.assertEqual(lic["fecha_publicacion"], "2026-10-01")
+        self.assertEqual(lic["estado_embudo"], "Participada")
+
+    def test_refrescar_licitacion_no_encontrada(self):
+        res = self.client.post("/licitaciones/NO-EXISTE-01/refrescar")
+        self.assertEqual(res.status_code, 404)
+
+    def test_ficha_md_view(self):
+        res = self.client.get("/licitaciones/1058-12-COT24/ficha.md")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("text/markdown", res.headers["Content-Type"])
+        md = res.data.decode("utf-8")
+        self.assertIn("# Servicio de Banqueteria y Salones", md)
+        self.assertIn("1058-12-COT24", md)
+        self.assertIn("$5.800.000 CLP", md)
+        self.assertIn("## Necesidad (Descripcion TDR)", md)
+
+    def test_ficha_md_descarga_adjunto(self):
+        res = self.client.get("/licitaciones/1058-12-COT24/ficha.md?descargar=1")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("attachment", res.headers["Content-Disposition"])
+        self.assertIn("ficha_1058-12-COT24.md", res.headers["Content-Disposition"])
+
+    def test_ficha_md_no_encontrada(self):
+        res = self.client.get("/licitaciones/NO-EXISTE-01/ficha.md")
+        self.assertEqual(res.status_code, 404)
 
 
 if __name__ == "__main__":

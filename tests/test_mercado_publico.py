@@ -118,6 +118,22 @@ INVALID_LINE_WITHOUT_EQUALS
         res = mercado_publico.filtrar_y_clasificar_licitacion(item)
         self.assertIsNone(res)
 
+    def test_filtrar_y_clasificar_descarta_moneda_no_clp(self):
+        # Montos en UF/USD no son comparables con el tope CLP ni con el costo base
+        item = {
+            "CodigoExterno": "5000-5-COT26",
+            "Nombre": "Servicio de hospedaje para comite de expertos",
+            "CodigoEstado": 5,
+            "FechaCierre": "2026-10-25T12:00:00",
+            "Moneda": "UF",
+            "Comprador": {
+                "NombreOrganismo": "Organismo Extranjero",
+                "RegionUnidad": "Region Metropolitana"
+            },
+            "MontoEstimado": 500
+        }
+        self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
+
     @patch("urllib.request.urlopen")
     def test_consultar_licitacion_api_mock(self, mock_urlopen):
         fake_api_response = {
@@ -227,6 +243,66 @@ INVALID_LINE_WITHOUT_EQUALS
         lic2 = database.get_licitacion_by_id("3003-3-COT24")
         self.assertIsNotNone(lic2)
         self.assertEqual(lic2["categoria"], "Alojamiento")
+
+        # Pasada multipledia: consulta varias fechas y reutiliza los mismos items
+        resumen_multi = mercado_publico.sincronizar_licitaciones(ticket="TICKET_TEST_VALIDO", dias=3)
+        self.assertEqual(resumen_multi["total_consultadas"], 9)
+        self.assertEqual(resumen_multi["total_guardadas"], 6)
+
+    @patch("urllib.request.urlopen")
+    def test_sincronizar_enriquece_con_ficha_detalle(self, mock_urlopen):
+        # Listado por fecha: solo 4 campos basicos (como la API real)
+        batch = {
+            "Cantidad": 1, "FechaCreacion": "2026-10-07T16:00:00", "Version": "v1",
+            "Listado": [{
+                "CodigoExterno": "7000-7-COT26",
+                "Nombre": "Servicio de banqueteria para asamblea anual",
+                "CodigoEstado": 5,
+                "FechaCierre": "2026-10-20T17:00:00"
+            }]
+        }
+        # Ficha por codigo: montos y comprador anidados, como la API real
+        detalle = {
+            "Cantidad": 1, "Version": "v1",
+            "Listado": [{
+                "CodigoExterno": "7000-7-COT26",
+                "Nombre": "Servicio de banqueteria para asamblea anual",
+                "CodigoEstado": 5,
+                "FechaCierre": None,
+                "Descripcion": "Coffee break y coctel para 120 personas",
+                "Comprador": {
+                    "NombreOrganismo": "SERVICIO NACIONAL DE TURISMO",
+                    "RegionUnidad": "Region de Valparaiso"
+                },
+                "Fechas": {
+                    "MontoEstimado": 4800000.0,
+                    "FechaCreacion": "2026-10-01T00:00:00",
+                    "FechaCierre": "2026-10-20T17:00:00"
+                }
+            }]
+        }
+
+        def fake_urlopen(req, *args, **kwargs):
+            url = getattr(req, "full_url", str(req))
+            data = detalle if "codigo=" in url else batch
+            resp = MagicMock()
+            resp.read.return_value = json.dumps(data).encode("utf-8")
+            cm = MagicMock()
+            cm.__enter__.return_value = resp
+            return cm
+
+        mock_urlopen.side_effect = fake_urlopen
+
+        resumen = mercado_publico.sincronizar_licitaciones(fecha="07102026", ticket="TICKET_TEST_VALIDO")
+        self.assertEqual(resumen["total_guardadas"], 1)
+
+        lic = database.get_licitacion_by_id("7000-7-COT26")
+        self.assertEqual(lic["presupuesto_mandante"], 4800000)
+        self.assertEqual(lic["costo_base_hotel"], 3600000)
+        self.assertEqual(lic["organismo"], "SERVICIO NACIONAL DE TURISMO")
+        self.assertEqual(lic["region"], "Region de Valparaiso")
+        self.assertEqual(lic["fecha_publicacion"], "2026-10-01")
+        self.assertEqual(lic["fecha_cierre"], "2026-10-20")
 
     def test_no_emojis_in_mercado_publico_module(self):
         emoji_pattern = re.compile(

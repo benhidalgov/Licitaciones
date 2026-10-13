@@ -21,6 +21,18 @@
             <a href="{{ mp_url }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
                 Ver en Mercado Publico
             </a>
+            <a href="{{ url_for('ficha_md', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
+                Ver ficha MD
+            </a>
+            <a href="{{ url_for('ficha_md', id_licitacion=lic.id_licitacion, descargar=1) }}" class="btn-secondary text-xs px-3 py-1.5">
+                Descargar .md
+            </a>
+            <form method="POST" action="{{ url_for('refrescar_licitacion', id_licitacion=lic.id_licitacion) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn-secondary text-xs px-3 py-1.5">
+                    Refrescar ficha
+                </button>
+            </form>
             <form method="POST" action="{{ url_for('eliminar_licitacion', id_licitacion=lic.id_licitacion) }}" class="inline" onsubmit="return confirm('Confirma la eliminacion definitiva de esta licitacion?');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn-secondary text-xs px-3 py-1.5 text-[#9F2F2D] hover:border-[#F8D1D3]">

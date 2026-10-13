@@ -1,6 +1,7 @@
 import os
 import re
 import unittest
+from unittest.mock import patch
 import app as flask_app
 import database
 
@@ -185,11 +186,15 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(res.status_code, 302)
         self.assertIn("/login", res.headers["Location"])
 
-    def test_sincronizar_route_authenticated(self):
+    @patch("mercado_publico.sincronizar_licitaciones")
+    def test_sincronizar_route_authenticated(self, mock_sync):
+        mock_sync.return_value = {"total_consultadas": 0, "total_guardadas": 0, "mensaje": "ok"}
         res = self.client.post("/licitaciones/sincronizar", follow_redirects=True)
         self.assertEqual(res.status_code, 200)
         html = res.data.decode("utf-8")
         self.assertIn("Sincronizar Mercado Publico", html)
+        # Sin fecha explicita sincroniza la ultima semana
+        mock_sync.assert_called_with(fecha=None, dias=7)
 
 
 if __name__ == "__main__":

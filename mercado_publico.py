@@ -4,7 +4,7 @@ Permite consultar, filtrar semanticamente y sincronizar licitaciones y compras a
 relevantes para la operacion del Hotel Plaza San Francisco.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import logging
 import os
@@ -178,7 +178,8 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
     else:
         categoria = "Alojamiento"
 
-    monto_estimado = int(item.get("MontoEstimado") or 0)
+    fechas = item.get("Fechas") or {}
+    monto_estimado = int(item.get("MontoEstimado") or fechas.get("MontoEstimado") or 0)
     codigo_upper = codigo.upper()
 
     if "COT" in codigo_upper or "-CO" in codigo_upper or (0 < monto_estimado <= database.get_tope_compra_agil()):
@@ -194,13 +195,19 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
         organismo = "Organismo Publico"
         region = "Region Metropolitana (Santiago)"
 
-    fecha_cierre_raw = str(item.get("FechaCierre") or "")
+    # El tope de Compra Agil y el costo base estan en CLP: montos en otra
+    # moneda no son comparables, se descartan en lugar de clasificar mal.
+    # La API real trae Moneda en la raiz del item (p. ej. "CLP", "UF").
+    if str(item.get("Moneda") or "CLP").upper() != "CLP":
+        return None
+
+    fecha_cierre_raw = str(item.get("FechaCierre") or fechas.get("FechaCierre") or "")
     if len(fecha_cierre_raw) >= 10:
         fecha_cierre = fecha_cierre_raw[:10]
     else:
         fecha_cierre = datetime.now().strftime("%Y-%m-%d")
 
-    fecha_creacion_raw = str(item.get("FechaCreacion") or "")
+    fecha_creacion_raw = str(item.get("FechaCreacion") or fechas.get("FechaCreacion") or "")
     if len(fecha_creacion_raw) >= 10:
         fecha_pub = fecha_creacion_raw[:10]
     else:
@@ -296,11 +303,12 @@ def consultar_licitaciones_fecha(fecha: str, ticket: Optional[str] = None) -> Li
 
 def sincronizar_licitaciones(
     fecha: Optional[str] = None,
-    ticket: Optional[str] = None
+    ticket: Optional[str] = None,
+    dias: int = 1
 ) -> Dict[str, Any]:
     """
     Ejecuta el ciclo de sincronizacion con Mercado Publico:
-    1. Obtiene las licitaciones de la fecha indicada.
+    1. Obtiene las licitaciones publicadas en las ultimas N fechas (dias) desde la fecha base.
     2. Aplica filtro semantico y clasificacion.
     3. Persiste o actualiza en la base de datos local.
     Retorna resumen estadistico de la operacion.
@@ -319,28 +327,46 @@ def sincronizar_licitaciones(
 
     if not fecha:
         fecha = datetime.now().strftime("%d%m%Y")
+    base = datetime.strptime(fecha, "%d%m%Y")
 
-    items = consultar_licitaciones_fecha(fecha=fecha, ticket=ticket)
-    total_consultadas = len(items)
+    total_consultadas = 0
     total_pertinentes = 0
     total_descartadas = 0
     total_guardadas = 0
 
-    for item in items:
-        clasificada = filtrar_y_clasificar_licitacion(item)
-        if clasificada is None:
-            total_descartadas += 1
-            continue
+    for dia in range(dias):
+        fecha_dia = (base - timedelta(days=dia)).strftime("%d%m%Y")
+        items = consultar_licitaciones_fecha(fecha=fecha_dia, ticket=ticket)
+        total_consultadas += len(items)
 
-        total_pertinentes += 1
-        id_lic = clasificada["id_licitacion"]
-        existente = database.get_licitacion_by_id(id_lic)
+        for item in items:
+            clasificada = filtrar_y_clasificar_licitacion(item)
+            if clasificada is None:
+                total_descartadas += 1
+                continue
 
-        if not existente:
-            database.create_licitacion(clasificada)
-            total_guardadas += 1
-        else:
-            database.update_licitacion(id_lic, clasificada)
+            total_pertinentes += 1
+
+            # El listado por fecha trae solo datos basicos; la ficha detalle aporta
+            # presupuesto, organismo y fechas reales (solo se consulta lo pertinente).
+            detalle = consultar_licitacion(clasificada["id_licitacion"], ticket=ticket) or {}
+            if detalle.get("CodigoExterno") == clasificada["id_licitacion"]:
+                merged = {**item, **{k: v for k, v in detalle.items() if v is not None}}
+                reclasificada = filtrar_y_clasificar_licitacion(merged)
+                if reclasificada is None:
+                    # La ficha completa lo descarta (moneda no CLP o exclusion en la descripcion)
+                    total_pertinentes -= 1
+                    total_descartadas += 1
+                    continue
+                clasificada = reclasificada
+
+            id_lic = clasificada["id_licitacion"]
+            existente = database.get_licitacion_by_id(id_lic)
+
+            if not existente:
+                database.create_licitacion(clasificada)
+            else:
+                database.update_licitacion(id_lic, clasificada)
             total_guardadas += 1
 
     return {
@@ -349,5 +375,6 @@ def sincronizar_licitaciones(
         "total_descartadas": total_descartadas,
         "total_guardadas": total_guardadas,
         "fecha": fecha,
-        "mensaje": f"Sincronizacion finalizada: {total_guardadas} registradas/actualizadas de {total_consultadas} consultadas."
+        "mensaje": f"Sincronizacion finalizada ({dias} dia(s) desde {fecha}): "
+                   f"{total_guardadas} registradas/actualizadas de {total_consultadas} consultadas."
     }
