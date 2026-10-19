@@ -1,1 +1,4 @@
 flask>=3.0.0
+# Lectura del historial de OC en .xlsx (el hotel entrega Excel).
+# El importador tambien acepta .csv, que no requiere esta dependencia.
+openpyxl>=3.1.0

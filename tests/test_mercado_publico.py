@@ -134,6 +134,37 @@ INVALID_LINE_WITHOUT_EQUALS
         }
         self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
 
+    def test_rescata_tipeos_de_comprador_publico(self):
+        # "catring" por catering y "hospedagh" por hospedaje aparecen en los TDR.
+        item_evento = {
+            "CodigoExterno": "777-1-LP26",
+            "Nombre": "Compra de catring para convencion anual",
+            "CodigoEstado": 5,
+            "FechaCierre": "2026-11-20T12:00:00",
+            "Descripcion": "Provision de catring para asistentes",
+            "MontoEstimado": 4000000,
+        }
+        res = mercado_publico.filtrar_y_clasificar_licitacion(item_evento)
+        self.assertIsNotNone(res)
+        self.assertEqual(res["categoria"], "Eventos / Catering")
+
+        item_alojamiento = {
+            "CodigoExterno": "777-2-LP26",
+            "Nombre": "Servicio de hospedagh para equipo medico",
+            "CodigoEstado": 5,
+            "FechaCierre": "2026-11-20T12:00:00",
+            "Descripcion": "Hospedagh de profesionales",
+            "MontoEstimado": 4000000,
+        }
+        res = mercado_publico.filtrar_y_clasificar_licitacion(item_alojamiento)
+        self.assertIsNotNone(res)
+        self.assertEqual(res["categoria"], "Alojamiento")
+
+    def test_fuzzy_no_inventa_clasificacion(self):
+        # El rescate por tipeo no debe convertir un no-relevante en relevante.
+        self.assertEqual(mercado_publico.contar_terminos_fuzzy("audifonos cascos uniformes", mercado_publico.FUZZY_ALOJAMIENTO), 0)
+        self.assertEqual(mercado_publico.contar_terminos_fuzzy("audifonos cascos uniformes", mercado_publico.FUZZY_EVENTOS), 0)
+
     @patch("urllib.request.urlopen")
     def test_consultar_licitacion_api_mock(self, mock_urlopen):
         fake_api_response = {

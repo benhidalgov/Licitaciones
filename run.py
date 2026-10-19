@@ -26,6 +26,8 @@ def main():
     print("  Credenciales de Demostracion:")
     print(f"    - Usuario:         {DEMO_USER}")
     print(f"    - Contrasena:      {DEMO_PASS}")
+    print("    - Perfiles:        daniela / francisca / mari")
+    print("    - Claves:          <perfil>123")
     print("=" * 72)
     print("[INFO] Servidor web iniciado en modo local. Presione CTRL+C para detener.")
     print("=" * 72)

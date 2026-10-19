@@ -1,5 +1,7 @@
 import os
+import re
 import sqlite3
+from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "licitaciones.db")
@@ -10,8 +12,47 @@ ALLOWED_COLUMNS = {
     "validacion_adjuntos", "tiene_anexo4", "tiene_escrituras",
     "tiene_poderes", "tiene_vigencias", "fecha_publicacion",
     "fecha_cierre", "descripcion_tdr",
-    "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado"
+    "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado",
+    "propiedad", "revisada", "motivo_descarte", "notas", "costeo_validado",
+    "sello_mujer", "jornada_40h", "sello_sernatur", "inclusion_laboral",
+    "adjudicatario", "puntaje_adjudicacion", "precio_final"
 }
+
+PROPIEDADES = ["Plaza San Francisco", "Hotel Ismael"]
+
+MOTIVOS_DESCARTE = ["Precio", "Disponibilidad", "Fuera de alcance", "Otro"]
+
+# Clientes clave que el equipo quiere monitorear (reunion de levantamiento).
+# Nombre visible + alias de busqueda sobre `organismo` y `titulo`.
+# ponytail: lista en codigo; mover a la tabla `ajustes` si el hotel la edita seguido.
+CLIENTES_CLAVE = [
+    ("Mineduc", ("ministerio de educacion", "subsecretaria de educacion", "mineduc")),
+    ("Minsal", ("ministerio de salud", "subsecretaria de salud", "minsal")),
+    ("U. de Chile", ("universidad de chile", "uchile")),
+    ("Usach", ("universidad de santiago", "usach")),
+    ("Productoras", ("productora", "produccion audiovisual", "productoras")),
+]
+
+
+def _sin_acentos(texto: str) -> str:
+    import unicodedata
+    return unicodedata.normalize("NFKD", texto or "").encode("ASCII", "ignore").decode("ascii")
+
+
+def _alias_cliente_clave(nombre: str) -> Tuple[str, ...]:
+    for cliente, alias in CLIENTES_CLAVE:
+        if cliente.lower() == str(nombre or "").strip().lower():
+            return alias
+    return ()
+
+
+def detectar_cliente_clave(texto: str) -> str:
+    """Devuelve el nombre del cliente clave que aparece en el texto, o ''."""
+    limpio = _sin_acentos(texto).lower()
+    for cliente, alias in CLIENTES_CLAVE:
+        if any(a in limpio for a in alias):
+            return cliente
+    return ""
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -46,7 +87,10 @@ def init_db() -> None:
                 tarifa_referencial INTEGER NOT NULL DEFAULT 0,
                 ubicacion TEXT NOT NULL DEFAULT '',
                 equipamiento TEXT NOT NULL DEFAULT '',
-                descripcion TEXT NOT NULL DEFAULT ''
+                descripcion TEXT NOT NULL DEFAULT '',
+                propiedad TEXT NOT NULL DEFAULT 'Plaza San Francisco',
+                montajes TEXT NOT NULL DEFAULT '',
+                es_provisional INTEGER NOT NULL DEFAULT 0
             )
         """)
         conn.commit()
@@ -60,10 +104,14 @@ def init_db() -> None:
             cursor.execute("ALTER TABLE salones ADD COLUMN equipamiento TEXT NOT NULL DEFAULT ''")
         if "descripcion" not in existing_salon_cols:
             cursor.execute("ALTER TABLE salones ADD COLUMN descripcion TEXT NOT NULL DEFAULT ''")
+        if "propiedad" not in existing_salon_cols:
+            cursor.execute("ALTER TABLE salones ADD COLUMN propiedad TEXT NOT NULL DEFAULT 'Plaza San Francisco'")
+        if "montajes" not in existing_salon_cols:
+            cursor.execute("ALTER TABLE salones ADD COLUMN montajes TEXT NOT NULL DEFAULT ''")
+        if "es_provisional" not in existing_salon_cols:
+            cursor.execute("ALTER TABLE salones ADD COLUMN es_provisional INTEGER NOT NULL DEFAULT 0")
         conn.commit()
 
-        cursor.execute("SELECT COUNT(*) FROM salones")
-        count_salones = cursor.fetchone()[0]
         seed_salones = [
             (
                 "SALON-PLENARIO",
@@ -74,7 +122,10 @@ def init_db() -> None:
                 850000,
                 "Nivel Subterraneo - Centro de Convenciones",
                 "Pantalla LED 4K, 4 proyectores laser, audio envolvente, cabinas de traduccion simultanea, climatizacion dual, microfonia inalambrica",
-                "Espacio de maxima capacidad del Hotel Plaza San Francisco, configurable en montaje plenario, auditorio o cena de gala. Ideal para congresos de gran escala y foros gubernamentales."
+                "Espacio de maxima capacidad del Hotel Plaza San Francisco, configurable en montaje plenario, auditorio o cena de gala. Ideal para congresos de gran escala y foros gubernamentales.",
+                "Plaza San Francisco",
+                "Plenario, Auditorio, Banquete, Coctel",
+                0
             ),
             (
                 "SALON-COLONIAL",
@@ -85,7 +136,10 @@ def init_db() -> None:
                 550000,
                 "Piso 2 - Sector Oriente",
                 "Proyector de alta resolucion, telon motorizado, iluminacion dimerizable, audio estereo, tarima desmontable, climatizacion independiente",
-                "Salon clasico con terminaciones de estilo colonial y amplios ventanales. Especializado en almuerzos corporativos, cenas de clausura y ceremonias de premiacion."
+                "Salon clasico con terminaciones de estilo colonial y amplios ventanales. Especializado en almuerzos corporativos, cenas de clausura y ceremonias de premiacion.",
+                "Plaza San Francisco",
+                "Banquete, Auditorio, Coctel, Mesa redonda",
+                0
             ),
             (
                 "SALON-ALAMEDA",
@@ -96,7 +150,10 @@ def init_db() -> None:
                 380000,
                 "Piso 1 - Hall Principal",
                 "Pantalla interactiva 85 pulgadas, streaming para transmision hibrida, microfono de atril y climatizacion automatica",
-                "Espacio versatil ubicado a pasos del lobby central. Optimo para seminarios medianos, talleres de capacitacion tecnica y conferencias de prensa."
+                "Espacio versatil ubicado a pasos del lobby central. Optimo para seminarios medianos, talleres de capacitacion tecnica y conferencias de prensa.",
+                "Plaza San Francisco",
+                "Seminario, Auditorio, Escuela, Isla",
+                0
             ),
             (
                 "SALON-LONDRES",
@@ -107,7 +164,10 @@ def init_db() -> None:
                 260000,
                 "Piso 2 - Ala Ejecutiva",
                 "Pantalla Smart TV 75 pulgadas, camara para videoconferencia grupal, pizarra magnetica y conexion de red dedicada de alta velocidad",
-                "Disenado para mesas redondas, sesiones de comite de expertos y jornadas de trabajo colaborativo de grupos de hasta 40 personas."
+                "Disenado para mesas redondas, sesiones de comite de expertos y jornadas de trabajo colaborativo de grupos de hasta 40 personas.",
+                "Plaza San Francisco",
+                "Mesa redonda, Herradura, Isla, Taller",
+                0
             ),
             (
                 "SALON-DIRECTORIO",
@@ -118,24 +178,196 @@ def init_db() -> None:
                 190000,
                 "Piso 3 - Area Presidencial",
                 "Mesa de directorio ejecutiva en madera noble, pantalla 65 pulgadas para presentaciones, videoconferencia Polycom, coffeebar privado",
-                "Ambiente exclusivo de alta privacidad para reuniones de directorio, juntas de accionistas y firmas protocolarias solemnes."
+                "Ambiente exclusivo de alta privacidad para reuniones de directorio, juntas de accionistas y firmas protocolarias solemnes.",
+                "Plaza San Francisco",
+                "Mesa ejecutiva, Directorio, Entrevistas",
+                0
+            ),
+            (
+                "SALON-ANDES",
+                "Salon Andes",
+                "Auditorio / Teatro",
+                120,
+                "08:30 - 20:00 hrs",
+                520000,
+                "Piso 1 - Ala Norte",
+                "Equipamiento audiovisual estandar, proyector, microfonia y climatizacion",
+                "[PROVISIONAL] Espacio de capacidad media-alta para jornadas y presentaciones. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Teatro, Auditorio, Escuela",
+                1
+            ),
+            (
+                "SALON-PROVIDENCIA",
+                "Salon Providencia",
+                "Banquete / Eventos",
+                100,
+                "08:30 - 23:00 hrs",
+                460000,
+                "Piso 2 - Ala Oriente",
+                "Montaje flexible, audio basico y climatizacion",
+                "[PROVISIONAL] Salon para almuerzos y cenas corporativas. Aforo y tarifa a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Banquete, Coctel, Mesa redonda",
+                1
+            ),
+            (
+                "SALON-CUMBRE",
+                "Salon Cumbre",
+                "Seminario / Coctel",
+                90,
+                "08:30 - 22:00 hrs",
+                420000,
+                "Piso 3 - Ala Poniente",
+                "Proyector, pantalla y audio ambiente",
+                "[PROVISIONAL] Espacio para seminarios y cocteles de cierre. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Seminario, Coctel, Isla",
+                1
+            ),
+            (
+                "SALON-PACIFICO",
+                "Salon Pacifico",
+                "Seminario / Conferencias",
+                70,
+                "08:30 - 20:00 hrs",
+                350000,
+                "Piso 1 - Ala Sur",
+                "Pantalla, proyector y conexion de red",
+                "[PROVISIONAL] Sala de conferencias de capacidad media. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Seminario, Escuela, Auditorio",
+                1
+            ),
+            (
+                "SALON-BELLAVISTA",
+                "Salon Bellavista",
+                "Taller / Capacitacion",
+                60,
+                "08:30 - 19:30 hrs",
+                320000,
+                "Piso 2 - Ala Norte",
+                "Pizarra, proyector y mesas modulares",
+                "[PROVISIONAL] Sala para talleres y capacitaciones. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Taller, Isla, Escuela",
+                1
+            ),
+            (
+                "SALON-LASTARRIA",
+                "Salon Lastarria",
+                "Reunion / Mesa redonda",
+                55,
+                "08:30 - 19:30 hrs",
+                300000,
+                "Piso 2 - Ala Central",
+                "Mesa redonda, pantalla y audio basico",
+                "[PROVISIONAL] Sala para reuniones y comites. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Mesa redonda, Herradura, Reunion",
+                1
+            ),
+            (
+                "SALON-BRASIL",
+                "Salon Brasil",
+                "Capacitacion / U",
+                50,
+                "08:30 - 19:30 hrs",
+                280000,
+                "Piso 1 - Ala Oriente",
+                "Montaje en U, proyector y pizarra",
+                "[PROVISIONAL] Sala de capacitacion con montaje en U. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Escuela, U, Taller",
+                1
+            ),
+            (
+                "SALON-MATTA",
+                "Salon Matta",
+                "Mesa ejecutiva",
+                45,
+                "08:00 - 20:00 hrs",
+                260000,
+                "Piso 3 - Ala Ejecutiva",
+                "Mesa ejecutiva, pantalla y videoconferencia",
+                "[PROVISIONAL] Sala ejecutiva para reuniones de mediana capacidad. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Mesa ejecutiva, Directorio, Reunion",
+                1
+            ),
+            (
+                "SALON-NERUDA",
+                "Salon Neruda",
+                "Sala de trabajo",
+                35,
+                "08:30 - 19:30 hrs",
+                220000,
+                "Piso 2 - Ala Sur",
+                "Mesas de trabajo, pizarra y pantalla",
+                "[PROVISIONAL] Sala de trabajo colaborativo. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Isla, Taller, Reunion",
+                1
+            ),
+            (
+                "SALON-GABRIELA",
+                "Salon Gabriela",
+                "Entrevistas / Reuniones",
+                30,
+                "08:30 - 19:30 hrs",
+                200000,
+                "Piso 1 - Ala Norte",
+                "Mesa de reuniones, pantalla y coffeebar",
+                "[PROVISIONAL] Sala para entrevistas y reuniones pequenas. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Mesa redonda, Entrevistas, Reunion",
+                1
+            ),
+            (
+                "SALON-CORDILLERA",
+                "Salon Cordillera",
+                "Directorio / Mesa ejecutiva",
+                28,
+                "08:00 - 20:00 hrs",
+                200000,
+                "Piso 3 - Area Presidencial",
+                "Mesa de directorio, pantalla y videoconferencia",
+                "[PROVISIONAL] Sala de directorio de capacidad menor. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Directorio, Mesa ejecutiva",
+                1
+            ),
+            (
+                "SALON-SANTA-LUCIA",
+                "Salon Santa Lucia",
+                "Sala de reuniones",
+                25,
+                "08:30 - 19:30 hrs",
+                180000,
+                "Piso 2 - Ala Central",
+                "Mesa de reuniones, pantalla y pizarra",
+                "[PROVISIONAL] Sala de reuniones pequena. Aforo y equipamiento a confirmar con el hotel.",
+                "Plaza San Francisco",
+                "Reunion, Mesa redonda, Entrevistas",
+                1
             )
         ]
-        if count_salones == 0:
-            cursor.executemany("""
-                INSERT INTO salones (
-                    id_salon, nombre, tipo, capacidad_maxima, horario_disponible, tarifa_referencial,
-                    ubicacion, equipamiento, descripcion
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, seed_salones)
-            conn.commit()
-        else:
-            salon_updates = [(s[6], s[7], s[8], s[0]) for s in seed_salones]
-            cursor.executemany("""
-                UPDATE salones SET ubicacion = ?, equipamiento = ?, descripcion = ?
-                WHERE id_salon = ? AND (ubicacion = '' OR ubicacion IS NULL)
-            """, salon_updates)
-            conn.commit()
+        cursor.executemany("""
+            INSERT OR IGNORE INTO salones (
+                id_salon, nombre, tipo, capacidad_maxima, horario_disponible, tarifa_referencial,
+                ubicacion, equipamiento, descripcion, propiedad, montajes, es_provisional
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, seed_salones)
+        salon_updates = [(s[6], s[7], s[8], s[0]) for s in seed_salones]
+        cursor.executemany("""
+            UPDATE salones SET ubicacion = ?, equipamiento = ?, descripcion = ?
+            WHERE id_salon = ? AND (ubicacion = '' OR ubicacion IS NULL)
+        """, salon_updates)
+        cursor.executemany("""
+            UPDATE salones SET montajes = ?
+            WHERE id_salon = ? AND (montajes = '' OR montajes IS NULL)
+        """, [(s[10], s[0]) for s in seed_salones])
+        conn.commit()
 
         # 2. Tabla de Reservas y Ocupacion de Salones (Agenda / Bookings)
         cursor.execute("""
@@ -307,7 +539,19 @@ def init_db() -> None:
                 cantidad_asistentes INTEGER NOT NULL DEFAULT 0,
                 tipo_jornada TEXT NOT NULL DEFAULT '',
                 horario_evento TEXT NOT NULL DEFAULT '',
-                id_salon_asignado TEXT NOT NULL DEFAULT ''
+                id_salon_asignado TEXT NOT NULL DEFAULT '',
+                propiedad TEXT NOT NULL DEFAULT 'Plaza San Francisco',
+                revisada INTEGER NOT NULL DEFAULT 0,
+                motivo_descarte TEXT NOT NULL DEFAULT '',
+                notas TEXT NOT NULL DEFAULT '',
+                costeo_validado INTEGER NOT NULL DEFAULT 0,
+                sello_mujer INTEGER NOT NULL DEFAULT 0,
+                jornada_40h INTEGER NOT NULL DEFAULT 0,
+                sello_sernatur INTEGER NOT NULL DEFAULT 0,
+                inclusion_laboral INTEGER NOT NULL DEFAULT 0,
+                adjudicatario TEXT NOT NULL DEFAULT '',
+                puntaje_adjudicacion REAL NOT NULL DEFAULT 0,
+                precio_final INTEGER NOT NULL DEFAULT 0
             )
         """)
         conn.commit()
@@ -315,14 +559,42 @@ def init_db() -> None:
         # Migracion de columnas en caso de tabla preexistente
         cursor.execute("PRAGMA table_info(licitaciones)")
         existing_cols = {row[1] for row in cursor.fetchall()}
-        if "cantidad_asistentes" not in existing_cols:
-            cursor.execute("ALTER TABLE licitaciones ADD COLUMN cantidad_asistentes INTEGER NOT NULL DEFAULT 0")
-        if "tipo_jornada" not in existing_cols:
-            cursor.execute("ALTER TABLE licitaciones ADD COLUMN tipo_jornada TEXT NOT NULL DEFAULT ''")
-        if "horario_evento" not in existing_cols:
-            cursor.execute("ALTER TABLE licitaciones ADD COLUMN horario_evento TEXT NOT NULL DEFAULT ''")
-        if "id_salon_asignado" not in existing_cols:
-            cursor.execute("ALTER TABLE licitaciones ADD COLUMN id_salon_asignado TEXT NOT NULL DEFAULT ''")
+        nuevas_columnas = [
+            ("cantidad_asistentes", "INTEGER NOT NULL DEFAULT 0"),
+            ("tipo_jornada", "TEXT NOT NULL DEFAULT ''"),
+            ("horario_evento", "TEXT NOT NULL DEFAULT ''"),
+            ("id_salon_asignado", "TEXT NOT NULL DEFAULT ''"),
+            ("propiedad", "TEXT NOT NULL DEFAULT 'Plaza San Francisco'"),
+            ("revisada", "INTEGER NOT NULL DEFAULT 0"),
+            ("motivo_descarte", "TEXT NOT NULL DEFAULT ''"),
+            ("notas", "TEXT NOT NULL DEFAULT ''"),
+            ("costeo_validado", "INTEGER NOT NULL DEFAULT 0"),
+            ("sello_mujer", "INTEGER NOT NULL DEFAULT 0"),
+            ("jornada_40h", "INTEGER NOT NULL DEFAULT 0"),
+            ("sello_sernatur", "INTEGER NOT NULL DEFAULT 0"),
+            ("inclusion_laboral", "INTEGER NOT NULL DEFAULT 0"),
+            ("adjudicatario", "TEXT NOT NULL DEFAULT ''"),
+            ("puntaje_adjudicacion", "REAL NOT NULL DEFAULT 0"),
+            ("precio_final", "INTEGER NOT NULL DEFAULT 0"),
+        ]
+        for nombre, definicion in nuevas_columnas:
+            if nombre not in existing_cols:
+                cursor.execute(f"ALTER TABLE licitaciones ADD COLUMN {nombre} {definicion}")
+        conn.commit()
+
+        # 3. Historial de Ordenes de Compra que entrega el hotel en Excel.
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS historial_oc (
+                id_oc INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT NOT NULL DEFAULT '',
+                organismo TEXT NOT NULL DEFAULT '',
+                objeto TEXT NOT NULL DEFAULT '',
+                monto INTEGER NOT NULL DEFAULT 0,
+                modalidad TEXT NOT NULL DEFAULT '',
+                archivo TEXT NOT NULL DEFAULT '',
+                cargado_en TEXT NOT NULL DEFAULT ''
+            )
+        """)
         conn.commit()
 
         cursor.execute("SELECT COUNT(*) FROM licitaciones")
@@ -542,16 +814,67 @@ def get_salon_by_id(id_salon: str) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
-def get_salones_aptos(capacidad_minima: int) -> List[Dict[str, Any]]:
+def get_salones_aptos(
+    capacidad_minima: int,
+    propiedad: Optional[str] = None
+) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
-        rows = conn.execute(
-            "SELECT * FROM salones WHERE capacidad_maxima >= ? ORDER BY capacidad_maxima ASC",
-            (capacidad_minima,)
-        ).fetchall()
+        query = "SELECT * FROM salones WHERE capacidad_maxima >= ?"
+        params: List[Any] = [capacidad_minima]
+        if propiedad:
+            query += " AND propiedad = ?"
+            params.append(propiedad)
+        query += " ORDER BY capacidad_maxima ASC"
+        rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()
+
+
+# Costos minimos referenciales para el descarte por presupuesto. El hotel puede
+# ajustarlos en el codigo mientras no exista una pantalla de parametros.
+# ponytail: constantes simples; mover a `ajustes` si el hotel cambia tarifas seguido.
+COSTO_ALIMENTACION_PERSONA = 15000
+COSTO_HABITACION_PERSONA = 65000
+
+
+def calcular_costo_minimo(
+    categoria: str,
+    cantidad_asistentes: int,
+    id_salon: Optional[str] = None
+) -> int:
+    """Costo minimo operativo: salon + alimentacion o habitacion por persona."""
+    asistentes = max(0, int(cantidad_asistentes or 0))
+    salon = get_salon_by_id(id_salon) if id_salon else None
+    costo = int(salon["tarifa_referencial"]) if salon else 0
+    if categoria == "Alojamiento":
+        costo += asistentes * COSTO_HABITACION_PERSONA
+    else:
+        costo += asistentes * COSTO_ALIMENTACION_PERSONA
+    return costo
+
+
+def registrar_evaluacion(id_licitacion: str, datos: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Guarda la evaluacion operativa y aplica la regla de presupuesto mandatorio.
+    Retorna el registro actualizado.
+    """
+    lic = get_licitacion_by_id(id_licitacion)
+    if not lic:
+        return {}
+
+    cambios = dict(datos)
+    if cambios.get("costeo_validado") and cambios.get("costo_base_hotel", 0) > 0:
+        if cambios["costo_base_hotel"] > lic["presupuesto_mandante"]:
+            cambios["estado_embudo"] = "Descartada"
+            cambios["motivo_descarte"] = "Precio"
+        elif lic["estado_embudo"] == "Descartada" and lic["motivo_descarte"] == "Precio":
+            cambios["estado_embudo"] = "Calificada"
+            cambios["motivo_descarte"] = ""
+
+    update_licitacion(id_licitacion, cambios)
+    return get_licitacion_by_id(id_licitacion) or {}
 
 
 def _filtros_reservas(
@@ -739,7 +1062,9 @@ def _filtros_licitaciones(
     categoria: Optional[str] = None,
     modalidad: Optional[str] = None,
     estado: Optional[str] = None,
-    q: Optional[str] = None
+    q: Optional[str] = None,
+    propiedad: Optional[str] = None,
+    cliente_clave: Optional[str] = None
 ) -> Tuple[str, List[Any]]:
     """Construye el WHERE compartido entre listado y conteo (evita divergencia)."""
     where = " WHERE 1=1"
@@ -753,10 +1078,20 @@ def _filtros_licitaciones(
     if estado:
         where += " AND l.estado_embudo = ?"
         params.append(estado)
+    if propiedad:
+        where += " AND l.propiedad = ?"
+        params.append(propiedad)
+    if cliente_clave:
+        alias = _alias_cliente_clave(cliente_clave)
+        if alias:
+            where += " AND (" + " OR ".join("l.organismo LIKE ?" for _ in alias) + ")"
+            params.extend(f"%{a}%" for a in alias)
+        else:
+            where += " AND 1=0"  # cliente fuera de la lista configurable
     if q:
-        where += " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ?)"
+        where += " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ? OR l.notas LIKE ?)"
         term = f"%{q}%"
-        params.extend([term, term, term])
+        params.extend([term, term, term, term])
     return where, params
 
 
@@ -764,9 +1099,11 @@ def count_licitaciones(
     categoria: Optional[str] = None,
     modalidad: Optional[str] = None,
     estado: Optional[str] = None,
-    q: Optional[str] = None
+    q: Optional[str] = None,
+    propiedad: Optional[str] = None,
+    cliente_clave: Optional[str] = None
 ) -> int:
-    where, params = _filtros_licitaciones(categoria, modalidad, estado, q)
+    where, params = _filtros_licitaciones(categoria, modalidad, estado, q, propiedad, cliente_clave)
     conn = get_db_connection()
     try:
         row = conn.execute(
@@ -782,18 +1119,21 @@ def get_all_licitaciones(
     modalidad: Optional[str] = None,
     estado: Optional[str] = None,
     q: Optional[str] = None,
+    propiedad: Optional[str] = None,
+    cliente_clave: Optional[str] = None,
     limit: Optional[int] = None,
     offset: int = 0
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
-        where, params = _filtros_licitaciones(categoria, modalidad, estado, q)
+        where, params = _filtros_licitaciones(categoria, modalidad, estado, q, propiedad, cliente_clave)
         query = """
             SELECT l.*,
                    s.nombre AS nombre_salon,
                    s.capacidad_maxima AS capacidad_salon,
                    s.tipo AS tipo_salon,
-                   s.horario_disponible AS horario_salon
+                   s.horario_disponible AS horario_salon,
+                   s.es_provisional AS salon_provisional
             FROM licitaciones l
             LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
         """ + where + " ORDER BY l.fecha_cierre ASC"
@@ -814,7 +1154,8 @@ def get_licitacion_by_id(id_licitacion: str) -> Optional[Dict[str, Any]]:
                    s.nombre AS nombre_salon,
                    s.capacidad_maxima AS capacidad_salon,
                    s.tipo AS tipo_salon,
-                   s.horario_disponible AS horario_salon
+                   s.horario_disponible AS horario_salon,
+                   s.es_provisional AS salon_provisional
             FROM licitaciones l
             LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
             WHERE l.id_licitacion = ?
@@ -825,12 +1166,81 @@ def get_licitacion_by_id(id_licitacion: str) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
+def get_oportunidades_prioritarias(
+    hoy: Optional[str] = None,
+    limit: int = 8,
+    **filtros
+) -> List[Dict[str, Any]]:
+    """
+    Oportunidades abiertas con match viable: presupuesto cubre el costo y, si
+    hay aforo, el salon asignado tiene capacidad suficiente.
+
+    `filtros` acepta los mismos nombres que `_filtros_licitaciones`, de modo que
+    el bloque priorizado respete la misma busqueda que el listado de abajo.
+    """
+    fecha_referencia = hoy or date.today().isoformat()
+    conn = get_db_connection()
+    try:
+        query = """
+            SELECT l.*,
+                   s.nombre AS nombre_salon,
+                   s.capacidad_maxima AS capacidad_salon,
+                   s.es_provisional AS salon_provisional
+            FROM licitaciones l
+            LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
+            WHERE l.estado_embudo NOT IN ('Descartada', 'Adjudicada')
+              AND l.fecha_cierre >= ?
+              AND l.costo_base_hotel <= l.presupuesto_mandante
+              AND (
+                    l.cantidad_asistentes = 0
+                    OR l.id_salon_asignado = ''
+                    OR s.capacidad_maxima >= l.cantidad_asistentes
+              )
+        """
+        params: List[Any] = [fecha_referencia]
+
+        # Los filtros del tablero se reutilizan tal cual; solo se retira la
+        # clausula WHERE porque la base de esta consulta ya la trae.
+        extra_where, extra_params = _filtros_licitaciones(**filtros)
+        query += extra_where.replace(" WHERE 1=1", "", 1)
+        params.extend(extra_params)
+
+        query += " ORDER BY l.fecha_cierre ASC LIMIT ?"
+        params.append(int(limit))
+        rows = conn.execute(query, params).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def marcar_inviables() -> int:
+    """Descarta oportunidades con costeo validado que superan el presupuesto."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute("""
+            UPDATE licitaciones
+            SET estado_embudo = 'Descartada', motivo_descarte = 'Precio'
+            WHERE costeo_validado = 1
+              AND presupuesto_mandante > 0
+              AND costo_base_hotel > presupuesto_mandante
+              AND estado_embudo NOT IN ('Descartada', 'Adjudicada')
+        """)
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+
 def create_licitacion(data: Dict[str, Any]) -> str:
     conn = get_db_connection()
     try:
         payload = {
             "cantidad_asistentes": 0, "tipo_jornada": "",
             "horario_evento": "", "id_salon_asignado": "",
+            "propiedad": "Plaza San Francisco", "revisada": 0,
+            "motivo_descarte": "", "notas": "", "costeo_validado": 0,
+            "sello_mujer": 0, "jornada_40h": 0,
+            "sello_sernatur": 0, "inclusion_laboral": 0,
             **data
         }
         conn.execute("""
@@ -839,13 +1249,17 @@ def create_licitacion(data: Dict[str, Any]) -> str:
                 presupuesto_mandante, costo_base_hotel, estado_embudo, validacion_adjuntos,
                 tiene_anexo4, tiene_escrituras, tiene_poderes, tiene_vigencias,
                 fecha_publicacion, fecha_cierre, descripcion_tdr,
-                cantidad_asistentes, tipo_jornada, horario_evento, id_salon_asignado
+                cantidad_asistentes, tipo_jornada, horario_evento, id_salon_asignado,
+                propiedad, revisada, motivo_descarte, notas, costeo_validado,
+                sello_mujer, jornada_40h, sello_sernatur, inclusion_laboral
             ) VALUES (
                 :id_licitacion, :titulo, :organismo, :categoria, :modalidad, :region,
                 :presupuesto_mandante, :costo_base_hotel, :estado_embudo, :validacion_adjuntos,
                 :tiene_anexo4, :tiene_escrituras, :tiene_poderes, :tiene_vigencias,
                 :fecha_publicacion, :fecha_cierre, :descripcion_tdr,
-                :cantidad_asistentes, :tipo_jornada, :horario_evento, :id_salon_asignado
+                :cantidad_asistentes, :tipo_jornada, :horario_evento, :id_salon_asignado,
+                :propiedad, :revisada, :motivo_descarte, :notas, :costeo_validado,
+                :sello_mujer, :jornada_40h, :sello_sernatur, :inclusion_laboral
             )
         """, payload)
         conn.commit()
@@ -937,3 +1351,186 @@ def set_tope_compra_agil(valor: int) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Historial de Ordenes de Compra (Excel que entrega el hotel).
+# El equipo aun no confirma las cabeceras exactas: se aceptan alias y las
+# columnas que falten quedan vacias en vez de abortar la carga.
+# ---------------------------------------------------------------------------
+
+COLUMNAS_OC = {
+    "fecha": ("fecha", "fecha adjudicacion", "fecha oc", "fechaa o"),
+    "organismo": ("organismo", "cliente", "comprador", "institucion", "unidad de gasto"),
+    "objeto": ("objeto", "descripcion", "materia", "glosa", "nombre"),
+    "monto": ("monto", "monto total", "precio", "monto adjudicado", "valor"),
+    "modalidad": ("modalidad", "tipo", "tipo de compra"),
+}
+
+
+def _normalizar_encabezado(texto: Any) -> str:
+    limpio = _sin_acentos(str(texto or "")).lower().replace(".", "")
+    return " ".join(limpio.split())
+
+
+def _monto_oc(valor: Any) -> int:
+    """Pesos chilenos: '$1.234.567', '1.234.567' o '1234567'. Ignora decimales."""
+    s = str(valor or "").strip()
+    decimal = re.search(r",\d{1,2}$", s)
+    if decimal:
+        s = s[:decimal.start()]
+    digitos = re.sub(r"\D", "", s)
+    return int(digitos) if digitos else 0
+
+
+def _fecha_oc(valor: Any) -> str:
+    s = str(valor or "").strip()
+    m = re.match(r"^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$", s)
+    if m:
+        dia, mes, anio = m.groups()
+        anio = f"20{anio}" if len(anio) == 2 else anio
+        return f"{anio}-{int(mes):02d}-{int(dia):02d}"
+    return s[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", s) else s
+
+
+def importar_historial_oc(filas: List[List[Any]], archivo: str = "") -> int:
+    """
+    Importa la hoja ya leida del Excel de OC. Primera fila = encabezados.
+    Retorna la cantidad de filas insertadas.
+    """
+    if not filas:
+        return 0
+
+    encabezados = [_normalizar_encabezado(c) for c in filas[0]]
+    idx: Dict[str, int] = {}
+    for campo, alias in COLUMNAS_OC.items():
+        for i, enc in enumerate(encabezados):
+            if enc in alias:
+                idx[campo] = i
+                break
+
+    if "objeto" not in idx and "organismo" not in idx:
+        return 0  # ninguna columna reconocible: no es un Excel de OC
+
+    def celda(fila: List[Any], campo: str) -> str:
+        i = idx.get(campo)
+        if i is None or i >= len(fila):
+            return ""
+        return str(fila[i] or "").strip()
+
+    hoy = date.today().isoformat()
+    registros = []
+    for fila in filas[1:]:
+        objeto = celda(fila, "objeto")
+        organismo = celda(fila, "organismo")
+        if not objeto and not organismo:
+            continue
+        registros.append((
+            _fecha_oc(celda(fila, "fecha")),
+            organismo,
+            objeto,
+            _monto_oc(celda(fila, "monto")),
+            celda(fila, "modalidad"),
+            archivo,
+            hoy,
+        ))
+
+    if not registros:
+        return 0
+
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT INTO historial_oc
+                (fecha, organismo, objeto, monto, modalidad, archivo, cargado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            registros,
+        )
+        conn.commit()
+        return len(registros)
+    finally:
+        conn.close()
+
+
+def get_historial_oc(limit: int = 500) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM historial_oc ORDER BY fecha DESC LIMIT ?",
+            (int(limit),)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_resumen_historial_oc() -> Dict[str, int]:
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS registros, COALESCE(SUM(monto), 0) AS monto FROM historial_oc"
+        ).fetchone()
+        return {"registros": int(row["registros"]), "monto_total": int(row["monto"])}
+    finally:
+        conn.close()
+
+
+def get_experiencia_organismo(organismo: str) -> Dict[str, int]:
+    """
+    Cruce de experiencia: OC que comparten un termino significativo (>= 5
+    letras) con el organismo de la licitacion.
+    ponytail: comparacion en memoria sobre una palabra comun; basta mientras el
+    historial sea de cientos de filas, no de decenas de miles.
+    """
+    propio = {w for w in _sin_acentos(organismo).lower().split() if len(w) >= 5}
+    if not propio:
+        return {"registros": 0, "monto_total": 0}
+
+    registros = monto_total = 0
+    for oc in get_historial_oc(limit=5000):
+        otro = {w for w in _sin_acentos(oc["organismo"]).lower().split() if len(w) >= 5}
+        if propio & otro:
+            registros += 1
+            monto_total += int(oc["monto"])
+    return {"registros": registros, "monto_total": monto_total}
+
+
+# ---------------------------------------------------------------------------
+# Benchmarking de adjudicaciones: quien gano, con que puntaje y a que precio.
+# La fuente la carga el equipo (la API publica no expone puntajes).
+# ---------------------------------------------------------------------------
+
+def get_benchmarking(licitaciones: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """Comparacion entre lo adjudicado, lo que pide el mandante y nuestro costo."""
+    if licitaciones is None:
+        licitaciones = get_all_licitaciones(limit=5000)
+
+    filas = []
+    for lic in licitaciones:
+        precio = int(lic.get("precio_final") or 0)
+        if precio <= 0:
+            continue
+        presupuesto = int(lic.get("presupuesto_mandante") or 0)
+        costo = int(lic.get("costo_base_hotel") or 0)
+        filas.append({
+            "id_licitacion": lic["id_licitacion"],
+            "titulo": lic["titulo"],
+            "organismo": lic["organismo"],
+            "adjudicatario": lic.get("adjudicatario") or "",
+            "puntaje_adjudicacion": lic.get("puntaje_adjudicacion") or 0,
+            "precio_final": precio,
+            "presupuesto_mandante": presupuesto,
+            "costo_base_hotel": costo,
+            # > 0 el adjudicatario pago mas de lo que pedia el mandante
+            "desviacion_pct": round(((precio - presupuesto) / presupuesto) * 100, 1) if presupuesto else 0,
+            # > 0 hay espacio para ofertar por debajo del precio observado
+            "margen_vs_costo": precio - costo,
+        })
+    filas.sort(key=lambda f: f["precio_final"], reverse=True)
+    return {
+        "filas": filas,
+        "adjudicaciones": len(filas),
+        "precio_promedio": int(round(sum(f["precio_final"] for f in filas) / len(filas))) if filas else 0,
+    }
