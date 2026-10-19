@@ -32,15 +32,32 @@ class TestEvaluacionOperativa(unittest.TestCase):
             except PermissionError:
                 pass
 
-    def test_catalogo_tiene_17_salones_con_12_provisionales(self):
+    def test_catalogo_tiene_17_salones_del_hotel(self):
         salones = database.get_all_salones()
         self.assertEqual(len(salones), 17)
-        self.assertEqual(sum(1 for s in salones if s["es_provisional"]), 12)
         self.assertTrue(all(s["propiedad"] == "Plaza San Francisco" for s in salones))
 
+        # Solo "Tam" sigue como provisional: el catalogo oficial no le dedica
+        # fila propia y sus aforos se deducen de las combinaciones.
+        prov = [s["nombre"] for s in salones if s["es_provisional"]]
+        self.assertEqual(prov, ["Salon Tam"])
+
+        # Aforos tomados del documento oficial del hotel, no estimados.
+        por_id = {s["id_salon"]: s for s in salones}
+        self.assertEqual(por_id["SALON-PERGOLA"]["capacidad_maxima"], 450)
+        self.assertEqual(por_id["SALON-DANUBIO"]["capacidad_maxima"], 100)
+        self.assertEqual(por_id["SALON-EJECUTIVO"]["capacidad_maxima"], 8)
+        # Superficie del Salon Pergola, la unica apta para 450 personas.
+        self.assertIn("362 m2", por_id["SALON-PERGOLA"]["ubicacion"])
+        # Ningun salon del catalogo real se llama como los de prueba.
+        self.assertFalse(any("Andes" in s["nombre"] or "Cordillera" in s["nombre"]
+                             for s in salones))
+
     def test_costo_minimo_suma_salon_y_consumo(self):
-        costo = database.calcular_costo_minimo("Eventos / Catering", 10, "SALON-DIRECTORIO")
-        self.assertEqual(costo, 190000 + 10 * database.COSTO_ALIMENTACION_PERSONA)
+        costo = database.calcular_costo_minimo("Eventos / Catering", 10, "SALON-SENA")
+        # El catalogo oficial no publica tarifas, por lo que solo se cuenta el
+        # consumo por persona.
+        self.assertEqual(costo, 10 * database.COSTO_ALIMENTACION_PERSONA)
 
         hospedaje = database.calcular_costo_minimo("Alojamiento", 2)
         self.assertEqual(hospedaje, 2 * database.COSTO_HABITACION_PERSONA)
@@ -51,7 +68,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
             data={
                 "propiedad": "Plaza San Francisco",
                 "cantidad_asistentes": "1000",
-                "id_salon_asignado": "SALON-ALAMEDA",
+                "id_salon_asignado": "SALON-DANUBIO",
                 "tipo_jornada": "Jornada Completa (8 hrs)",
                 "horario_evento": "08:30 a 18:30 hrs",
             },
@@ -118,7 +135,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
             "fecha_cierre": "2026-12-31",
             "descripcion_tdr": "Servicio de salon",
             "cantidad_asistentes": 10,
-            "id_salon_asignado": "SALON-DIRECTORIO",
+            "id_salon_asignado": "SALON-SENA",
         })
         priorizadas = database.get_oportunidades_prioritarias(hoy="2026-01-01", limit=100)
         self.assertIn("TEST-PRIORIDAD-01", {p["id_licitacion"] for p in priorizadas})

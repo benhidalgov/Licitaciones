@@ -201,10 +201,10 @@ class TestDatabase(unittest.TestCase):
         salones = database.get_all_salones()
         self.assertGreaterEqual(len(salones), 5)
         ids = {s["id_salon"] for s in salones}
-        self.assertIn("SALON-PLENARIO", ids)
-        self.assertIn("SALON-COLONIAL", ids)
-        self.assertIn("SALON-ALAMEDA", ids)
-        self.assertIn("SALON-DIRECTORIO", ids)
+        self.assertIn("SALON-PERGOLA", ids)
+        self.assertIn("SALON-PERGOLA", ids)
+        self.assertIn("SALON-DANUBIO", ids)
+        self.assertIn("SALON-SENA", ids)
 
         # Verificar campos obligatorios del catalogo
         for s in salones:
@@ -214,10 +214,10 @@ class TestDatabase(unittest.TestCase):
             self.assertTrue(s["horario_disponible"])
 
     def test_get_salon_by_id(self):
-        plenario = database.get_salon_by_id("SALON-PLENARIO")
-        self.assertIsNotNone(plenario)
-        self.assertEqual(plenario["capacidad_maxima"], 300)
-        self.assertEqual(plenario["nombre"], "Gran Salon San Francisco (Plenario)")
+        pergola = database.get_salon_by_id("SALON-PERGOLA")
+        self.assertIsNotNone(pergola)
+        self.assertEqual(pergola["capacidad_maxima"], 450)
+        self.assertEqual(pergola["nombre"], "Salon Pergola")
 
         inexistente = database.get_salon_by_id("SALON-INEXISTENTE")
         self.assertIsNone(inexistente)
@@ -231,7 +231,7 @@ class TestDatabase(unittest.TestCase):
 
         aptos_200 = database.get_salones_aptos(200)
         self.assertEqual(len(aptos_200), 1)
-        self.assertEqual(aptos_200[0]["id_salon"], "SALON-PLENARIO")
+        self.assertEqual(aptos_200[0]["id_salon"], "SALON-PERGOLA")
 
         aptos_500 = database.get_salones_aptos(500)
         self.assertEqual(len(aptos_500), 0)
@@ -258,7 +258,7 @@ class TestDatabase(unittest.TestCase):
             "cantidad_asistentes": 120,
             "tipo_jornada": "Media Jornada Manana (4 hrs)",
             "horario_evento": "08:30 a 13:00 hrs",
-            "id_salon_asignado": "SALON-COLONIAL"
+            "id_salon_asignado": "SALON-PERGOLA"
         }
         database.create_licitacion(data)
 
@@ -267,19 +267,19 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(creada["cantidad_asistentes"], 120)
         self.assertEqual(creada["tipo_jornada"], "Media Jornada Manana (4 hrs)")
         self.assertEqual(creada["horario_evento"], "08:30 a 13:00 hrs")
-        self.assertEqual(creada["id_salon_asignado"], "SALON-COLONIAL")
-        self.assertEqual(creada["nombre_salon"], "Salon Colonial")
-        self.assertEqual(creada["capacidad_salon"], 150)
+        self.assertEqual(creada["id_salon_asignado"], "SALON-PERGOLA")
+        self.assertEqual(creada["nombre_salon"], "Salon Pergola")
+        self.assertEqual(creada["capacidad_salon"], 450)
 
         # Actualizar asignacion de salon y aforo
         database.update_licitacion("TEST-CAPACIDAD-01", {
             "cantidad_asistentes": 200,
-            "id_salon_asignado": "SALON-PLENARIO"
+            "id_salon_asignado": "SALON-PERGOLA"
         })
         actualizada = database.get_licitacion_by_id("TEST-CAPACIDAD-01")
         self.assertEqual(actualizada["cantidad_asistentes"], 200)
-        self.assertEqual(actualizada["id_salon_asignado"], "SALON-PLENARIO")
-        self.assertEqual(actualizada["nombre_salon"], "Gran Salon San Francisco (Plenario)")
+        self.assertEqual(actualizada["id_salon_asignado"], "SALON-PERGOLA")
+        self.assertEqual(actualizada["nombre_salon"], "Salon Pergola")
 
 
 if __name__ == "__main__":
