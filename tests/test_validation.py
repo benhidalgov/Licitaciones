@@ -5,7 +5,7 @@ import database
 
 
 VALID_RESERVA_FORM = {
-    "id_salon": "SALON-LONDRES",
+    "id_salon": "SALON-PARRA",
     "cliente_evento": "Evento de Validacion",
     "organismo_o_empresa": "Organismo de Prueba",
     "tipo_evento": "Reunion",
@@ -77,7 +77,7 @@ class TestValidation(unittest.TestCase):
         data["fecha_fin"] = "2027-02-01"
         response = self.client.post("/reservas/nueva", data=data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        reservas = database.get_all_reservas(id_salon="SALON-LONDRES")
+        reservas = database.get_all_reservas(id_salon="SALON-PARRA")
         nueva = [r for r in reservas if r["cliente_evento"] == "Evento de Validacion"]
         self.assertEqual(len(nueva), 1)
         self.assertEqual(nueva[0]["asistentes_estimados"], 0)

@@ -47,11 +47,11 @@ class TestSalones(unittest.TestCase):
         self.assertIn("Reservas Activas", html)
 
         # Salon names
-        self.assertIn("Gran Salon San Francisco (Plenario)", html)
-        self.assertIn("Salon Colonial", html)
-        self.assertIn("Salon Alameda", html)
-        self.assertIn("Salon Londres", html)
-        self.assertIn("Salon Directorio Ejecutivo", html)
+        self.assertIn("Salon Pergola", html)
+        self.assertIn("Salon Pergola", html)
+        self.assertIn("Salon Danubio", html)
+        self.assertIn("Salon Parra", html)
+        self.assertIn("Salon Sena", html)
 
         # Reservation agenda items
         self.assertIn("Subsecretaria de Turismo", html)
@@ -59,15 +59,15 @@ class TestSalones(unittest.TestCase):
         self.assertIn("Banco Central de Chile", html)
 
     def test_salon_detail_view(self):
-        response = self.client.get("/salones/SALON-PLENARIO")
+        response = self.client.get("/salones/SALON-PERGOLA")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
-        self.assertIn("Gran Salon San Francisco (Plenario)", html)
-        self.assertIn("Plenario / Conferencia", html)
-        self.assertIn("300", html)
-        self.assertIn("Nivel Subterraneo - Centro de Convenciones", html)
-        self.assertIn("Pantalla LED 4K", html)
+        self.assertIn("Salon Pergola", html)
+        self.assertIn("Salon de gran capacidad", html)
+        self.assertIn("450", html)
+        self.assertIn("Piso 1 - 362 m2", html)
+        self.assertIn("Aforos del catalogo oficial", html)
         self.assertIn("Agenda de Ocupacion", html)
         self.assertIn("Fechas de Ocupacion", html)
         self.assertIn("Cliente / Organismo (Booked Por)", html)
@@ -77,13 +77,13 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_reservas_filter_by_salon(self):
-        response = self.client.get("/salones?salon=SALON-ALAMEDA")
+        response = self.client.get("/salones?salon=SALON-DANUBIO")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
-        self.assertIn("Salon Alameda", html)
+        self.assertIn("Salon Danubio", html)
         self.assertIn("Subsecretaria de Turismo", html)
-        # Should not show Banco Central de Chile which is in Salon Colonial
+        # Should not show Banco Central de Chile which is in Salon Pergola
         self.assertNotIn("Banco Central de Chile", html)
 
     def test_reservas_search_query(self):
@@ -95,18 +95,18 @@ class TestSalones(unittest.TestCase):
         self.assertNotIn("SOFOFA", html)
 
     def test_conflictos_reserva_logic(self):
-        # 2026-09-20 has a reservation for Subsecretaria de Turismo in SALON-ALAMEDA
-        conflictos = database.get_conflictos_reserva("SALON-ALAMEDA", "2026-09-20", "2026-09-20")
+        # 2026-09-20 has a reservation for Subsecretaria de Turismo in SALON-DANUBIO
+        conflictos = database.get_conflictos_reserva("SALON-DANUBIO", "2026-09-20", "2026-09-20")
         self.assertEqual(len(conflictos), 1)
         self.assertEqual(conflictos[0]["organismo_o_empresa"], "Subsecretaria de Turismo")
 
         # Date without reservation
-        sin_conflicto = database.get_conflictos_reserva("SALON-ALAMEDA", "2026-11-01", "2026-11-01")
+        sin_conflicto = database.get_conflictos_reserva("SALON-DANUBIO", "2026-11-01", "2026-11-01")
         self.assertEqual(len(sin_conflicto), 0)
 
     def test_create_reserva(self):
         new_reserva_data = {
-            "id_salon": "SALON-LONDRES",
+            "id_salon": "SALON-PARRA",
             "cliente_evento": "Taller de Auditoria de Procesos",
             "organismo_o_empresa": "Contraloria General",
             "tipo_evento": "Capacitacion Tecnica",
@@ -123,7 +123,7 @@ class TestSalones(unittest.TestCase):
         self.assertIsInstance(reserva_id, int)
         self.assertGreater(reserva_id, 0)
 
-        reservas_londres = database.get_reservas_by_salon("SALON-LONDRES")
+        reservas_londres = database.get_reservas_by_salon("SALON-PARRA")
         nombres_eventos = [r["cliente_evento"] for r in reservas_londres]
         self.assertIn("Taller de Auditoria de Procesos", nombres_eventos)
 
@@ -131,7 +131,7 @@ class TestSalones(unittest.TestCase):
         # Existing seed reservation
         reserva = database.get_reserva_by_id(1)
         self.assertIsNotNone(reserva)
-        self.assertEqual(reserva["id_salon"], "SALON-ALAMEDA")
+        self.assertEqual(reserva["id_salon"], "SALON-DANUBIO")
         self.assertEqual(reserva["organismo_o_empresa"], "Subsecretaria de Turismo")
 
         # Non-existent
@@ -154,7 +154,7 @@ class TestSalones(unittest.TestCase):
     def test_delete_reserva(self):
         # Create a temp reservation and delete it
         temp_id = database.create_reserva({
-            "id_salon": "SALON-DIRECTORIO",
+            "id_salon": "SALON-SENA",
             "cliente_evento": "Reunion Temporal",
             "organismo_o_empresa": "Empresa Test",
             "tipo_evento": "Reunion",
@@ -168,25 +168,25 @@ class TestSalones(unittest.TestCase):
         self.assertIsNone(database.get_reserva_by_id(temp_id))
 
     def test_conflictos_reserva_exclude_self(self):
-        # Reservation 1 is on 2026-09-20 in SALON-ALAMEDA
-        conflictos = database.get_conflictos_reserva("SALON-ALAMEDA", "2026-09-20", "2026-09-20")
+        # Reservation 1 is on 2026-09-20 in SALON-DANUBIO
+        conflictos = database.get_conflictos_reserva("SALON-DANUBIO", "2026-09-20", "2026-09-20")
         self.assertEqual(len(conflictos), 1)
 
         # Excluding self (id_reserva = 1) should yield no conflicts
-        conflictos_self = database.get_conflictos_reserva("SALON-ALAMEDA", "2026-09-20", "2026-09-20", exclude_id_reserva=1)
+        conflictos_self = database.get_conflictos_reserva("SALON-DANUBIO", "2026-09-20", "2026-09-20", exclude_id_reserva=1)
         self.assertEqual(len(conflictos_self), 0)
 
     def test_crear_reserva_get_view(self):
-        response = self.client.get("/reservas/nueva?salon=SALON-ALAMEDA&licitacion=1058-12-COT24")
+        response = self.client.get("/reservas/nueva?salon=SALON-DANUBIO&licitacion=1058-12-COT24")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("Registrar Nueva Reserva", html)
-        self.assertIn("SALON-ALAMEDA", html)
+        self.assertIn("SALON-DANUBIO", html)
         self.assertIn("1058-12-COT24", html)
 
     def test_crear_reserva_post_success(self):
         payload = {
-            "id_salon": "SALON-COLONIAL",
+            "id_salon": "SALON-PERGOLA",
             "cliente_evento": "Cena de Gala Anual",
             "organismo_o_empresa": "Asociacion de Hoteleria",
             "tipo_evento": "Banquete",
@@ -207,7 +207,7 @@ class TestSalones(unittest.TestCase):
 
     def test_crear_reserva_post_invalid_dates(self):
         payload = {
-            "id_salon": "SALON-COLONIAL",
+            "id_salon": "SALON-PERGOLA",
             "cliente_evento": "Evento Fechas Invalidas",
             "organismo_o_empresa": "Organismo Test",
             "tipo_evento": "Banquete",
@@ -223,9 +223,9 @@ class TestSalones(unittest.TestCase):
         self.assertIn("fecha de inicio no puede ser posterior", html)
 
     def test_crear_reserva_post_collision_warning(self):
-        # 2026-09-20 already has Subsecretaria de Turismo in SALON-ALAMEDA
+        # 2026-09-20 already has Subsecretaria de Turismo in SALON-DANUBIO
         payload = {
-            "id_salon": "SALON-ALAMEDA",
+            "id_salon": "SALON-DANUBIO",
             "cliente_evento": "Evento Colisionante",
             "organismo_o_empresa": "Entidad Competidora",
             "tipo_evento": "Seminario",
@@ -250,7 +250,7 @@ class TestSalones(unittest.TestCase):
 
         # POST edit
         edit_payload = {
-            "id_salon": "SALON-ALAMEDA",
+            "id_salon": "SALON-DANUBIO",
             "cliente_evento": "Jornada Estrategica Modificada",
             "organismo_o_empresa": "Subsecretaria de Turismo Actualizada",
             "tipo_evento": "Planificacion",
@@ -271,7 +271,7 @@ class TestSalones(unittest.TestCase):
     def test_eliminar_reserva_post(self):
         # Create temp reservation to delete
         temp_id = database.create_reserva({
-            "id_salon": "SALON-LONDRES",
+            "id_salon": "SALON-PARRA",
             "cliente_evento": "Evento Para Eliminar",
             "organismo_o_empresa": "Organismo X",
             "tipo_evento": "Taller",
@@ -284,7 +284,7 @@ class TestSalones(unittest.TestCase):
         self.assertIsNone(database.get_reserva_by_id(temp_id))
 
     def test_reservar_desde_licitacion_button_rendered(self):
-        # In detail view of 1058-12-COT24 (which has SALON-ALAMEDA assigned)
+        # In detail view of 1058-12-COT24 (which has SALON-DANUBIO assigned)
         resp = self.client.get("/licitaciones/1058-12-COT24")
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode("utf-8")

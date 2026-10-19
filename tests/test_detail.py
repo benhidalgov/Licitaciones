@@ -169,14 +169,14 @@ class TestDetail(unittest.TestCase):
         self.assertIn("6.900.000 CLP", html)
 
     def test_detail_capacity_panel_adequate(self):
-        # 1058-12-COT24 has 80 personas, SALON-ALAMEDA (capacidad: 80)
+        # 1058-12-COT24 has 80 personas, SALON-DANUBIO (capacidad: 100)
         response = self.client.get("/licitaciones/1058-12-COT24")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
         self.assertIn("Dimensionamiento Operativo, Aforo y Horarios de Salones", html)
         self.assertIn("80 personas", html)
-        self.assertIn("Salon Alameda", html)
+        self.assertIn("Salon Danubio", html)
         self.assertIn("Capacidad Adecuada", html)
 
     def test_detail_capacity_exceeded_alert(self):
@@ -202,7 +202,7 @@ class TestDetail(unittest.TestCase):
             "cantidad_asistentes": 100,
             "tipo_jornada": "Jornada Completa (8 hrs)",
             "horario_evento": "08:30 a 18:30 hrs",
-            "id_salon_asignado": "SALON-LONDRES"  # Capacidad: 40
+            "id_salon_asignado": "SALON-PARRA"  # Capacidad: 40
         })
 
         response = self.client.get("/licitaciones/TEST-SOBRECUPO-01")

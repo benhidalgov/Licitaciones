@@ -62,6 +62,91 @@ def get_db_connection() -> sqlite3.Connection:
     return conn
 
 
+# Catalogo oficial de salones del Hotel Plaza San Francisco.
+# Fuente: documento "SALONES HPSF.pdf" del hotel, tabla de aforos por montaje.
+# Formato de cada fila: (nombre, piso, m2, U, auditorio, mesa imperial, escuela,
+# mesa redonda 1,50 m 10 pax, mesa redonda 1,20 m 5 pax, coctel de pie).
+# None significa que el catalogo no admite ese montaje en ese salon.
+CATALOGO_SALONES_HPSF = [
+    ("Ejecutivo", 2, 28, None, None, 8, None, None, None, None),
+    ("Alerce", -2, 41, 20, 30, 20, 25, 30, 20, None),
+    ("Roble", -2, 41, 20, 30, 20, 25, 30, 20, None),
+    ("Mistral", -1, 47, 20, 30, 20, 25, 30, 25, None),
+    ("Neruda", -1, 50, 20, 30, 20, 25, 30, 20, None),
+    ("Parra", -1, 62, 20, 35, 20, 25, 40, 25, None),
+    ("Ebro", 2, 48, 20, 30, 20, 25, 30, 25, None),
+    ("Tiber", 2, 46, 15, 20, 15, 20, 30, 25, 15),
+    ("Volga", 2, 49, 20, 30, 20, 25, 30, 25, 30),
+    ("Duero", 2, 58, 25, 50, 25, 30, 40, 30, 30),
+    ("Arrau", -1, 62, 25, 50, 25, 30, 40, 30, 30),
+    ("Araucaria", -2, 105, 40, 100, 40, 60, 80, 40, 60),
+    ("Sena", 2, 65, 30, 60, 30, 35, 50, 30, 40),
+    ("Danubio", 2, 108, 35, 100, 35, 50, 70, 40, 80),
+    ("Rhin", 2, 84, 20, 60, 20, 30, 50, 30, 60),
+    ("Pergola", 1, 362, 60, 450, 60, 200, 280, 150, 300),
+]
+
+# "Tam" no tiene fila propia en el catalogo: aparece unicamente dentro de las
+# combinaciones "Danubio Abierto" (158 m2) y "Dan+Tam+Rhin" (242 m2). Sus
+# aforos se deducen por diferencia y solo se cargan los que coinciden en ambas
+# combinaciones; el resto queda sin dato en vez de inventarse.
+SALON_TAM_DEDUCIDO = ("Tam", 2, 50, None, None, None, 50, 30, None, 20)
+
+_MONTAJES_TITULARES = (
+    ("U", 3),
+    ("Auditorio", 4),
+    ("Mesa imperial", 5),
+    ("Escuela", 6),
+    ("Mesa redonda 1,50 m (10 pax)", 7),
+    ("Mesa redonda 1,20 m (5 pax)", 8),
+    ("Coctel de pie", 9),
+)
+
+
+def _tipo_por_aforo(capacidad: int) -> str:
+    """Clasifica el salon por su aforo maximo documentado."""
+    if capacidad <= 12:
+        return "Mesa ejecutiva"
+    if capacidad <= 40:
+        return "Sala de reuniones"
+    if capacidad <= 70:
+        return "Salon de eventos"
+    return "Salon de gran capacidad"
+
+
+def _filas_catalogo_salones() -> List[Tuple]:
+    """Convierte la tabla del catalogo del hotel en filas de la tabla salones."""
+    filas = []
+    for fila in list(CATALOGO_SALONES_HPSF) + [SALON_TAM_DEDUCIDO]:
+        nombre, piso, m2 = fila[0], fila[1], fila[2]
+        aforos = [(titulo, fila[indice]) for titulo, indice in _MONTAJES_TITULARES
+                  if fila[indice]]
+        capacidad = max(valor for _, valor in aforos)
+        filas.append((
+            f"SALON-{_sin_acentos(nombre).upper()}",
+            f"Salon {nombre}",
+            _tipo_por_aforo(capacidad),
+            capacidad,
+            "Por confirmar con el hotel",
+            0,  # el catalogo oficial no publica tarifas
+            f"Piso {piso} - {m2} m2",
+            "Por confirmar con el hotel",
+            (
+                "Aforos deducidos de las combinaciones Danubio Abierto (158 m2) y "
+                "Dan+Tam+Rhin (242 m2); el salon no tiene fila propia en el "
+                "catalogo, confirmar con el hotel: "
+                if fila is SALON_TAM_DEDUCIDO
+                else "Aforos del catalogo oficial: "
+            )
+            + ", ".join(f"{titulo} ({valor})" for titulo, valor in aforos)
+            + f". Superficie {m2} m2. Tarifa por confirmar con el hotel.",
+            "Plaza San Francisco",
+            ", ".join(titulo for titulo, _ in aforos),
+            1 if fila is SALON_TAM_DEDUCIDO else 0,
+        ))
+    return filas
+
+
 def init_db() -> None:
     conn = get_db_connection()
     try:
@@ -112,261 +197,27 @@ def init_db() -> None:
             cursor.execute("ALTER TABLE salones ADD COLUMN es_provisional INTEGER NOT NULL DEFAULT 0")
         conn.commit()
 
-        seed_salones = [
-            (
-                "SALON-PLENARIO",
-                "Gran Salon San Francisco (Plenario)",
-                "Plenario / Conferencia",
-                300,
-                "08:00 - 23:00 hrs",
-                850000,
-                "Nivel Subterraneo - Centro de Convenciones",
-                "Pantalla LED 4K, 4 proyectores laser, audio envolvente, cabinas de traduccion simultanea, climatizacion dual, microfonia inalambrica",
-                "Espacio de maxima capacidad del Hotel Plaza San Francisco, configurable en montaje plenario, auditorio o cena de gala. Ideal para congresos de gran escala y foros gubernamentales.",
-                "Plaza San Francisco",
-                "Plenario, Auditorio, Banquete, Coctel",
-                0
-            ),
-            (
-                "SALON-COLONIAL",
-                "Salon Colonial",
-                "Banquete / Eventos",
-                150,
-                "08:00 - 23:00 hrs",
-                550000,
-                "Piso 2 - Sector Oriente",
-                "Proyector de alta resolucion, telon motorizado, iluminacion dimerizable, audio estereo, tarima desmontable, climatizacion independiente",
-                "Salon clasico con terminaciones de estilo colonial y amplios ventanales. Especializado en almuerzos corporativos, cenas de clausura y ceremonias de premiacion.",
-                "Plaza San Francisco",
-                "Banquete, Auditorio, Coctel, Mesa redonda",
-                0
-            ),
-            (
-                "SALON-ALAMEDA",
-                "Salon Alameda",
-                "Seminario / Conferencias",
-                80,
-                "08:30 - 20:00 hrs",
-                380000,
-                "Piso 1 - Hall Principal",
-                "Pantalla interactiva 85 pulgadas, streaming para transmision hibrida, microfono de atril y climatizacion automatica",
-                "Espacio versatil ubicado a pasos del lobby central. Optimo para seminarios medianos, talleres de capacitacion tecnica y conferencias de prensa.",
-                "Plaza San Francisco",
-                "Seminario, Auditorio, Escuela, Isla",
-                0
-            ),
-            (
-                "SALON-LONDRES",
-                "Salon Londres",
-                "Reuniones / Taller",
-                40,
-                "08:30 - 19:30 hrs",
-                260000,
-                "Piso 2 - Ala Ejecutiva",
-                "Pantalla Smart TV 75 pulgadas, camara para videoconferencia grupal, pizarra magnetica y conexion de red dedicada de alta velocidad",
-                "Disenado para mesas redondas, sesiones de comite de expertos y jornadas de trabajo colaborativo de grupos de hasta 40 personas.",
-                "Plaza San Francisco",
-                "Mesa redonda, Herradura, Isla, Taller",
-                0
-            ),
-            (
-                "SALON-DIRECTORIO",
-                "Salon Directorio Ejecutivo",
-                "Directorio / Mesa Ejecutiva",
-                20,
-                "08:00 - 20:00 hrs",
-                190000,
-                "Piso 3 - Area Presidencial",
-                "Mesa de directorio ejecutiva en madera noble, pantalla 65 pulgadas para presentaciones, videoconferencia Polycom, coffeebar privado",
-                "Ambiente exclusivo de alta privacidad para reuniones de directorio, juntas de accionistas y firmas protocolarias solemnes.",
-                "Plaza San Francisco",
-                "Mesa ejecutiva, Directorio, Entrevistas",
-                0
-            ),
-            (
-                "SALON-ANDES",
-                "Salon Andes",
-                "Auditorio / Teatro",
-                120,
-                "08:30 - 20:00 hrs",
-                520000,
-                "Piso 1 - Ala Norte",
-                "Equipamiento audiovisual estandar, proyector, microfonia y climatizacion",
-                "[PROVISIONAL] Espacio de capacidad media-alta para jornadas y presentaciones. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Teatro, Auditorio, Escuela",
-                1
-            ),
-            (
-                "SALON-PROVIDENCIA",
-                "Salon Providencia",
-                "Banquete / Eventos",
-                100,
-                "08:30 - 23:00 hrs",
-                460000,
-                "Piso 2 - Ala Oriente",
-                "Montaje flexible, audio basico y climatizacion",
-                "[PROVISIONAL] Salon para almuerzos y cenas corporativas. Aforo y tarifa a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Banquete, Coctel, Mesa redonda",
-                1
-            ),
-            (
-                "SALON-CUMBRE",
-                "Salon Cumbre",
-                "Seminario / Coctel",
-                90,
-                "08:30 - 22:00 hrs",
-                420000,
-                "Piso 3 - Ala Poniente",
-                "Proyector, pantalla y audio ambiente",
-                "[PROVISIONAL] Espacio para seminarios y cocteles de cierre. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Seminario, Coctel, Isla",
-                1
-            ),
-            (
-                "SALON-PACIFICO",
-                "Salon Pacifico",
-                "Seminario / Conferencias",
-                70,
-                "08:30 - 20:00 hrs",
-                350000,
-                "Piso 1 - Ala Sur",
-                "Pantalla, proyector y conexion de red",
-                "[PROVISIONAL] Sala de conferencias de capacidad media. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Seminario, Escuela, Auditorio",
-                1
-            ),
-            (
-                "SALON-BELLAVISTA",
-                "Salon Bellavista",
-                "Taller / Capacitacion",
-                60,
-                "08:30 - 19:30 hrs",
-                320000,
-                "Piso 2 - Ala Norte",
-                "Pizarra, proyector y mesas modulares",
-                "[PROVISIONAL] Sala para talleres y capacitaciones. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Taller, Isla, Escuela",
-                1
-            ),
-            (
-                "SALON-LASTARRIA",
-                "Salon Lastarria",
-                "Reunion / Mesa redonda",
-                55,
-                "08:30 - 19:30 hrs",
-                300000,
-                "Piso 2 - Ala Central",
-                "Mesa redonda, pantalla y audio basico",
-                "[PROVISIONAL] Sala para reuniones y comites. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Mesa redonda, Herradura, Reunion",
-                1
-            ),
-            (
-                "SALON-BRASIL",
-                "Salon Brasil",
-                "Capacitacion / U",
-                50,
-                "08:30 - 19:30 hrs",
-                280000,
-                "Piso 1 - Ala Oriente",
-                "Montaje en U, proyector y pizarra",
-                "[PROVISIONAL] Sala de capacitacion con montaje en U. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Escuela, U, Taller",
-                1
-            ),
-            (
-                "SALON-MATTA",
-                "Salon Matta",
-                "Mesa ejecutiva",
-                45,
-                "08:00 - 20:00 hrs",
-                260000,
-                "Piso 3 - Ala Ejecutiva",
-                "Mesa ejecutiva, pantalla y videoconferencia",
-                "[PROVISIONAL] Sala ejecutiva para reuniones de mediana capacidad. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Mesa ejecutiva, Directorio, Reunion",
-                1
-            ),
-            (
-                "SALON-NERUDA",
-                "Salon Neruda",
-                "Sala de trabajo",
-                35,
-                "08:30 - 19:30 hrs",
-                220000,
-                "Piso 2 - Ala Sur",
-                "Mesas de trabajo, pizarra y pantalla",
-                "[PROVISIONAL] Sala de trabajo colaborativo. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Isla, Taller, Reunion",
-                1
-            ),
-            (
-                "SALON-GABRIELA",
-                "Salon Gabriela",
-                "Entrevistas / Reuniones",
-                30,
-                "08:30 - 19:30 hrs",
-                200000,
-                "Piso 1 - Ala Norte",
-                "Mesa de reuniones, pantalla y coffeebar",
-                "[PROVISIONAL] Sala para entrevistas y reuniones pequenas. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Mesa redonda, Entrevistas, Reunion",
-                1
-            ),
-            (
-                "SALON-CORDILLERA",
-                "Salon Cordillera",
-                "Directorio / Mesa ejecutiva",
-                28,
-                "08:00 - 20:00 hrs",
-                200000,
-                "Piso 3 - Area Presidencial",
-                "Mesa de directorio, pantalla y videoconferencia",
-                "[PROVISIONAL] Sala de directorio de capacidad menor. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Directorio, Mesa ejecutiva",
-                1
-            ),
-            (
-                "SALON-SANTA-LUCIA",
-                "Salon Santa Lucia",
-                "Sala de reuniones",
-                25,
-                "08:30 - 19:30 hrs",
-                180000,
-                "Piso 2 - Ala Central",
-                "Mesa de reuniones, pantalla y pizarra",
-                "[PROVISIONAL] Sala de reuniones pequena. Aforo y equipamiento a confirmar con el hotel.",
-                "Plaza San Francisco",
-                "Reunion, Mesa redonda, Entrevistas",
-                1
-            )
-        ]
+        seed_salones = _filas_catalogo_salones()
         cursor.executemany("""
             INSERT OR IGNORE INTO salones (
                 id_salon, nombre, tipo, capacidad_maxima, horario_disponible, tarifa_referencial,
                 ubicacion, equipamiento, descripcion, propiedad, montajes, es_provisional
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, seed_salones)
-        salon_updates = [(s[6], s[7], s[8], s[0]) for s in seed_salones]
+        salon_updates = [
+            (s[1], s[2], s[3], s[6], s[7], s[8], s[9], s[10], s[11], s[0])
+            for s in seed_salones
+        ]
+        # El documento del hotel manda sobre todo lo que el catalogo define.
+        # Solo se conservan tarifa y horario, que el documento no publica y que
+        # el hotel puede cargar o ajustar manualmente.
         cursor.executemany("""
-            UPDATE salones SET ubicacion = ?, equipamiento = ?, descripcion = ?
-            WHERE id_salon = ? AND (ubicacion = '' OR ubicacion IS NULL)
+            UPDATE salones SET
+                nombre = ?, tipo = ?, capacidad_maxima = ?, ubicacion = ?,
+                equipamiento = ?, descripcion = ?, propiedad = ?,
+                montajes = ?, es_provisional = ?
+            WHERE id_salon = ?
         """, salon_updates)
-        cursor.executemany("""
-            UPDATE salones SET montajes = ?
-            WHERE id_salon = ? AND (montajes = '' OR montajes IS NULL)
-        """, [(s[10], s[0]) for s in seed_salones])
         conn.commit()
 
         # 2. Tabla de Reservas y Ocupacion de Salones (Agenda / Bookings)
@@ -395,7 +246,7 @@ def init_db() -> None:
         if count_reservas == 0:
             seed_reservas = [
                 (
-                    "SALON-ALAMEDA",
+                    "SALON-DANUBIO",
                     "Jornada de Planificacion Estrategica de Turismo",
                     "Subsecretaria de Turismo",
                     "Licitacion Estatal (Compra Agil)",
@@ -409,7 +260,7 @@ def init_db() -> None:
                     "Bloqueo formal vinculado a orden de compra adjudicada. Servicio de coffee break continuo."
                 ),
                 (
-                    "SALON-PLENARIO",
+                    "SALON-PERGOLA",
                     "Foro Regional de Sostenibilidad Urbana y Cambio Climatico",
                     "Gobierno Regional Metropolitano de Santiago (GORE)",
                     "Congreso Gubernamental",
@@ -423,7 +274,7 @@ def init_db() -> None:
                     "Uso de amplificacion total, cabinas de interpretacion y acreditacion de delegaciones."
                 ),
                 (
-                    "SALON-COLONIAL",
+                    "SALON-PERGOLA",
                     "Encuentro Trimestral de Politica Financiera y Proyecciones",
                     "Banco Central de Chile",
                     "Evento Corporativo Institucional",
@@ -437,7 +288,7 @@ def init_db() -> None:
                     "Montaje tipo auditorio con servicio de desayuno ejecutivo previo y coctel de cierre."
                 ),
                 (
-                    "SALON-LONDRES",
+                    "SALON-PARRA",
                     "Sesion Mensual de Comite de Innovacion Industrial",
                     "SOFOFA / Federacion Gremial",
                     "Reunion Gremial Privada",
@@ -451,7 +302,7 @@ def init_db() -> None:
                     "Mesa en herradura, videoconferencia internacional y estacion permanente de cafe."
                 ),
                 (
-                    "SALON-DIRECTORIO",
+                    "SALON-SENA",
                     "Junta Extraordinaria de Directorio y Finanzas",
                     "Hotel Plaza San Francisco (Directorio General)",
                     "Bloqueo Interno / Sesion de Directorio",
@@ -465,7 +316,7 @@ def init_db() -> None:
                     "Revision de presupuestos semestrales y politicas comerciales de licitaciones publicas."
                 ),
                 (
-                    "SALON-PLENARIO",
+                    "SALON-PERGOLA",
                     "Mantencion Preventiva de Iluminacion Escenica y Climatizacion",
                     "Servicios de Infraestructura Hotelera",
                     "Bloqueo de Mantenimiento Operativo",
@@ -479,7 +330,7 @@ def init_db() -> None:
                     "Calibracion tecnica de proyectores laser y revision de ductos de climatizacion central."
                 ),
                 (
-                    "SALON-COLONIAL",
+                    "SALON-PERGOLA",
                     "Seminario de Gestion Presupuestaria del Sector Publico",
                     "Direccion de Presupuestos (DIPRES)",
                     "Licitacion Estatal (Compra Agil)",
@@ -493,7 +344,7 @@ def init_db() -> None:
                     "Pre-reserva en espera de adjudicacion final en portal Mercado Publico."
                 ),
                 (
-                    "SALON-ALAMEDA",
+                    "SALON-DANUBIO",
                     "Conferencia Anual de Rectores Universitarios",
                     "Consejo de Rectores de las Universidades Chilenas (CRUCH)",
                     "Congreso Academico",
@@ -514,6 +365,45 @@ def init_db() -> None:
                     estado_reserva, id_licitacion, contacto_responsable, observaciones
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, seed_reservas)
+            conn.commit()
+
+        # El catalogo oficial reemplaza a los salones de prueba de versiones
+        # anteriores: se retiran los que ya no existen en el documento del hotel.
+        # Las filas oficiales jamas se sobrescriben, para no pisar tarifas o
+        # aforos ajustados manualmente por el hotel.
+        ids_oficiales = {s[0] for s in seed_salones}
+        cursor.execute("SELECT id_salon FROM salones")
+        retirados = [r[0] for r in cursor.fetchall() if r[0] not in ids_oficiales]
+        if retirados:
+            marcadores = ",".join("?" for _ in retirados)
+            # Cada licitacion se reasigna al salon oficial mas pequeno que aun
+            # alcanza su aforo, con la misma regla que get_salones_aptos; si
+            # ninguno sirve, queda sin salon.
+            cursor.execute(
+                "SELECT id_licitacion, cantidad_asistentes FROM licitaciones "
+                f"WHERE id_salon_asignado IN ({marcadores})",
+                retirados,
+            )
+            pendientes = cursor.fetchall()
+            cursor.execute(
+                f"DELETE FROM reservas_salones WHERE id_salon IN ({marcadores})",
+                retirados,
+            )
+            cursor.execute(
+                f"DELETE FROM salones WHERE id_salon IN ({marcadores})", retirados
+            )
+            for id_lic, asistentes in pendientes:
+                cursor.execute(
+                    "SELECT id_salon FROM salones WHERE capacidad_maxima >= ? "
+                    "ORDER BY capacidad_maxima ASC LIMIT 1",
+                    (asistentes or 0,),
+                )
+                reemplazo = cursor.fetchone()
+                cursor.execute(
+                    "UPDATE licitaciones SET id_salon_asignado = ? "
+                    "WHERE id_licitacion = ?",
+                    (reemplazo[0] if reemplazo else "", id_lic),
+                )
             conn.commit()
 
         # 2. Tabla de Licitaciones
@@ -617,7 +507,7 @@ def init_db() -> None:
                     80,
                     "Jornada Completa (8 hrs)",
                     "08:30 a 18:30 hrs",
-                    "SALON-ALAMEDA"
+                    "SALON-DANUBIO"
                 ),
                 (
                     "723-4-LP24",
@@ -636,7 +526,7 @@ def init_db() -> None:
                     35,
                     "Jornada Completa (8 hrs)",
                     "09:00 a 18:00 hrs",
-                    "SALON-LONDRES"
+                    "SALON-PARRA"
                 ),
                 (
                     "1840-22-COT24",
@@ -655,7 +545,7 @@ def init_db() -> None:
                     120,
                     "Media Jornada Manana (4 hrs)",
                     "08:30 a 13:00 hrs",
-                    "SALON-COLONIAL"
+                    "SALON-PERGOLA"
                 ),
                 (
                     "512-10-LE24",
@@ -674,7 +564,7 @@ def init_db() -> None:
                     60,
                     "Jornada Completa (8 hrs)",
                     "08:30 a 19:00 hrs",
-                    "SALON-ALAMEDA"
+                    "SALON-DANUBIO"
                 ),
                 (
                     "930-15-LP23",
@@ -693,7 +583,7 @@ def init_db() -> None:
                     150,
                     "Nocturno / Cena",
                     "19:30 a 23:30 hrs",
-                    "SALON-COLONIAL"
+                    "SALON-PERGOLA"
                 ),
                 (
                     "440-8-COT24",
@@ -731,7 +621,7 @@ def init_db() -> None:
                     250,
                     "Jornada Completa (8 hrs)",
                     "08:00 a 18:00 hrs",
-                    "SALON-PLENARIO"
+                    "SALON-PERGOLA"
                 ),
                 (
                     "310-7-COT24",
@@ -750,7 +640,7 @@ def init_db() -> None:
                     70,
                     "Media Jornada Tarde (4 hrs)",
                     "15:00 a 19:30 hrs",
-                    "SALON-ALAMEDA"
+                    "SALON-DANUBIO"
                 ),
                 (
                     "620-14-LE24",
@@ -769,7 +659,7 @@ def init_db() -> None:
                     180,
                     "Jornada Completa (8 hrs)",
                     "08:30 a 18:30 hrs",
-                    "SALON-PLENARIO"
+                    "SALON-PERGOLA"
                 )
             ]
         if count == 0:

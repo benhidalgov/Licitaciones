@@ -34,7 +34,7 @@ Estado de la suite al momento de este analisis: **121 pruebas, 0 fallos**
 |:-:|:--|:--|:--|:--|:--|:--:|
 | 1 | Servicios | Salones, alojamiento y A&B solo intramuros | Categorias `Alojamiento` y `Eventos / Catering` (`mercado_publico.py:26-34`) | No habia regla de intramuros ni exclusion de servicios externos | Mantener A&B dentro de `Eventos / Catering` y excluir servicios fuera del hotel | P0 |
 | 2 | Propiedades | Plaza San Francisco (todo) e Ismael (solo hospedaje) | Una sola propiedad implicita; `salones` no tiene campo de hotel (`database.py:39-51`) | No se puede modelar Ismael ni restringirlo | Campo `propiedad` en salones y licitaciones; regla Ismael = solo alojamiento | P0 |
-| 3 | Salones | 17 salones con distintos montajes | 5 salones (`database.py:67-123`) | Faltan 12 espacios y el catalogo de montajes | Cargar catalogo real del hotel; campo `montajes` | P0 (dato pendiente) |
+| 3 | Salones | 17 salones con distintos montajes | **Catalogo oficial cargado**: 16 salones del documento del hotel mas Tam (deducido). Antes habia 17 salones inventados que no coincidian con el hotel | Aforos por montaje tomados de `SALONES HPSF.pdf`; campo `montajes` | P0 (resuelto) |
 | 4 | Presupuesto | Criterio mandatorio: si no cubre costo minimo, se descarta | Se muestra alerta, no se descarta (`app.py:196-216`; badge en `dashboard.html:322-339`) | No hay descarte automatico ni motivo | Calcular costo minimo real y marcar `Descartada / Precio` | P0 |
 | 5 | Costo base | Costo minimo del hotel | `costo_base_hotel = 75% del presupuesto` (`mercado_publico.py:217`) | El costo depende del presupuesto, no de la operacion | Modelo de costo: salones + alimentacion por persona + habitaciones + margen | P0 |
 | 6 | Capacidad | Proponer match por capacidad; hotel valida disponibilidad en PMS | `get_salones_aptos` existe (`database.py:545`) pero solo se listan alternativas ante sobrecupo (`detail.html:387-436`) | No hay propuesta de match permanente ni aviso PMS | Mostrar siempre salones compatibles y etiqueta "Disponibilidad a validar en PMS" | P0 |
@@ -86,8 +86,9 @@ usuario final; **P2** = bonus track.
 
 ### Fase 0 - Decisiones y datos (bloquea P0)
 
-1. Catalogo real de los **17 salones**: nombre, propiedad, capacidad por montaje,
-   tarifa y equipamiento.
+1. ~~Catalogo real de los **17 salones**.~~ **Resuelto**: aforos por montaje
+   cargados desde el documento oficial del hotel. Siguen pendientes solo
+   **tarifas** y **equipamiento**, que el documento no publica.
 2. **Modelo de costos minimos**: tarifa de salon, valor por persona de alimentacion,
    tarifa de habitacion y margen/tolerancia.
 3. **Usuarios**: nombres, credenciales y si tendran roles distintos o solo autoria.
@@ -147,7 +148,8 @@ usuario final; **P2** = bonus track.
 Implementado en el repositorio:
 
 - [x] Campo `propiedad` en licitaciones y salones; regla Ismael solo alojamiento.
-- [x] Catalogo de 17 salones (5 confirmados + 12 provisionales marcados).
+- [x] Catalogo de 17 salones con los aforos del documento oficial del hotel
+      (16 confirmados mas Tam, cuyos aforos se deducen de las combinaciones).
 - [x] Explicitud de A&B dentro de `Eventos / Catering` y exclusion de servicios fuera del hotel.
 - [x] Costo minimo por tarifa de salon + consumo por persona y descarte automatico con motivo `Precio`.
 - [x] Costeo provisional identificado; no se descarta hasta que el equipo lo valide.
@@ -172,7 +174,9 @@ Implementado en el repositorio:
 
 Pendiente de datos o de Fase 2:
 
-- [ ] Validar los 12 salones provisionales con el hotel.
+- [x] ~~Validar los 12 salones provisionales con el hotel.~~ El catalogo
+      inventado fue reemplazado por el documento oficial. Queda confirmar los
+      aforos deducidos del Salon Tam y las tarifas.
 - [ ] Confirmar tarifas de alimentacion y habitacion usadas por el modelo de costos.
 - [ ] Confirmar las columnas exactas del Excel de OC con el hotel (el importador
       ya tolera variantes, pero conviene fijarlas).
@@ -183,8 +187,10 @@ Pendiente de datos o de Fase 2:
 
 ## 8. Riesgos
 
-- **Datos faltantes**: cargar 17 salones con aforos inventados produce matches
-  falsos. Es preferible dejar el catalogo incompleto y marcarlo.
+- **Datos faltantes**: los aforos de salones provienen ahora del documento
+  oficial del hotel. Lo que sigue sin dato son **tarifas** y **equipamiento**;
+  hasta que el hotel los confirme, el costo minimo solo considera el consumo
+  por persona.
 - **Costo minimo**: sin tarifas reales el descarte por presupuesto sera tan
   arbitrario como el 75% actual.
 - **PMS**: no hay integracion; la validacion final siempre es humana. El sistema
