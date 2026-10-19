@@ -4,6 +4,7 @@ import os
 import re
 import unittest
 from unittest.mock import patch, MagicMock
+import urllib.error
 import database
 import mercado_publico
 
@@ -18,13 +19,93 @@ class TestMercadoPublico(unittest.TestCase):
             except PermissionError:
                 pass
         database.init_db()
+        # El espaciado de rate limit solo importa contra la API real; en pruebas
+        # con urlopen simulado solo sumaria espera.
+        self._intervalo_previo = os.environ.get("MERCADO_PUBLICO_INTERVALO_MS")
+        os.environ["MERCADO_PUBLICO_INTERVALO_MS"] = "0"
 
     def tearDown(self):
+        if self._intervalo_previo is None:
+            os.environ.pop("MERCADO_PUBLICO_INTERVALO_MS", None)
+        else:
+            os.environ["MERCADO_PUBLICO_INTERVALO_MS"] = self._intervalo_previo
         if os.path.exists(self.db_name):
             try:
                 os.remove(self.db_name)
             except PermissionError:
                 pass
+
+    @patch("mercado_publico.time.sleep")
+    def test_429_reintenta_y_luego_lee_la_respuesta(self, mock_sleep):
+        url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
+        error_429 = urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+        respuesta = MagicMock()
+        respuesta.read.return_value = b'{"Listado": []}'
+        contexto_ok = MagicMock()
+        contexto_ok.__enter__.return_value = respuesta
+        mercado_publico.avisos_rate_limit["cantidad"] = 0
+
+        with patch("urllib.request.urlopen", side_effect=[error_429, contexto_ok]):
+            contenido = mercado_publico._fetch_url(url)
+
+        self.assertEqual(contenido, b'{"Listado": []}')
+        self.assertEqual(mock_sleep.call_count, 1)
+        # Un reintento que termina bien no es una consulta bloqueada.
+        self.assertEqual(mercado_publico.avisos_rate_limit["cantidad"], 0)
+
+    @patch("mercado_publico.time.sleep")
+    def test_429_persistente_degrada_y_cuenta_las_fichas_afectadas(self, mock_sleep):
+        url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
+        error_429 = urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+        mercado_publico.avisos_rate_limit["cantidad"] = 0
+
+        with patch("urllib.request.urlopen", side_effect=error_429):
+            self.assertIsNone(mercado_publico._fetch_url(url))
+
+        # Backoff exponencial: un reintento por intento disponible.
+        self.assertEqual(mock_sleep.call_count, mercado_publico.MP_REINTENTOS_LIMITE)
+        self.assertEqual(mock_sleep.call_args_list[0].args[0], 4.0)
+        self.assertEqual(mock_sleep.call_args_list[1].args[0], 8.0)
+        self.assertEqual(mercado_publico.avisos_rate_limit["cantidad"], 1)
+
+    def test_espaciado_entre_consultas_respeta_el_intervalo(self):
+        with patch.dict(os.environ, {"MERCADO_PUBLICO_INTERVALO_MS": "500"}):
+            with patch("mercado_publico.time.sleep") as mock_sleep:
+                # Hace rato: la primera llamada no debe esperar.
+                mercado_publico._ultima_consulta["ts"] = mercado_publico.time.monotonic() - 10
+                mercado_publico._esperar_rate_limit()
+                self.assertEqual(mock_sleep.call_count, 0)
+                # Inmediata: debe respetar el intervalo.
+                mercado_publico._esperar_rate_limit()
+                self.assertEqual(mock_sleep.call_count, 1)
+                self.assertGreater(mock_sleep.call_args.args[0], 0)
+                self.assertLessEqual(mock_sleep.call_args.args[0], 0.5)
+        mercado_publico._ultima_consulta["ts"] = 0.0
+
+    def test_respeta_retry_after_y_sino_backoff_exponencial(self):
+        url = "https://api.mercadopublico.cl/x"
+        con_retry = urllib.error.HTTPError(url, 429, "Too Many Requests", {"Retry-After": "12"}, None)
+        sin_retry = urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+        self.assertEqual(mercado_publico._espera_reintento(con_retry, 0), 12.0)
+        self.assertEqual(mercado_publico._espera_reintento(sin_retry, 0), 4.0)
+        self.assertEqual(mercado_publico._espera_reintento(sin_retry, 1), 8.0)
+        # Nunca mas del tope.
+        self.assertEqual(mercado_publico._espera_reintento(sin_retry, 10), float(mercado_publico.MP_ESPERA_MAX_S))
+
+    @patch("mercado_publico.time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_sincronizacion_avisa_cuando_la_api_limita(self, mock_urlopen, mock_sleep):
+        url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
+        mock_urlopen.side_effect = urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+
+        resumen = mercado_publico.sincronizar_licitaciones(
+            fecha="07102026",
+            ticket="TICKET_TEST_VALIDO"
+        )
+
+        self.assertIn("HTTP 429", resumen["mensaje"])
+        self.assertIn("MERCADO_PUBLICO_INTERVALO_MS", resumen["mensaje"])
+        self.assertGreater(resumen["avisos_rate_limit"], 0)
 
     def test_load_env_file(self):
         test_env_content = """

@@ -42,6 +42,7 @@ El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el
 * **Decision Operativa Compartida:** Marca `Revisada`, decision `Participamos` o `No participamos` con motivo (`Precio`, `Disponibilidad`, `Fuera de alcance`, `Otro`) y notas con autor y fecha.
 * **Vista Priorizada del Dia:** Oportunidades abiertas con presupuesto viable y match de capacidad, con enlace directo a la ficha oficial de Mercado Publico.
 * **Exportacion a Planilla:** Descarga CSV compatible con Excel del listado filtrado (indicadores, estado, motivo, aforo y notas).
+* **Control de Llamadas a la API:** Las consultas a Mercado Publico se espacian (`MERCADO_PUBLICO_INTERVALO_MS`, 500 ms por defecto = 120 llamadas/min) y se reintenta con backoff exponencial ante HTTP 429 o 503, respetando `Retry-After`. Si la API aun bloquea fichas, el resumen de la sincronizacion lo indica para subir el intervalo en `.env` y repetir.
 
 ### 2. Control Financiero Preventivo y Admisibilidad Legal
 * **Regla Mandatoria de Presupuesto:** Una oportunidad con costeo validado cuyo costo minimo (tarifa de salon + alimentacion o habitacion por persona) supera el presupuesto mandante se marca `Descartada` con motivo `Precio`. El valor importado desde la API es provisional hasta que el equipo complete la evaluacion operativa.
