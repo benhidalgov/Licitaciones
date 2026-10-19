@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import ssl
+import time
 from typing import Any, Dict, List, Optional
 import unicodedata
 import urllib.error
@@ -156,33 +157,108 @@ def _create_ssl_context() -> ssl.SSLContext:
         return ssl._create_unverified_context()
 
 
+MP_REINTENTOS_LIMITE = 3
+MP_ESPERA_MAX_S = 60
+
+# Estado compartido entre consultas de una misma sincronizacion.
+_ultima_consulta = {"ts": 0.0}
+_ssl_roto = {"v": False}
+avisos_rate_limit = {"cantidad": 0}
+
+
+def _intervalo_ms() -> int:
+    """Milisegundos minimos entre consultas. Se lee en cada llamada porque el
+    .env se carga despues de importar el modulo. 0 desactiva el espaciado."""
+    try:
+        return max(0, int(os.environ.get("MERCADO_PUBLICO_INTERVALO_MS", "500") or 0))
+    except ValueError:
+        return 500
+
+
+def _esperar_rate_limit() -> None:
+    """Espacia las consultas contra la API para no disparar su limite."""
+    intervalo = _intervalo_ms()
+    if intervalo <= 0:
+        _ultima_consulta["ts"] = time.monotonic()
+        return
+    espera = intervalo / 1000.0 - (time.monotonic() - _ultima_consulta["ts"])
+    if espera > 0:
+        time.sleep(espera)
+    _ultima_consulta["ts"] = time.monotonic()
+
+
+def _espera_reintento(exc: urllib.error.HTTPError, intento: int) -> float:
+    """Respeta Retry-After si la API lo envia; si no, backoff exponencial."""
+    cabecera = exc.headers.get("Retry-After") if exc.headers else None
+    try:
+        if cabecera:
+            return min(float(cabecera), float(MP_ESPERA_MAX_S))
+    except (TypeError, ValueError):
+        pass
+    return float(min(4 * (2 ** intento), MP_ESPERA_MAX_S))
+
+
+def _contexto_peticion() -> ssl.SSLContext:
+    """Si la red corporativa ya rompio la verificacion SSL, se va directo al
+    contexto sin verificacion y se ahorra un intento por consulta."""
+    if _ssl_roto["v"]:
+        return ssl._create_unverified_context()
+    return _create_ssl_context()
+
+
+def _leer(req: urllib.request.Request, timeout: int, contexto: ssl.SSLContext) -> bytes:
+    """
+    Ejecuta la peticion. Si falla la verificacion del certificado (proxy
+    corporativo que intercepta SSL) se reintenta una vez sin verificar.
+    """
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=contexto) as resp:
+            return resp.read()
+    except urllib.error.URLError as exc:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(exc):
+            raise
+        _ssl_roto["v"] = True
+        logger.warning(f"Fallo de verificacion SSL; reintento sin verificar en {req.full_url}")
+        with urllib.request.urlopen(req, timeout=timeout, context=ssl._create_unverified_context()) as resp:
+            return resp.read()
+
+
 def _fetch_url(url: str, timeout: int = 15) -> Optional[bytes]:
     """
-    Ejecuta peticion HTTP a la API con gestion de contexto SSL
-    y reintento tolerante a proxies corporativos de red.
+    Peticion HTTP a la API con espaciado de rate limit, reintento ante 429/503
+    y tolerancia a proxies corporativos de red.
     """
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "Licitaciones-Hotel-Plaza-San-Francisco/1.0"}
     )
-    ctx = _create_ssl_context()
-    try:
-        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
-            return resp.read()
-    except urllib.error.URLError as exc:
-        if "CERTIFICATE_VERIFY_FAILED" in str(exc):
-            try:
-                unverified_ctx = ssl._create_unverified_context()
-                with urllib.request.urlopen(req, timeout=timeout, context=unverified_ctx) as resp:
-                    return resp.read()
-            except Exception as retry_exc:
-                logger.error(f"Error tras reintento SSL en {url}: {retry_exc}")
-                return None
-        logger.error(f"Error de red al consultar {url}: {exc}")
-        return None
-    except Exception as exc:
-        logger.error(f"Error al consultar {url}: {exc}")
-        return None
+
+    for intento in range(MP_REINTENTOS_LIMITE + 1):
+        _esperar_rate_limit()
+        try:
+            return _leer(req, timeout, _contexto_peticion())
+        except urllib.error.HTTPError as exc:
+            # HTTPError hereda de URLError: hay que evaluarlo antes, si no un
+            # 429 queda clasificado como error de red o de certificado.
+            if exc.code in (429, 503) and intento < MP_REINTENTOS_LIMITE:
+                espera = _espera_reintento(exc, intento)
+                logger.warning(
+                    f"Mercado Publico respondio HTTP {exc.code}; reintento en {espera}s ({url})"
+                )
+                time.sleep(espera)
+                continue
+            # Solo se cuenta lo que queda sin resolver: la ficha completa.
+            avisos_rate_limit["cantidad"] += 1
+            logger.error(f"Mercado Publico respondio HTTP {exc.code} en {url}")
+            return None
+        except urllib.error.URLError as exc:
+            logger.error(f"Error de red al consultar {url}: {exc}")
+            return None
+        except Exception as exc:
+            logger.error(f"Error al consultar {url}: {exc}")
+            return None
+
+    return None
 
 
 def parse_env_content(content: str) -> Dict[str, str]:
@@ -465,6 +541,8 @@ def sincronizar_licitaciones(
     total_descartadas = 0
     total_guardadas = 0
 
+    avisos_rate_limit["cantidad"] = 0
+
     for dia in range(dias):
         fecha_dia = (base - timedelta(days=dia)).strftime("%d%m%Y")
         items = consultar_licitaciones_fecha(fecha=fecha_dia, ticket=ticket)
@@ -506,12 +584,23 @@ def sincronizar_licitaciones(
 
     total_descartadas += database.marcar_inviables()
 
+    mensaje = (
+        f"Sincronizacion finalizada ({dias} dia(s) desde {fecha}): "
+        f"{total_guardadas} registradas/actualizadas de {total_consultadas} consultadas."
+    )
+    if avisos_rate_limit["cantidad"]:
+        mensaje += (
+            f" La API bloqueo {avisos_rate_limit['cantidad']} consulta(s) por limite "
+            f"de llamadas (HTTP 429) y quedaron sin datos de detalle. Suba "
+            f"MERCADO_PUBLICO_INTERVALO_MS en .env y repita la sincronizacion."
+        )
+
     return {
         "total_consultadas": total_consultadas,
         "total_pertinentes": total_pertinentes,
         "total_descartadas": total_descartadas,
         "total_guardadas": total_guardadas,
         "fecha": fecha,
-        "mensaje": f"Sincronizacion finalizada ({dias} dia(s) desde {fecha}): "
-                   f"{total_guardadas} registradas/actualizadas de {total_consultadas} consultadas."
+        "avisos_rate_limit": avisos_rate_limit["cantidad"],
+        "mensaje": mensaje,
     }
