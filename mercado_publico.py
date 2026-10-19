@@ -23,19 +23,56 @@ logger = logging.getLogger(__name__)
 MERCADO_PUBLICO_BASE_URL = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
 MP_FICHA_URL = "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion="
 
+VOCAB_ALOJAMIENTO = (
+    "hospedaje", "alojamiento", "habitacion", "habitaciones",
+    "pernoctacion", "hotel", "hoteles", "hoteleria",
+)
+
+VOCAB_EVENTOS = (
+    "evento", "eventos", "catering", "salon", "salones", "banqueteria",
+    "coctel", "cocteles", "desayuno", "almuerzo", "cena", "cenas",
+    "coffee break",
+)
+
 PATRON_ALOJAMIENTO = re.compile(
-    r"\b(hospedaje|alojamiento|habitacion|habitaciones|pernoctacion|hotel|hoteles|hoteleria)\b",
+    r"\b(" + "|".join(VOCAB_ALOJAMIENTO) + r")\b",
     re.IGNORECASE
 )
 
 PATRON_EVENTOS = re.compile(
-    r"\b(evento|eventos|catering|salon|salones|banqueteria|coffee break|coctel|cocteles|desayuno|almuerzo|cena|cenas)\b",
+    r"\b(" + "|".join(VOCAB_EVENTOS) + r")\b",
     re.IGNORECASE
 )
+
+# Palabras de una sola linea para el rescate por tipeo ("coffee break" se queda
+# solo en el regex exacto).
+FUZZY_ALOJAMIENTO = tuple(w for w in VOCAB_ALOJAMIENTO if " " not in w)
+FUZZY_EVENTOS = tuple(w for w in VOCAB_EVENTOS if " " not in w)
 
 PATRON_EXCLUSIONES = re.compile(
     r"\b(almacenamiento|almacen|habitabilidad|habitacional|vial|veredas|pavimentacion|petroleo|clinico|medicamento|medicamentos|quirurgico|oxigeno|repuesto|repuestos|techumbre|cubierta de zinc)\b",
     re.IGNORECASE
+)
+
+PATRON_ASISTENTES = re.compile(
+    r"\b(\d{1,4})\s*(personas|asistentes|participantes|delegados|huespedes)\b",
+    re.IGNORECASE
+)
+
+# Restriccion de alcance: el hotel solo ejecuta servicios dentro de sus
+# instalaciones. Se descartan eventos y banqueteria a domicilio o en exteriores.
+PATRON_EXCLUSIONES_FUERA = re.compile(
+    r"\b(a domicilio|servicio a domicilio|evento a domicilio|fuera del hotel|fuera de la instalacion|fuera de las instalaciones|aire libre|espacio publico|plaza publica|via publica|exteriores|outdoor)\b",
+    re.IGNORECASE
+)
+
+
+# Campos que gestiona el equipo del hotel: una sincronizacion no debe pisarlos.
+CAMPOS_LOCALES = (
+    "estado_embudo", "revisada", "motivo_descarte", "notas", "propiedad",
+    "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado",
+    "costo_base_hotel", "costeo_validado", "sello_mujer", "jornada_40h",
+    "sello_sernatur", "inclusion_laboral"
 )
 
 
@@ -49,6 +86,60 @@ def _normalizar_texto(texto: str) -> str:
     nfkd = unicodedata.normalize("NFKD", texto)
     ascii_bytes = nfkd.encode("ASCII", "ignore")
     return ascii_bytes.decode("utf-8").lower()
+
+
+def _distancia_edicion(a: str, b: str, tope: int) -> int:
+    """
+    Distancia de Levenshtein limitada por `tope`: devuelve `tope + 1` en cuanto
+    cualquier celda supera el tope, asi no calcula la matriz completa.
+    """
+    if abs(len(a) - len(b)) > tope:
+        return tope + 1
+
+    fila = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        anterior = fila[0]
+        fila[0] = i
+        mejor = i
+        for j, cb in enumerate(b, 1):
+            actual = fila[j]
+            fila[j] = min(
+                fila[j] + 1,
+                fila[j - 1] + 1,
+                anterior + (ca != cb),
+            )
+            anterior = actual
+            if fila[j] < mejor:
+                mejor = fila[j]
+        if mejor > tope:
+            return tope + 1
+    return fila[len(b)]
+
+
+def contar_terminos_fuzzy(texto: str, vocabulario) -> int:
+    """
+    Cuenta cuantas palabras del vocabulario aparecen en el texto, tolerando
+    tipeos del comprador publico ("catring" por "catering", "hospedagh" por
+    "hospedaje"). Distancia de edicion a mano: una palabra corta admite un
+    error, una larga dos. Sin dependencias NLP.
+    """
+    if not texto:
+        return 0
+
+    tokens = [t for t in set(re.findall(r"[a-z]+", texto)) if len(t) >= 4]
+    encontradas = 0
+    for palabra in vocabulario:
+        tope = 1 if len(palabra) <= 7 else 2
+        if palabra in tokens:
+            encontradas += 1
+            continue
+        for token in tokens:
+            if abs(len(token) - len(palabra)) > tope:
+                continue
+            if _distancia_edicion(token, palabra, tope) <= tope:
+                encontradas += 1
+                break
+    return encontradas
 
 
 def _create_ssl_context() -> ssl.SSLContext:
@@ -168,11 +259,19 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
     if PATRON_EXCLUSIONES.search(texto_evaluacion):
         return None
 
+    if PATRON_EXCLUSIONES_FUERA.search(texto_evaluacion):
+        return None
+
     matches_alojamiento = len(PATRON_ALOJAMIENTO.findall(texto_evaluacion))
     matches_eventos = len(PATRON_EVENTOS.findall(texto_evaluacion))
 
+    # Si el regex estricto no calza, se reintenta tolerando tipeos de compra
+    # ("catring", "hospedagh"). Solo se rescata, nunca se descarta con fuzzy.
     if matches_alojamiento == 0 and matches_eventos == 0:
-        return None
+        matches_alojamiento = contar_terminos_fuzzy(texto_evaluacion, FUZZY_ALOJAMIENTO)
+        matches_eventos = contar_terminos_fuzzy(texto_evaluacion, FUZZY_EVENTOS)
+        if matches_alojamiento == 0 and matches_eventos == 0:
+            return None
 
     if matches_eventos > matches_alojamiento:
         categoria = "Eventos / Catering"
@@ -191,10 +290,10 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
     comprador = item.get("Comprador")
     if isinstance(comprador, dict):
         organismo = comprador.get("NombreOrganismo") or "Organismo Publico"
-        region = comprador.get("RegionUnidad") or "Region Metropolitana (Santiago)"
+        region = comprador.get("RegionUnidad") or "No informada"
     else:
         organismo = "Organismo Publico"
-        region = "Region Metropolitana (Santiago)"
+        region = "No informada"
 
     # El tope de Compra Agil y el costo base estan en CLP: montos en otra
     # moneda no son comparables, se descartan en lugar de clasificar mal.
@@ -216,6 +315,11 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
 
     costo_base = int(monto_estimado * 0.75) if monto_estimado > 0 else 0
 
+    # Estimacion simple de aforo para proponer matches de capacidad. Si no se
+    # puede inferir, el equipo lo completa en la evaluacion operativa.
+    match_asistentes = PATRON_ASISTENTES.search(texto_evaluacion)
+    cantidad_asistentes = int(match_asistentes.group(1)) if match_asistentes else 0
+
     return {
         "id_licitacion": codigo,
         "titulo": nombre,
@@ -234,10 +338,19 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
         "fecha_publicacion": fecha_pub,
         "fecha_cierre": fecha_cierre,
         "descripcion_tdr": descripcion,
-        "cantidad_asistentes": 0,
+        "cantidad_asistentes": cantidad_asistentes,
         "tipo_jornada": "",
         "horario_evento": "",
-        "id_salon_asignado": ""
+        "id_salon_asignado": "",
+        "propiedad": "Plaza San Francisco",
+        "revisada": 0,
+        "motivo_descarte": "",
+        "notas": "",
+        "costeo_validado": 0,
+        "sello_mujer": 0,
+        "jornada_40h": 0,
+        "sello_sernatur": 0,
+        "inclusion_laboral": 0
     }
 
 
@@ -384,8 +497,14 @@ def sincronizar_licitaciones(
             if not existente:
                 database.create_licitacion(clasificada)
             else:
+                for campo in CAMPOS_LOCALES:
+                    if campo in ("costo_base_hotel", "costeo_validado") and not existente["costeo_validado"]:
+                        continue
+                    clasificada[campo] = existente[campo]
                 database.update_licitacion(id_lic, clasificada)
             total_guardadas += 1
+
+    total_descartadas += database.marcar_inviables()
 
     return {
         "total_consultadas": total_consultadas,

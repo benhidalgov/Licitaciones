@@ -240,11 +240,14 @@
                         <a href="{{ url_for('salones_catalogo') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['salones_catalogo', 'salon_detalle'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
                             Salones y Agenda
                         </a>
+                        <a href="{{ url_for('analitica') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['analitica', 'cargar_historial_oc'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                            Analitica
+                        </a>
                     </nav>
 
                     <div class="flex items-center space-x-3 pl-3 border-l border-[#EAEAEA]">
                         <span class="text-[11px] text-[#6E6D6A]">
-                            Usuario: <span class="font-mono font-medium text-[#111111]">{{ session.get('user') }}</span>
+                            Usuario: <span class="font-mono font-medium text-[#111111]">{{ session.get('nombre') or session.get('user') }}</span>
                         </span>
                         <form method="POST" action="{{ url_for('logout') }}" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
