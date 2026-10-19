@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Flask_3.0-111111?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
 [![Base de Datos](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-94_Aprobadas-10B981?style=flat-square)](tests)
+[![Tests](https://img.shields.io/badge/Tests-121_Aprobadas-10B981?style=flat-square)](tests)
 [![Interfaz](https://img.shields.io/badge/UI-Minimalist_Editorial-111111?style=flat-square)](templates)
 [![Normativa](https://img.shields.io/badge/Mercado_Publico-Ley_19.886-0284C7?style=flat-square)](https://www.mercadopublico.cl/)
 
@@ -85,10 +85,14 @@ El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el
 C:\Licitaciones\
 |-- app.py                     # Controlador central Flask (rutas, auth, validaciones CRUD y reservas)
 |-- database.py                # Capa relacional SQLite (esquema, consultas, seed, cruce de colisiones)
+|-- mercado_publico.py         # Cliente API ChileCompra, normalizacion semantica y filtros
 |-- run.py                     # Script de inicio oficial para entorno de ejecucion
+|-- verify.py                  # Script de verificacion de calidad y suite de pruebas unitarias
 |-- requirements.txt           # Dependencias minimas del sistema (Flask >= 3.0.0)
 |-- ESPECIFICACION_REQUERIMIENTOS.md # Especificacion formal de reglas de negocio
 |-- README.md                  # Manual tecnico y documentacion general del proyecto
+|-- docs/                      # Guias tecnicas y protocolos de ingenieria
+|   `-- WORKFLOW.md            # Protocolo de ramas Git, convenciones de commit y verificacion
 |-- templates/                 # Plantillas HTML con Jinja2 y tokens Minimalist UI
 |   |-- base.html              # Layout corporativo base, navegacion superior y CSS unificado
 |   |-- login.html             # Acceso autenticado y credenciales demo
@@ -105,6 +109,7 @@ C:\Licitaciones\
     |-- test_detail.py         # Evaluacion de margenes, checklist y alertas
     |-- test_crud_flow.py      # Eliminacion de licitaciones y rutas manuales retiradas
     |-- test_salones.py        # Catalogo de salones, reservas, colisiones y acciones
+    |-- test_mercado_publico.py# Pruebas de cliente e integracion Mercado Publico
     |-- test_run.py            # Modulo de arranque del servidor
     `-- test_emoji_compliance.py # Auditoria regex de ausencia total de emojis
 ```
@@ -171,28 +176,32 @@ Al iniciarse, el servidor verifica automaticamente la base de datos `licitacione
 
 ---
 
-## Suite de Pruebas Automatizadas
+## Suite de Pruebas Automatizadas y Flujo de Calidad
 
-El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 94 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, prevencion de colisiones y cumplimiento normativo.
+El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 121 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
 
-### Ejecutar Todas las Pruebas
+### 1. Verificacion Oficial Previa a Integracion
+
+Para validar la suite completa y constatar que la rama de trabajo es apta para fusionarse a `main`:
+
+```bash
+python verify.py
+```
+
+### 2. Ejecucion Directa con Unittest
 
 ```bash
 python -m unittest discover tests
 ```
 
-### Resultado de la Suite Completa
-
-```text
-Ran 94 tests in 2.105s
-
-OK
-```
-
-### Auditoria de Cumplimiento de Cero Emojis
+### 3. Auditoria de Cumplimiento de Cero Emojis
 
 Para ejecutar el escaneo independiente de expresiones regulares sobre la totalidad del repositorio:
 
 ```bash
 python -m unittest tests/test_emoji_compliance.py
 ```
+
+### 4. Protocolo de Ramas de Trabajo
+
+Para consultar la politica de ramas tematicas (`feat/`, `fix/`, `refactor/`), convenciones de commit y pasos de integracion, revise [docs/WORKFLOW.md](docs/WORKFLOW.md).
