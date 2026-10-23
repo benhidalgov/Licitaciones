@@ -21,6 +21,7 @@ class TestSecurity(unittest.TestCase):
         flask_app.app.config["CSRF_ENABLED"] = True
         flask_app._login_attempts.clear()
         self.client = flask_app.app.test_client()
+        self.admin_password = flask_app.USERS["admin"]["password"]
 
     def tearDown(self):
         flask_app.app.config["CSRF_ENABLED"] = False
@@ -45,7 +46,7 @@ class TestSecurity(unittest.TestCase):
         self._get_csrf_token_from_login_page()
         response = self.client.post(
             "/login",
-            data={"username": "admin", "password": "admin123"}
+            data={"username": "admin", "password": self.admin_password}
         )
         self.assertEqual(response.status_code, 400)
 
@@ -53,7 +54,7 @@ class TestSecurity(unittest.TestCase):
         self._get_csrf_token_from_login_page()
         response = self.client.post(
             "/login",
-            data={"username": "admin", "password": "admin123", "csrf_token": "token-falso"}
+            data={"username": "admin", "password": self.admin_password, "csrf_token": "token-falso"}
         )
         self.assertEqual(response.status_code, 400)
 
@@ -61,7 +62,7 @@ class TestSecurity(unittest.TestCase):
         token = self._get_csrf_token_from_login_page()
         response = self.client.post(
             "/login",
-            data={"username": "admin", "password": "admin123", "csrf_token": token},
+            data={"username": "admin", "password": self.admin_password, "csrf_token": token},
             follow_redirects=True
         )
         self.assertEqual(response.status_code, 200)
@@ -88,10 +89,18 @@ class TestSecurity(unittest.TestCase):
 
         blocked = self.client.post(
             "/login",
-            data={"username": "admin", "password": "admin123", "csrf_token": token}
+            data={"username": "admin", "password": self.admin_password, "csrf_token": token}
         )
         self.assertEqual(blocked.status_code, 429)
         self.assertIn(b"Demasiados intentos", blocked.data)
+
+    def test_login_attempts_map_prunes_old_entries(self):
+        viejo = flask_app.time.monotonic() - 1000
+        flask_app._login_attempts.clear()
+        for i in range(1001):
+            flask_app._login_attempts[f"10.0.0.{i}"] = (1, viejo)
+        flask_app._record_login_failure("nueva-ip")
+        self.assertLess(len(flask_app._login_attempts), 1001)
 
 
 if __name__ == "__main__":

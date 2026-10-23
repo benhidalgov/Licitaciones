@@ -246,6 +246,56 @@ INVALID_LINE_WITHOUT_EQUALS
         self.assertEqual(mercado_publico.contar_terminos_fuzzy("audifonos cascos uniformes", mercado_publico.FUZZY_ALOJAMIENTO), 0)
         self.assertEqual(mercado_publico.contar_terminos_fuzzy("audifonos cascos uniformes", mercado_publico.FUZZY_EVENTOS), 0)
 
+    def test_fuzzy_no_confunde_habilitacion_con_habitacion(self):
+        # Dos ediciones solo si el largo es casi el mismo: "habilitacion" no es "habitacion".
+        self.assertEqual(
+            mercado_publico.contar_terminos_fuzzy(
+                "habilitacion calle de rodaje", mercado_publico.FUZZY_ALOJAMIENTO
+            ),
+            0,
+        )
+        item = {
+            "CodigoExterno": "1096-6-O126",
+            "Nombre": "HABILITACIÓN CALLE DE RODAJE ALFA Y OBRAS ANEXAS AEROPUERTO PUNTA ARENAS",
+            "Descripcion": "Obras de habilitación de calle de rodaje",
+        }
+        self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
+
+    def test_descarta_reparacion_de_habitaciones_de_oficina(self):
+        item = {
+            "CodigoExterno": "1234-1-LP26",
+            "Nombre": "REPARACIÓN DE PISOS Y CUBIERTA EN EL SECTOR COMEDOR Y EN LAS HABITACIONES DE OFICINA",
+            "Descripcion": "Trabajos de reparación",
+        }
+        self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
+
+    def test_fuzzy_no_confunde_paqueteria_con_banqueteria(self):
+        item = {
+            "CodigoExterno": "1242140-12-LE26",
+            "Nombre": "Servicio de Courier Traslado de Sobres y Paquetería para el Hospital Provincial de Ovalle",
+        }
+        self.assertEqual(
+            mercado_publico.contar_terminos_fuzzy(
+                "servicio de courier traslado de sobres y paqueteria", mercado_publico.FUZZY_EVENTOS
+            ),
+            0,
+        )
+        self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
+
+    def test_fuzzy_no_confunde_cuna_con_cena(self):
+        item = {
+            "CodigoExterno": "4362-10-LP26",
+            "Nombre": "MEJORAMIENTO SALA CUNA LA CRUZ NACIMIENTO",
+        }
+        self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
+
+    def test_fuzzy_no_confunde_balones_con_salones(self):
+        item = {
+            "CodigoExterno": "1002772-101-LR26",
+            "Nombre": "BALONES DE ANGIOPLASTIA Y STENTS MEDICADOS",
+        }
+        self.assertIsNone(mercado_publico.filtrar_y_clasificar_licitacion(item))
+
     @patch("urllib.request.urlopen")
     def test_consultar_licitacion_api_mock(self, mock_urlopen):
         fake_api_response = {
@@ -312,7 +362,7 @@ INVALID_LINE_WITHOUT_EQUALS
                     "CodigoExterno": "3001-1-COT24",
                     "Nombre": "Servicio de banqueteria y salones para conferencia universitaria",
                     "CodigoEstado": 5,
-                    "FechaCierre": "2026-10-20T17:00:00",
+                    "FechaCierre": "2027-10-20T17:00:00",
                     "FechaCreacion": "2026-10-05T09:00:00",
                     "Descripcion": "Coffee break continuo para 80 personas",
                     "Comprador": {
@@ -325,7 +375,7 @@ INVALID_LINE_WITHOUT_EQUALS
                     "CodigoExterno": "3002-2-LP24",
                     "Nombre": "Construccion de veredas y pavimentacion",
                     "CodigoEstado": 5,
-                    "FechaCierre": "2026-10-22T17:00:00",
+                    "FechaCierre": "2027-10-22T17:00:00",
                     "FechaCreacion": "2026-10-05T09:00:00",
                     "Descripcion": "Obras viales",
                     "Comprador": {
@@ -338,7 +388,7 @@ INVALID_LINE_WITHOUT_EQUALS
                     "CodigoExterno": "3003-3-COT24",
                     "Nombre": "Alojamiento y hospedaje delegacion de investigacion",
                     "CodigoEstado": 5,
-                    "FechaCierre": "2026-10-25T18:00:00",
+                    "FechaCierre": "2027-10-25T18:00:00",
                     "FechaCreacion": "2026-10-06T11:00:00",
                     "Descripcion": "Hospedaje de 4 noches en Santiago Centro",
                     "Comprador": {
@@ -378,6 +428,31 @@ INVALID_LINE_WITHOUT_EQUALS
         self.assertEqual(resumen_multi["total_guardadas"], 6)
 
     @patch("urllib.request.urlopen")
+    def test_sincronizar_descarta_licitacion_cerrada(self, mock_urlopen):
+        batch = {
+            "Cantidad": 1,
+            "FechaCreacion": "2026-10-07T16:00:00",
+            "Version": "v1",
+            "Listado": [{
+                "CodigoExterno": "8000-8-COT26",
+                "Nombre": "Servicio de banqueteria para evento",
+                "CodigoEstado": 8,
+                "FechaCierre": "2020-01-01T17:00:00",
+            }],
+        }
+        mock_urlopen.return_value.__enter__.return_value.read.return_value = json.dumps(batch).encode("utf-8")
+
+        resumen = mercado_publico.sincronizar_licitaciones(
+            fecha="07102026",
+            ticket="TICKET_TEST_VALIDO"
+        )
+        self.assertEqual(resumen["total_consultadas"], 1)
+        self.assertEqual(resumen["total_pertinentes"], 0)
+        self.assertGreaterEqual(resumen["total_descartadas"], 1)
+        self.assertEqual(resumen["total_guardadas"], 0)
+        self.assertIsNone(database.get_licitacion_by_id("8000-8-COT26"))
+
+    @patch("urllib.request.urlopen")
     def test_sincronizar_enriquece_con_ficha_detalle(self, mock_urlopen):
         # Listado por fecha: solo 4 campos basicos (como la API real)
         batch = {
@@ -386,7 +461,7 @@ INVALID_LINE_WITHOUT_EQUALS
                 "CodigoExterno": "7000-7-COT26",
                 "Nombre": "Servicio de banqueteria para asamblea anual",
                 "CodigoEstado": 5,
-                "FechaCierre": "2026-10-20T17:00:00"
+                "FechaCierre": "2027-10-20T17:00:00"
             }]
         }
         # Ficha por codigo: montos y comprador anidados, como la API real
@@ -405,7 +480,7 @@ INVALID_LINE_WITHOUT_EQUALS
                 "Fechas": {
                     "MontoEstimado": 4800000.0,
                     "FechaCreacion": "2026-10-01T00:00:00",
-                    "FechaCierre": "2026-10-20T17:00:00"
+                    "FechaCierre": "2027-10-20T17:00:00"
                 }
             }]
         }
@@ -430,7 +505,50 @@ INVALID_LINE_WITHOUT_EQUALS
         self.assertEqual(lic["organismo"], "SERVICIO NACIONAL DE TURISMO")
         self.assertEqual(lic["region"], "Region de Valparaiso")
         self.assertEqual(lic["fecha_publicacion"], "2026-10-01")
-        self.assertEqual(lic["fecha_cierre"], "2026-10-20")
+        self.assertEqual(lic["fecha_cierre"], "2027-10-20")
+
+    def test_filtro_no_marca_documentos_como_verificados(self):
+        item = {
+            "CodigoExterno": "1100-55-COT26",
+            "Nombre": "Catering para jornada institucional",
+            "Descripcion": "Coffee break para 50 personas",
+            "MontoEstimado": 3000000,
+        }
+        res = mercado_publico.filtrar_y_clasificar_licitacion(item)
+        self.assertIsNotNone(res)
+        self.assertEqual(res["validacion_adjuntos"], "Sin verificar")
+        self.assertEqual(res["tiene_anexo4"], 0)
+        self.assertEqual(res["tiene_escrituras"], 0)
+        self.assertEqual(res["tiene_poderes"], 0)
+        self.assertEqual(res["tiene_vigencias"], 0)
+
+    @patch("urllib.request.urlopen")
+    def test_certificado_invalido_no_se_reintenta_sin_verificar(self, mock_urlopen):
+        mock_urlopen.side_effect = urllib.error.URLError("CERTIFICATE_VERIFY_FAILED")
+        with patch("mercado_publico.time.sleep"):
+            self.assertIsNone(mercado_publico._fetch_url("https://api.mercadopublico.cl/x"))
+        self.assertEqual(mock_urlopen.call_count, 1)
+
+    def test_ssl_context_usa_ca_bundle_configurado(self):
+        with patch.dict(os.environ, {
+            "MERCADO_PUBLICO_SSL_VERIFY": "1",
+            "MERCADO_PUBLICO_CA_BUNDLE": "C:/certs/ca.pem",
+        }):
+            with patch("mercado_publico.os.path.isfile", return_value=True):
+                with patch("mercado_publico.ssl.create_default_context") as mock_ctx:
+                    mercado_publico._create_ssl_context()
+        mock_ctx.assert_called_once_with(cafile="C:/certs/ca.pem")
+
+    @patch("mercado_publico.time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_log_no_expone_el_ticket(self, mock_urlopen, mock_sleep):
+        url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json?ticket=SECRETO"
+        mock_urlopen.side_effect = urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+        with self.assertLogs("mercado_publico", level="ERROR") as logs:
+            self.assertIsNone(mercado_publico._fetch_url(url))
+        salida = "\n".join(logs.output)
+        self.assertIn("ticket=***", salida)
+        self.assertNotIn("SECRETO", salida)
 
     def test_no_emojis_in_mercado_publico_module(self):
         emoji_pattern = re.compile(

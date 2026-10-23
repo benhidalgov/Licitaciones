@@ -127,6 +127,19 @@ class TestSalones(unittest.TestCase):
         nombres_eventos = [r["cliente_evento"] for r in reservas_londres]
         self.assertIn("Taller de Auditoria de Procesos", nombres_eventos)
 
+    def test_create_reserva_no_permite_doble_confirmacion(self):
+        data = {
+            "id_salon": "SALON-SENA",
+            "cliente_evento": "Primera reserva",
+            "organismo_o_empresa": "Organismo A",
+            "tipo_evento": "Reunion",
+            "fecha_inicio": "2027-04-10",
+            "fecha_fin": "2027-04-10",
+            "horario": "09:00 a 12:00 hrs",
+        }
+        self.assertIsInstance(database.create_reserva(data), int)
+        self.assertIsNone(database.create_reserva({**data, "cliente_evento": "Segunda reserva"}))
+
     def test_get_reserva_by_id(self):
         # Existing seed reservation
         reserva = database.get_reserva_by_id(1)

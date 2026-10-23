@@ -4,11 +4,18 @@ Hotel Plaza San Francisco - Programa de Vinculacion con el Medio (VcM) DUOC UC.
 """
 
 import os
+import sys
 
-from app import app, DEMO_USER, DEMO_PASS
+from app import app, USERS, DEMO_PASSWORDS
 import database
 
 DEBUG = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
+HOST = os.environ.get("HOST", "127.0.0.1")
+PORT = int(os.environ.get("PORT", "5000") or 5000)
+
+
+def _es_local(host):
+    return host in ("127.0.0.1", "localhost", "::1")
 
 
 def main():
@@ -17,23 +24,26 @@ def main():
     print("  ASISTENTE VIRTUAL PARA LICITACIONES (MERCADO PUBLICO)")
     print("  Hotel Plaza San Francisco | Programa VcM DUOC UC")
     print("=" * 72)
+    if not _es_local(HOST):
+        if not os.environ.get("FLASK_SECRET_KEY"):
+            print("[FAIL] Para exponer el servidor configure FLASK_SECRET_KEY en .env.")
+            return 1
+        if any(USERS[u]["password"] == p for u, p in DEMO_PASSWORDS.items()):
+            print("[FAIL] Para exponer el servidor cambie las claves demo con LICITACIONES_PASSWORD_<USUARIO>.")
+            return 1
     print("[INFO] Inicializando motor de persistencia SQLite...")
     database.init_db()
     print("[INFO] Esquema relacional y datos de prueba verificados correctamente.")
     print("[INFO] Arquitectura 100% Web activa. Acceso exclusivo mediante navegador.")
     print("=" * 72)
-    print("  Punto de Acceso Web: http://127.0.0.1:5000")
-    print("  Credenciales de Demostracion:")
-    print(f"    - Usuario:         {DEMO_USER}")
-    print(f"    - Contrasena:      {DEMO_PASS}")
-    print("    - Perfiles:        daniela / francisca / mari")
-    print("    - Claves:          <perfil>123")
+    print(f"  Punto de Acceso Web: http://{HOST}:{PORT}")
     print("=" * 72)
-    print("[INFO] Servidor web iniciado en modo local. Presione CTRL+C para detener.")
+    print("[INFO] Servidor web iniciado. Presione CTRL+C para detener.")
     print("=" * 72)
 
-    app.run(host="127.0.0.1", port=5000, debug=DEBUG)
+    app.run(host=HOST, port=PORT, debug=DEBUG)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

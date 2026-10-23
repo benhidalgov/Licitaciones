@@ -82,6 +82,15 @@ class TestEvaluacionOperativa(unittest.TestCase):
         self.assertEqual(lic["estado_embudo"], "Descartada")
         self.assertEqual(lic["motivo_descarte"], "Precio")
 
+    def test_evaluacion_no_descarta_una_adjudicada(self):
+        lic = database.get_licitacion_by_id("930-15-LP23")
+        self.assertEqual(lic["estado_embudo"], "Adjudicada")
+        actualizada = database.registrar_evaluacion(
+            "930-15-LP23", {"costeo_validado": 1, "costo_base_hotel": 99999999}
+        )
+        self.assertEqual(actualizada["estado_embudo"], "Adjudicada")
+        self.assertEqual(actualizada["costo_base_hotel"], 99999999)
+
     def test_ismael_solo_acepta_alojamiento(self):
         response = self.client.post(
             "/licitaciones/1058-12-COT24/evaluacion",
@@ -101,11 +110,16 @@ class TestEvaluacionOperativa(unittest.TestCase):
             "/licitaciones/1058-12-COT24/notas",
             data={"nota": "PMS sin disponibilidad para la fecha."},
         )
+        self.client.post(
+            "/licitaciones/1058-12-COT24/notas",
+            data={"nota": "Se solicito alternativa de fecha."},
+        )
 
         lic = database.get_licitacion_by_id("1058-12-COT24")
         self.assertEqual(lic["estado_embudo"], "Descartada")
         self.assertEqual(lic["motivo_descarte"], "Disponibilidad")
         self.assertIn("PMS sin disponibilidad", lic["notas"])
+        self.assertIn("Se solicito alternativa", lic["notas"])
         self.assertIn("Daniela", lic["notas"])
 
     def test_exportacion_csv_abre_en_excel(self):
@@ -114,6 +128,29 @@ class TestEvaluacionOperativa(unittest.TestCase):
         self.assertIn("text/csv", response.headers["Content-Type"])
         self.assertTrue(response.data.startswith("\ufeff".encode("utf-8")))
         self.assertIn(b"ID;Titulo;Organismo", response.data)
+
+    def test_exportacion_neutraliza_formulas(self):
+        database.create_licitacion({
+            "id_licitacion": "FORMULA-1",
+            "titulo": "=HYPERLINK(\"http://ejemplo\")",
+            "organismo": "Organismo",
+            "categoria": "Alojamiento",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 500000,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Sin verificar",
+            "tiene_anexo4": 0,
+            "tiene_escrituras": 0,
+            "tiene_poderes": 0,
+            "tiene_vigencias": 0,
+            "fecha_publicacion": "2026-01-01",
+            "fecha_cierre": "2026-12-31",
+            "descripcion_tdr": "x",
+        })
+        texto = self.client.get("/licitaciones/exportar.csv").data.decode("utf-8-sig")
+        self.assertIn("'=HYPERLINK", texto)
 
     def test_priorizadas_incluye_oportunidad_abierta_y_viable(self):
         database.create_licitacion({

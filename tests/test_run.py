@@ -33,12 +33,28 @@ class TestRunScript(unittest.TestCase):
         output = captured_stdout.getvalue()
         self.assertIn("ASISTENTE VIRTUAL PARA LICITACIONES", output)
         self.assertIn("http://127.0.0.1:5000", output)
-        self.assertIn("admin", output)
-        self.assertIn("admin123", output)
+        self.assertNotIn("admin123", output)
+        self.assertNotIn("Contrasena", output)
 
         # Verification of zero emojis in printed console messages
         matches = self.emoji_pattern.findall(output)
         self.assertEqual(matches, [], f"Se encontraron emojis en los mensajes de consola de run.py: {matches}")
+
+    @patch("run.app.run")
+    @patch("run.database.init_db")
+    def test_run_uses_env_host_and_port(self, mock_init_db, mock_app_run):
+        with patch.object(run, "HOST", "0.0.0.0"), patch.object(run, "PORT", 8080):
+            with patch.object(run, "_es_local", return_value=True):
+                run.main()
+        mock_app_run.assert_called_once_with(host="0.0.0.0", port=8080, debug=run.DEBUG)
+
+    @patch("run.app.run")
+    @patch("run.database.init_db")
+    def test_run_refuses_public_without_secret(self, mock_init_db, mock_app_run):
+        with patch.object(run, "HOST", "0.0.0.0"):
+            with patch.dict("os.environ", {"FLASK_SECRET_KEY": ""}):
+                self.assertEqual(run.main(), 1)
+        mock_app_run.assert_not_called()
 
     def test_no_emojis_in_run_py_source(self):
         with open("run.py", "r", encoding="utf-8") as f:

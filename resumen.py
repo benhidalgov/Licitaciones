@@ -10,9 +10,9 @@ import json
 import os
 import re
 import urllib.request
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+import database
 import mercado_publico
 
 # Servicios de alimentacion intramuros que el hotel puede prestar.
@@ -78,7 +78,7 @@ def _buscar_salones_habitaciones(lic: Dict[str, Any]) -> Dict[str, Any]:
             "alternativas": [],
         }
 
-    salones = mercado_publico.database.get_salones_aptos(asistentes, propiedad=lic.get("propiedad"))
+    salones = database.get_salones_aptos(asistentes, propiedad=lic.get("propiedad"))
     if asistentes and salones:
         alternativas = [f"{s['nombre']} ({s['capacidad_maxima']} pers.)" for s in salones[:4]]
         requerimiento = f"{asistentes} asistentes; {len(salones)} salon(es) con capacidad suficiente"
@@ -86,7 +86,7 @@ def _buscar_salones_habitaciones(lic: Dict[str, Any]) -> Dict[str, Any]:
         alternativas = []
         requerimiento = f"{asistentes} asistentes; sin salon de capacidad suficiente"
     else:
-        salones = mercado_publico.database.get_all_salones()
+        salones = database.get_all_salones()
         alternativas = [f"{s['nombre']} ({s['capacidad_maxima']} pers.)" for s in salones[:4]]
         requerimiento = "Salones requeridos (aforo por confirmar)"
 
@@ -110,7 +110,7 @@ def _ponderar_criterios(lic: Dict[str, Any]) -> List[Dict[str, Any]]:
     else:
         puntuacion_presupuesto = 0
 
-    salon = mercado_publico.database.get_salon_by_id(salon_id) if salon_id else None
+    salon = database.get_salon_by_id(salon_id) if salon_id else None
     if salon and asistentes:
         holgura = salon["capacidad_maxima"] - asistentes
         puntuacion_capacidad = 100 if holgura >= 0 else max(0, 100 + holgura)
@@ -135,9 +135,9 @@ def _ponderar_criterios(lic: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 def generar_resumen_reglas(lic: Dict[str, Any]) -> Dict[str, Any]:
     """Ficha resumen construida con reglas deterministas sobre el TDR."""
-    texto = mercado_publico._normalizar_texto(
+    texto = database._sin_acentos(
         f"{lic.get('titulo', '')} {lic.get('descripcion_tdr', '')}"
-    )
+    ).lower()
 
     fechas = _buscar_fechas(texto)
     servicios = _buscar_servicios(texto)

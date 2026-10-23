@@ -264,10 +264,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
                 <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Presupuesto Mandante</div>
-                <div class="text-2xl font-bold text-[#111111] mt-1 font-mono">
-                    {{ lic.presupuesto_mandante | clp }}
+                <div class="text-2xl font-bold mt-1 font-mono {% if lic.presupuesto_mandante > 0 %}text-[#111111]{% else %}text-[#6E6D6A]{% endif %}">
+                    {% if lic.presupuesto_mandante > 0 %}{{ lic.presupuesto_mandante | clp }}{% else %}No informado{% endif %}
                 </div>
-                <div class="text-[11px] text-[#6E6D6A] mt-1">Tope oficial disponible</div>
+                <div class="text-[11px] text-[#6E6D6A] mt-1">
+                    {% if lic.presupuesto_mandante > 0 %}Tope oficial disponible{% else %}La ficha no publica monto{% endif %}
+                </div>
             </div>
 
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
@@ -286,15 +288,19 @@
 
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
                 <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Margen Proyectado / Diferencia</div>
-                <div class="text-2xl font-bold mt-1 font-mono {% if es_inviable %}text-[#9F2F2D]{% else %}text-[#346538]{% endif %}">
-                    {% if es_inviable %}
+                <div class="text-2xl font-bold mt-1 font-mono {% if lic.presupuesto_mandante <= 0 %}text-[#6E6D6A]{% elif es_inviable %}text-[#9F2F2D]{% else %}text-[#346538]{% endif %}">
+                    {% if lic.presupuesto_mandante <= 0 %}
+                    —
+                    {% elif es_inviable %}
                     -{{ deficit | clp }}
                     {% else %}
                     +{{ diferencia | clp }}
                     {% endif %}
                 </div>
                 <div class="text-[11px] text-[#6E6D6A] mt-1">
-                    {% if es_inviable %}
+                    {% if lic.presupuesto_mandante <= 0 %}
+                    No calculable sin presupuesto
+                    {% elif es_inviable %}
                     Deficit operacional directo
                     {% else %}
                     Margen de contribucion: {{ margen_porcentaje }}%
@@ -305,7 +311,11 @@
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 flex flex-col justify-between">
                 <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Diagnostico de Viabilidad</div>
                 <div class="mt-2">
-                    {% if es_inviable %}
+                    {% if lic.presupuesto_mandante <= 0 %}
+                    <span class="badge-spot badge-spot-neutral">
+                        Monto no informado
+                    </span>
+                    {% elif es_inviable %}
                     <span class="badge-spot badge-spot-red">
                         Inviable / Costo Excede
                     </span>
@@ -316,7 +326,9 @@
                     {% endif %}
                 </div>
                 <div class="text-[11px] text-[#6E6D6A] mt-1">
-                    {% if es_inviable %}
+                    {% if lic.presupuesto_mandante <= 0 %}
+                    Requiere costeo manual
+                    {% elif es_inviable %}
                     Requiere descarte o renegociacion
                     {% else %}
                     Parametros de rentabilidad conformes
@@ -326,7 +338,18 @@
         </div>
 
         <!-- Alerta Formal de Viabilidad en Spot Pastel -->
-        {% if es_inviable %}
+        {% if lic.presupuesto_mandante <= 0 %}
+        <div class="p-4 rounded-[6px] border text-xs" style="background: #FBFBFA; border-color: #EAEAEA; color: #6E6D6A;">
+            <div class="flex flex-col space-y-1">
+                <span class="font-semibold uppercase tracking-wider">
+                    Presupuesto No Informado
+                </span>
+                <p class="leading-relaxed">
+                    La ficha oficial no publica el monto estimado de esta licitacion. El equipo debe obtener el presupuesto desde las bases o los anexos y registrar el costeo antes de decidir la postulacion.
+                </p>
+            </div>
+        </div>
+        {% elif es_inviable %}
         <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-red-bg); border-color: #F8D1D3; color: var(--pastel-red-text);">
             <div class="flex flex-col space-y-1">
                 <span class="font-semibold uppercase tracking-wider">
@@ -539,13 +562,13 @@
             </div>
             {% if salon_asignado %}
             <div>
-                <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion, salon=salon_asignado.id_salon, fecha_inicio=lic.fecha_cierre) }}" class="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
+                <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion, salon=salon_asignado.id_salon) }}" class="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
                     Bloquear Salon para esta Licitacion
                 </a>
             </div>
             {% else %}
             <div>
-                <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion, fecha_inicio=lic.fecha_cierre) }}" class="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap">
+                <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion) }}" class="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap">
                     Registrar Reserva de Salon
                 </a>
             </div>
@@ -615,30 +638,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Alerta de Conflicto de Agenda con Reservas Existentes -->
-        {% if conflictos_agenda %}
-        <div class="p-4 rounded-[6px] border text-xs space-y-2" style="background: var(--pastel-yellow-bg); border-color: #F3E0A9; color: var(--pastel-yellow-text);">
-            <div class="flex flex-col space-y-1">
-                <span class="font-semibold uppercase tracking-wider">
-                    [ALERTA] Conflicto de Disponibilidad de Salon en Fecha Comprometida
-                </span>
-                <p class="leading-relaxed">
-                    El salon asignado <strong>{{ salon_asignado.nombre }}</strong> registra reservas activas que coinciden con el periodo de ejecucion o cierre de esta oportunidad (<strong>{{ lic.fecha_cierre }}</strong>):
-                </p>
-                <ul class="list-disc list-inside pl-1 space-y-1 pt-1 font-mono">
-                    {% for ca in conflictos_agenda %}
-                    <li>
-                        <strong>{{ ca.organismo_o_empresa }}</strong> ({{ ca.cliente_evento }}): del <strong>{{ ca.fecha_inicio }}</strong> al <strong>{{ ca.fecha_fin }}</strong> [{{ ca.horario }}] - Estado: <strong>{{ ca.estado_reserva }}</strong>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <p class="text-[11px] pt-1">
-                    Nota: Se sugiere evaluar la reasignacion de fecha o seleccionar otro salon del hotel con aforo compatible.
-                </p>
-            </div>
-        </div>
-        {% endif %}
 
         <!-- Diagnostico de Aforo y Alertas -->
         {% if excede_aforo %}
@@ -788,7 +787,7 @@
                 El identificador registrado en la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) coincide de manera precisa con el correlativo interno consignado en los archivos descargables, anexos contractuales y bases administrativas. No se registran discrepancias de identificacion.
             </p>
         </div>
-        {% else %}
+        {% elif lic.validacion_adjuntos == 'Error ID / Discrepancia' %}
         <div class="p-4 rounded-[6px] border text-xs space-y-2" style="background: var(--pastel-yellow-bg); border-color: #F3E0A9; color: var(--pastel-yellow-text);">
             <div class="flex items-center space-x-2">
                 <span class="badge-spot badge-spot-yellow">
@@ -800,6 +799,13 @@
             </div>
             <p class="leading-relaxed">
                 Se ha constatado una discordancia entre el identificador de la ficha maestra (<strong>{{ lic.id_licitacion }}</strong>) y los rotulos en los documentos adjuntos de bases. Esta desalineacion genera riesgo de subsanacion o eventual inadmisibilidad administrativa. Es obligatorio emitir una consulta formal a traves del foro de Mercado Publico previo al envio de la propuesta.
+            </p>
+        </div>
+        {% else %}
+        <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 space-y-2">
+            <span class="badge-spot badge-spot-neutral">Sin verificar</span>
+            <p class="text-xs text-[#6E6D6A] leading-relaxed">
+                El equipo aun no ha cotejado el identificador de la ficha con los documentos adjuntos.
             </p>
         </div>
         {% endif %}
@@ -818,6 +824,10 @@
                 {% if lic.tiene_anexo4 and lic.tiene_escrituras and lic.tiene_poderes and lic.tiene_vigencias %}
                 <span class="badge-spot badge-spot-green">
                     Admisibilidad Administrativa Completa
+                </span>
+                {% elif not (lic.tiene_anexo4 or lic.tiene_escrituras or lic.tiene_poderes or lic.tiene_vigencias) %}
+                <span class="badge-spot badge-spot-neutral">
+                    Sin verificar
                 </span>
                 {% else %}
                 <span class="badge-spot badge-spot-yellow">
@@ -924,6 +934,35 @@
                 </tbody>
             </table>
         </div>
+
+        <form method="POST" action="{{ url_for('actualizar_documentos_licitacion', id_licitacion=lic.id_licitacion) }}" class="border-t border-[#EAEAEA] pt-4 space-y-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" name="tiene_anexo4" {% if lic.tiene_anexo4 %}checked{% endif %}> Anexo 4
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" name="tiene_escrituras" {% if lic.tiene_escrituras %}checked{% endif %}> Escrituras
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" name="tiene_poderes" {% if lic.tiene_poderes %}checked{% endif %}> Poderes
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" name="tiene_vigencias" {% if lic.tiene_vigencias %}checked{% endif %}> Vigencias
+                </label>
+                <div>
+                    <label for="validacion_adjuntos" class="block text-[10px] uppercase tracking-wide text-[#6E6D6A] mb-1">Cruce de ID</label>
+                    <select id="validacion_adjuntos" name="validacion_adjuntos" class="w-full text-xs px-2 py-1.5 border border-[#EAEAEA] rounded bg-white text-[#111111]">
+                        {% for v in ['Sin verificar', 'Valida', 'Error ID / Discrepancia'] %}
+                        <option value="{{ v }}" {% if lic.validacion_adjuntos == v %}selected{% endif %}>{{ v }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="btn-secondary text-xs px-3 py-1.5">Guardar verificacion documental</button>
+            </div>
+        </form>
     </div>
 
     <!-- Historial de Notas Compartidas -->

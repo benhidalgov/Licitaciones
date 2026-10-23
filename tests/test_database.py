@@ -178,6 +178,28 @@ class TestDatabase(unittest.TestCase):
         total_despues = len(database.get_all_licitaciones())
         self.assertEqual(total_antes, total_despues)
 
+    def test_init_db_no_resiembra_despues_de_borrar_todo(self):
+        conn = database.get_db_connection()
+        try:
+            conn.execute("DELETE FROM reservas_salones")
+            conn.execute("DELETE FROM licitaciones")
+            conn.commit()
+        finally:
+            conn.close()
+        database.init_db()
+        self.assertEqual(len(database.get_all_licitaciones()), 0)
+        self.assertEqual(len(database.get_all_reservas()), 0)
+
+    def test_init_db_no_pisa_aforo_editado(self):
+        conn = database.get_db_connection()
+        try:
+            conn.execute("UPDATE salones SET capacidad_maxima = 300 WHERE id_salon = 'SALON-PERGOLA'")
+            conn.commit()
+        finally:
+            conn.close()
+        database.init_db()
+        self.assertEqual(database.get_salon_by_id("SALON-PERGOLA")["capacidad_maxima"], 300)
+
     def test_combined_filters_and_ordering(self):
         # Filtro combinado por categoria y modalidad
         resultado = database.get_all_licitaciones(
@@ -235,6 +257,11 @@ class TestDatabase(unittest.TestCase):
 
         aptos_500 = database.get_salones_aptos(500)
         self.assertEqual(len(aptos_500), 0)
+
+    def test_opciones_reserva_excluye_descartadas(self):
+        ids = {lic["id_licitacion"] for lic in database.get_licitaciones_para_reserva()}
+        self.assertNotIn("310-7-COT24", ids)
+        self.assertIn("1058-12-COT24", ids)
 
     def test_create_and_update_licitacion_with_capacity_and_salon(self):
         data = {

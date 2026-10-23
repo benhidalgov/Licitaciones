@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Flask_3.0-111111?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
 [![Base de Datos](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-130_Aprobadas-10B981?style=flat-square)](tests)
+[![Tests](https://img.shields.io/badge/Tests-188_Aprobadas-10B981?style=flat-square)](tests)
 [![Interfaz](https://img.shields.io/badge/UI-Minimalist_Editorial-111111?style=flat-square)](templates)
 [![Normativa](https://img.shields.io/badge/Mercado_Publico-Ley_19.886-0284C7?style=flat-square)](https://www.mercadopublico.cl/)
 
@@ -64,7 +64,7 @@ El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el
 * **Propuesta de Match por Capacidad:** El sistema propone los salones cuya capacidad maxima cubre el aforo requerido. La disponibilidad final siempre se valida en el PMS del hotel; no existe sincronizacion automatica con Mercado Publico.
 * **Validacion de Aforo y Sobrecupo:** Verificacion entre la cantidad de asistentes solicitada y la capacidad del salon asignado, recomendando alternativas compatibles en caso de sobrecupo.
 * **Agenda de Ocupacion y Reservas (Bookings):** Cronograma de fechas ocupadas con detalle de organismo contratante, asistentes, franja horaria y estado (`Confirmada`, `Tentativa`, `Bloqueo Interno`).
-* **Motor de Deteccion de Colisiones:** Validacion matematica de cruce de fechas que impide la doble reserva de un mismo espacio en fechas solapadas y alerta en tiempo real en la ficha de licitacion.
+* **Motor de Deteccion de Colisiones:** Validacion matematica de cruce de fechas que impide la doble reserva de un mismo espacio en fechas solapadas, tanto en el formulario de reserva como en la base de datos.
 * **Bloqueo Directo desde Licitacion:** Boton para transferir en un clic los datos del proceso licitatorio al formulario de reserva del hotel.
 
 ### 4. Analitica, Clientes Clave e Historial de OC
@@ -156,11 +156,11 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Al iniciarse, el servidor verifica automaticamente la base de datos `licitaciones.db`, inicializa las tablas relacionales y siembra los registros de prueba si no existen.
+Al iniciarse, el servidor verifica automaticamente la base de datos `licitaciones.db`, inicializa las tablas relacionales y siembra los registros de prueba la primera vez que se crea.
 
 ```text
 ========================================================================
-  COPILOT DE LICITACIONES Y OPERACIONES HOTELERAS
+  ASISTENTE VIRTUAL PARA LICITACIONES (MERCADO PUBLICO)
   Hotel Plaza San Francisco | Programa VcM DUOC UC
 ========================================================================
 [INFO] Inicializando motor de persistencia SQLite...
@@ -168,11 +168,8 @@ Al iniciarse, el servidor verifica automaticamente la base de datos `licitacione
 [INFO] Arquitectura 100% Web activa. Acceso exclusivo mediante navegador.
 ========================================================================
   Punto de Acceso Web: http://127.0.0.1:5000
-  Credenciales de Demostracion:
-    - Usuario:         admin
-    - Contrasena:      admin123
-    - Perfiles:        daniela / francisca / mari
-    - Claves:          <perfil>123
+========================================================================
+[INFO] Servidor web iniciado. Presione CTRL+C para detener.
 ========================================================================
 ```
 
@@ -206,7 +203,7 @@ Al iniciarse, el servidor verifica automaticamente la base de datos `licitacione
 
 ## Suite de Pruebas Automatizadas y Flujo de Calidad
 
-El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 130 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
+El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 188 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
 
 ### 1. Verificacion Oficial Previa a Integracion
 

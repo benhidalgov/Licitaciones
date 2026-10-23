@@ -196,6 +196,30 @@ class TestDashboard(unittest.TestCase):
         # Sin fecha explicita sincroniza la ultima semana
         mock_sync.assert_called_with(fecha=None, dias=7)
 
+    def test_sincronizar_get_rechazado(self):
+        res = self.client.get("/licitaciones/sincronizar")
+        self.assertIn(res.status_code, (404, 405))
+
+    @patch("mercado_publico.sincronizar_licitaciones")
+    def test_sincronizar_fecha_invalida_no_llama_api(self, mock_sync):
+        res = self.client.post(
+            "/licitaciones/sincronizar", data={"fecha": "2026-01-01"}, follow_redirects=True
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("formato DDMMAAAA", res.get_data(as_text=True))
+        mock_sync.assert_not_called()
+
+    @patch("mercado_publico.sincronizar_licitaciones")
+    def test_sincronizar_no_corre_dos_veces(self, mock_sync):
+        adquirido = flask_app._sync_lock.acquire(blocking=False)
+        self.assertTrue(adquirido)
+        try:
+            res = self.client.post("/licitaciones/sincronizar", follow_redirects=True)
+        finally:
+            flask_app._sync_lock.release()
+        self.assertIn("Ya hay una sincronizacion en curso", res.get_data(as_text=True))
+        mock_sync.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

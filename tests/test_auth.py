@@ -14,6 +14,7 @@ class TestAuth(unittest.TestCase):
         flask_app.app.config["SECRET_KEY"] = "test-secret"
         flask_app.app.config["CSRF_ENABLED"] = False
         self.client = flask_app.app.test_client()
+        self.admin_password = flask_app.USERS["admin"]["password"]
 
     def tearDown(self):
         if os.path.exists(database.DB_NAME):
@@ -29,12 +30,12 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.headers["Location"])
 
-    def test_login_page_renders_demo_credentials(self):
+    def test_login_page_renders_form_without_leaking_credentials(self):
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"admin", response.data)
-        self.assertIn(b"admin123", response.data)
         self.assertIn(b"Iniciar Sesion", response.data)
+        self.assertNotIn(b"admin123", response.data)
+        self.assertNotIn(b"daniela123", response.data)
 
     def test_login_failure_invalid_credentials(self):
         response = self.client.post(
@@ -47,21 +48,21 @@ class TestAuth(unittest.TestCase):
     def test_login_success(self):
         response = self.client.post(
             "/login",
-            data={"username": "admin", "password": "admin123"},
+            data={"username": "admin", "password": self.admin_password},
             follow_redirects=True
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Panel de Control", response.data)
 
     def test_licitaciones_accessible_when_authenticated(self):
-        self.client.post("/login", data={"username": "admin", "password": "admin123"})
+        self.client.post("/login", data={"username": "admin", "password": self.admin_password})
         response = self.client.get("/licitaciones")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Panel de Control", response.data)
 
     def test_logout(self):
         # Login first
-        self.client.post("/login", data={"username": "admin", "password": "admin123"})
+        self.client.post("/login", data={"username": "admin", "password": self.admin_password})
         # Logout (POST only; GET must be rejected)
         get_response = self.client.get("/logout")
         self.assertEqual(get_response.status_code, 405)

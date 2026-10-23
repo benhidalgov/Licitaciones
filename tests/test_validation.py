@@ -70,6 +70,18 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"formato AAAA-MM-DD", response.data)
 
+    def test_reserva_excede_aforo_rechazada(self):
+        antes = len(database.get_all_reservas(id_salon="SALON-EJECUTIVO"))
+        response = self._post_reserva(
+            id_salon="SALON-EJECUTIVO",
+            asistentes_estimados="300",
+            fecha_inicio="2027-03-01",
+            fecha_fin="2027-03-01",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"admite 8 personas", response.data)
+        self.assertEqual(len(database.get_all_reservas(id_salon="SALON-EJECUTIVO")), antes)
+
     def test_reserva_empty_asistentes_accepted_as_zero(self):
         data = dict(VALID_RESERVA_FORM)
         data["asistentes_estimados"] = ""

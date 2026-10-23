@@ -1,8 +1,10 @@
 import csv
+import hashlib
 import hmac
 import io
 import os
 import secrets
+import threading
 import time
 from datetime import date, datetime
 from functools import wraps
@@ -14,7 +16,7 @@ import resumen
 mercado_publico.load_env_file()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "licitaciones-secret-key-2026")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_COOKIE_SECURE", "") == "1"
@@ -23,14 +25,19 @@ app.config["LOGIN_RATE_LIMIT"] = 5
 app.config["LOGIN_RATE_WINDOW"] = 300
 
 # Perfiles operativos. Los datos y estados son compartidos entre todos.
+# Las claves demo se pueden reemplazar con LICITACIONES_PASSWORD_<USUARIO>.
 USERS = {
     "admin": {"password": "admin123", "nombre": "Administrador"},
     "daniela": {"password": "daniela123", "nombre": "Daniela"},
     "francisca": {"password": "francisca123", "nombre": "Francisca"},
     "mari": {"password": "mari123", "nombre": "Mari Carmen"},
 }
-DEMO_USER = "admin"
-DEMO_PASS = "admin123"
+DEMO_PASSWORDS = {u: c["password"] for u, c in USERS.items()}
+for _usuario in USERS:
+    _clave = os.environ.get(f"LICITACIONES_PASSWORD_{_usuario.upper()}")
+    if _clave:
+        USERS[_usuario]["password"] = _clave
+
 
 VALID_ESTADOS = [
     "Identificada",
@@ -64,6 +71,7 @@ def verify_csrf_token():
 
 
 _login_attempts = {}
+_sync_lock = threading.Lock()
 
 
 def _is_login_blocked(ip):
@@ -80,6 +88,10 @@ def _is_login_blocked(ip):
 
 def _record_login_failure(ip):
     now = time.monotonic()
+    if len(_login_attempts) > 1000:
+        for vieja_ip, (_, started) in list(_login_attempts.items()):
+            if now - started >= app.config["LOGIN_RATE_WINDOW"]:
+                _login_attempts.pop(vieja_ip, None)
     entry = _login_attempts.get(ip)
     if not entry or now - entry[1] >= app.config["LOGIN_RATE_WINDOW"]:
         _login_attempts[ip] = (1, now)
@@ -257,12 +269,6 @@ def licitacion_detalle(id_licitacion):
     else:
         salones_compatibles = salones
 
-    # Cruce de agenda y disponibilidad con reservas existentes
-    conflictos_agenda = []
-    if salon_id and lic.get("fecha_cierre"):
-        fecha_ref = lic["fecha_cierre"]
-        conflictos_agenda = database.get_conflictos_reserva(salon_id, fecha_ref, fecha_ref)
-
     # Ficha resumen: IA si esta configurada, si no reglas deterministas.
     # ia=1 fuerza un nuevo intento con IA; si no hay llave, degrada a reglas.
     ficha_resumen = resumen.generar_resumen(lic, usar_ia=request.args.get("ia") == "1")
@@ -287,7 +293,6 @@ def licitacion_detalle(id_licitacion):
         excede_aforo=excede_aforo,
         sobrecupo=sobrecupo,
         salones_compatibles=salones_compatibles,
-        conflictos_agenda=conflictos_agenda,
         salones=salones,
         ficha_resumen=ficha_resumen,
         ia_disponible=ia_disponible,
@@ -311,9 +316,15 @@ def exportar_licitaciones():
         "estado": request.args.get("estado", "").strip() or None,
         "q": request.args.get("q", "").strip() or None,
         "propiedad": request.args.get("propiedad", "").strip() or None,
+        "cliente_clave": request.args.get("cliente_clave", "").strip() or None,
     }
     filtros = {k: v for k, v in filtros.items() if v}
     licitaciones = database.get_all_licitaciones(**filtros)
+
+    def celda(valor):
+        """Evita que un texto importado de la API se ejecute como formula en Excel."""
+        texto = "" if valor is None else str(valor)
+        return "'" + texto if texto[:1] in ("=", "+", "-", "@") else texto
 
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
@@ -326,24 +337,24 @@ def exportar_licitaciones():
     for lic in licitaciones:
         margen = lic["presupuesto_mandante"] - lic["costo_base_hotel"]
         writer.writerow([
-            lic["id_licitacion"],
-            lic["titulo"],
-            lic["organismo"],
-            lic["propiedad"],
-            lic["categoria"],
-            lic["modalidad"],
-            lic["region"],
+            celda(lic["id_licitacion"]),
+            celda(lic["titulo"]),
+            celda(lic["organismo"]),
+            celda(lic["propiedad"]),
+            celda(lic["categoria"]),
+            celda(lic["modalidad"]),
+            celda(lic["region"]),
             lic["presupuesto_mandante"],
             lic["costo_base_hotel"],
             margen,
-            lic["estado_embudo"],
-            lic["motivo_descarte"],
+            celda(lic["estado_embudo"]),
+            celda(lic["motivo_descarte"]),
             "Si" if lic["revisada"] else "No",
             lic["fecha_publicacion"],
             lic["fecha_cierre"],
             lic["cantidad_asistentes"],
-            lic.get("nombre_salon") or "",
-            (lic.get("notas") or "").replace("\n", " | "),
+            celda(lic.get("nombre_salon") or ""),
+            celda((lic.get("notas") or "").replace("\n", " | ")),
         ])
 
     respuesta = make_response("\ufeff" + buffer.getvalue())
@@ -516,9 +527,31 @@ def agregar_nota_licitacion(id_licitacion):
 
     autor = session.get("nombre") or session.get("user") or "Equipo"
     linea = f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] {autor}: {nota}"
-    notas = (lic.get("notas") or "").strip()
-    database.update_licitacion(id_licitacion, {"notas": f"{notas}\n{linea}".strip()})
+    database.append_nota(id_licitacion, linea)
     flash("Nota agregada al historial compartido.", "success")
+    return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+
+@app.route("/licitaciones/<id_licitacion>/documentos", methods=["POST"])
+@login_required
+def actualizar_documentos_licitacion(id_licitacion):
+    lic = database.get_licitacion_by_id(id_licitacion)
+    if not lic:
+        abort(404)
+
+    validacion = request.form.get("validacion_adjuntos", "").strip()
+    if validacion not in ("Valida", "Error ID / Discrepancia", "Sin verificar"):
+        flash("Estado de validacion documental invalido.", "error")
+        return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+
+    database.update_licitacion(id_licitacion, {
+        "validacion_adjuntos": validacion,
+        "tiene_anexo4": 1 if request.form.get("tiene_anexo4") else 0,
+        "tiene_escrituras": 1 if request.form.get("tiene_escrituras") else 0,
+        "tiene_poderes": 1 if request.form.get("tiene_poderes") else 0,
+        "tiene_vigencias": 1 if request.form.get("tiene_vigencias") else 0,
+    })
+    flash("Verificacion documental guardada.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
 
@@ -581,6 +614,7 @@ def cargar_historial_oc():
     nombre = archivo.filename
     ext = nombre.rsplit(".", 1)[-1].lower() if "." in nombre else ""
     try:
+        datos = archivo.read()
         if ext in ("xlsx", "xlsm"):
             try:
                 import openpyxl
@@ -591,13 +625,12 @@ def cargar_historial_oc():
                     "error",
                 )
                 return redirect(url_for("analitica"))
-            datos = archivo.read()
             libro = openpyxl.load_workbook(io.BytesIO(datos), read_only=True, data_only=True)
             hoja = libro.active
             filas = [list(f) for f in hoja.iter_rows(values_only=True)] if hoja else []
             libro.close()
         elif ext == "csv":
-            texto = archivo.read().decode("utf-8-sig", errors="replace")
+            texto = datos.decode("utf-8-sig", errors="replace")
             filas = list(csv.reader(io.StringIO(texto)))
         else:
             flash("Formato no soportado. Use .xlsx o .csv.", "error")
@@ -606,7 +639,10 @@ def cargar_historial_oc():
         flash(f"No se pudo leer el archivo: {exc}", "error")
         return redirect(url_for("analitica"))
 
-    insertadas = database.importar_historial_oc(filas, archivo=nombre)
+    # El nombre solo no identifica una carga: dos archivos "historial.xlsx"
+    # distintos no deben borrarse entre si.
+    huella = hashlib.sha256(datos).hexdigest()
+    insertadas = database.importar_historial_oc(filas, archivo=f"{nombre}:{huella}")
     if insertadas == 0:
         flash(
             "El archivo no tiene columnas reconocibles de OC. Se esperan encabezados "
@@ -626,7 +662,10 @@ def refrescar_licitacion(id_licitacion):
         abort(404)
 
     detalle = mercado_publico.consultar_licitacion(id_licitacion)
-    reclasificada = mercado_publico.filtrar_y_clasificar_licitacion(detalle) if detalle else None
+    if not detalle or str(detalle.get("CodigoExterno") or "").strip() != id_licitacion:
+        flash("No se pudo refrescar: la API no devolvio la ficha de esta licitacion.", "error")
+        return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+    reclasificada = mercado_publico.filtrar_y_clasificar_licitacion(detalle)
     if reclasificada is None:
         flash("No se pudo refrescar: la API no respondio o la licitacion ya no supera el filtro (moneda no CLP o sin pertinencia hotelera).", "error")
         return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
@@ -686,12 +725,24 @@ def guardar_tope_compra_agil():
     return redirect(url_for("dashboard"))
 
 
-@app.route("/licitaciones/sincronizar", methods=["GET", "POST"])
+@app.route("/licitaciones/sincronizar", methods=["POST"])
 @login_required
 def sincronizar_licitaciones_route():
-    fecha = request.form.get("fecha", "").strip() or request.args.get("fecha", "").strip() or None
-    # Sin fecha explicita sincroniza la ultima semana; con fecha, solo ese dia
-    resumen = mercado_publico.sincronizar_licitaciones(fecha=fecha, dias=1 if fecha else 7)
+    fecha = request.form.get("fecha", "").strip() or None
+    if fecha:
+        try:
+            datetime.strptime(fecha, "%d%m%Y")
+        except ValueError:
+            flash("La fecha debe tener formato DDMMAAAA.", "error")
+            return redirect(url_for("dashboard"))
+    if not _sync_lock.acquire(blocking=False):
+        flash("Ya hay una sincronizacion en curso. Espere a que termine.", "warning")
+        return redirect(url_for("dashboard"))
+    try:
+        # Sin fecha explicita sincroniza la ultima semana; con fecha, solo ese dia
+        resumen = mercado_publico.sincronizar_licitaciones(fecha=fecha, dias=1 if fecha else 7)
+    finally:
+        _sync_lock.release()
     if resumen.get("total_guardadas", 0) > 0:
         flash(f"[OK] {resumen['mensaje']}", "success")
     elif resumen.get("total_consultadas", 0) > 0:
@@ -768,10 +819,13 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
     observaciones = form.get("observaciones", "").strip()
 
     errors = []
+    salon = None
     if not id_salon:
         errors.append("Debe seleccionar un salon del hotel.")
-    elif database.get_salon_by_id(id_salon) is None:
-        errors.append("El salon seleccionado no existe en el catalogo del hotel.")
+    else:
+        salon = database.get_salon_by_id(id_salon)
+        if salon is None:
+            errors.append("El salon seleccionado no existe en el catalogo del hotel.")
     if not cliente_evento:
         errors.append("Debe indicar el nombre o descripcion del evento.")
     if not organismo_o_empresa:
@@ -801,6 +855,12 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
     if estado_reserva not in VALID_ESTADOS_RESERVA:
         errors.append(f"Estado de reserva '{estado_reserva}' invalido. Seleccione una etapa valida.")
 
+    if salon and estado_reserva == "Confirmada" and asistentes > salon["capacidad_maxima"]:
+        errors.append(
+            f"El salon {salon['nombre']} admite {salon['capacidad_maxima']} personas; "
+            f"la reserva indica {asistentes}. Elija un salon con mayor aforo."
+        )
+
     if not errors:
         conflictos = database.get_conflictos_reserva(
             id_salon, fecha_inicio, fecha_fin, exclude_id_reserva=exclude_id_reserva
@@ -826,14 +886,34 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
     return form_data, errors
 
 
+def _opciones_licitacion(extra_id=None):
+    opciones = database.get_licitaciones_para_reserva()
+    if extra_id and not any(o["id_licitacion"] == extra_id for o in opciones):
+        lic = database.get_licitacion_by_id(extra_id)
+        if lic:
+            opciones.insert(0, {"id_licitacion": lic["id_licitacion"], "titulo": lic["titulo"]})
+    return opciones
+
+
 @app.route("/reservas/nueva", methods=["GET", "POST"])
 @login_required
 def crear_reserva():
+    pre_lic_id = (
+        request.args.get("licitacion", "").strip()
+        or request.form.get("id_licitacion", "").strip()
+        or None
+    )
     salones = database.get_all_salones()
-    licitaciones = database.get_all_licitaciones()
+    licitaciones = _opciones_licitacion(pre_lic_id)
 
     if request.method == "POST":
         form_data, errors = parse_and_validate_reserva_form(request.form)
+        if not errors:
+            if database.create_reserva(form_data) is None:
+                errors.append(
+                    "Otro usuario confirmo una reserva para ese salon en las mismas fechas. "
+                    "Actualice la agenda y elija otro salon o fechas."
+                )
         if errors:
             for err in errors:
                 flash(err, "error")
@@ -847,12 +927,10 @@ def crear_reserva():
                 user=session.get("user")
             )
 
-        database.create_reserva(form_data)
         flash("Reserva registrada exitosamente en la agenda del hotel.", "success")
         return redirect(url_for("salones_catalogo"))
 
     pre_salon = request.args.get("salon", "").strip()
-    pre_lic_id = request.args.get("licitacion", "").strip()
     pre_fecha_inicio = request.args.get("fecha_inicio", "").strip()
     pre_fecha_fin = request.args.get("fecha_fin", "").strip()
 
@@ -880,9 +958,6 @@ def crear_reserva():
             reserva_init["horario"] = lic.get("horario_evento", "08:30 a 18:30 hrs") or "08:30 a 18:30 hrs"
             if not pre_salon and lic.get("id_salon_asignado"):
                 reserva_init["id_salon"] = lic.get("id_salon_asignado")
-            if not pre_fecha_inicio and lic.get("fecha_cierre"):
-                reserva_init["fecha_inicio"] = lic.get("fecha_cierre")
-                reserva_init["fecha_fin"] = lic.get("fecha_cierre")
 
     return render_template(
         "reserva_form.html",
@@ -903,7 +978,7 @@ def editar_reserva(id_reserva):
         abort(404)
 
     salones = database.get_all_salones()
-    licitaciones = database.get_all_licitaciones()
+    licitaciones = _opciones_licitacion(reserva.get("id_licitacion"))
 
     if request.method == "POST":
         form_data, errors = parse_and_validate_reserva_form(request.form, exclude_id_reserva=id_reserva)
@@ -917,7 +992,7 @@ def editar_reserva(id_reserva):
                 mode="edit",
                 reserva=view_data,
                 salones=salones,
-                licitaciones=licitaciones,
+                licitaciones=_opciones_licitacion(form_data.get("id_licitacion")),
                 valid_estados_reserva=VALID_ESTADOS_RESERVA,
                 user=session.get("user")
             )
@@ -949,13 +1024,6 @@ def eliminar_reserva(id_reserva):
 
 
 @app.errorhandler(404)
-
 def page_not_found(e):
     return render_template("404.html"), 404
-
-
-if __name__ == "__main__":
-    database.init_db()
-    debug_mode = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
-    app.run(debug=debug_mode, host="127.0.0.1", port=5000)
 

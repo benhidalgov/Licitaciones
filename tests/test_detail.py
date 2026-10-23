@@ -133,6 +133,34 @@ class TestDetail(unittest.TestCase):
         self.assertIn("Viable / Margen Positivo", html)
         self.assertIn("$5.500.000 CLP", html)
 
+    def test_detail_budget_no_informado(self):
+        database.create_licitacion({
+            "id_licitacion": "TEST-SIN-MONTO",
+            "titulo": "Evento sin monto informado",
+            "organismo": "Ministerio de Prueba",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Licitacion Publica",
+            "region": "Region Metropolitana",
+            "presupuesto_mandante": 0,
+            "costo_base_hotel": 0,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Sin verificar",
+            "tiene_anexo4": 0,
+            "tiene_escrituras": 0,
+            "tiene_poderes": 0,
+            "tiene_vigencias": 0,
+            "fecha_publicacion": "2026-10-23",
+            "fecha_cierre": "2027-10-23",
+            "descripcion_tdr": "Evento sin presupuesto publicado",
+        })
+        response = self.client.get("/licitaciones/TEST-SIN-MONTO")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+
+        self.assertIn("Monto no informado", html)
+        self.assertIn("Presupuesto No Informado", html)
+        self.assertNotIn("Viable / Margen Positivo", html)
+
     def test_detail_id_discrepancy_alert(self):
         # 805-19-LP24 has validacion_adjuntos = 'Error ID / Discrepancia'
         response = self.client.get("/licitaciones/805-19-LP24")
@@ -265,6 +293,46 @@ class TestDetail(unittest.TestCase):
         self.assertEqual(lic["fecha_cierre"], "2026-10-30")
         self.assertEqual(lic["fecha_publicacion"], "2026-10-01")
         self.assertEqual(lic["estado_embudo"], "Participada")
+
+    @patch("mercado_publico.consultar_licitacion")
+    def test_refrescar_rechaza_otro_codigo(self, mock_consultar):
+        mock_consultar.return_value = {
+            "CodigoExterno": "OTRO-CODIGO",
+            "Nombre": "Otra licitacion",
+            "Descripcion": "Hospedaje",
+            "Moneda": "CLP",
+            "MontoEstimado": 1,
+            "Comprador": {"NombreOrganismo": "Otro Organismo"},
+        }
+        res = self.client.post("/licitaciones/1058-12-COT24/refrescar", follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        lic = database.get_licitacion_by_id("1058-12-COT24")
+        self.assertIn("Banqueteria", lic["titulo"])
+        self.assertEqual(lic["organismo"], "Subsecretaria de Turismo")
+
+    def test_actualizar_documentos(self):
+        res = self.client.post(
+            "/licitaciones/1058-12-COT24/documentos",
+            data={
+                "tiene_anexo4": "on",
+                "tiene_escrituras": "on",
+                "tiene_poderes": "on",
+                "tiene_vigencias": "on",
+                "validacion_adjuntos": "Valida",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(res.status_code, 200)
+        lic = database.get_licitacion_by_id("1058-12-COT24")
+        self.assertEqual(lic["validacion_adjuntos"], "Valida")
+        self.assertEqual(lic["tiene_anexo4"], 1)
+        self.assertEqual(lic["tiene_vigencias"], 1)
+
+    def test_detalle_no_usa_fecha_cierre_como_fecha_evento(self):
+        res = self.client.get("/licitaciones/1058-12-COT24")
+        html = res.get_data(as_text=True)
+        self.assertNotIn("fecha_inicio=2026-09-20", html)
+        self.assertIn("licitacion=1058-12-COT24", html)
 
     def test_refrescar_licitacion_no_encontrada(self):
         res = self.client.post("/licitaciones/NO-EXISTE-01/refrescar")

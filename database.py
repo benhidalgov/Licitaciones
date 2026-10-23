@@ -59,6 +59,7 @@ def get_db_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.create_function("sin_acentos", 1, _sin_acentos)
     return conn
 
 
@@ -161,6 +162,11 @@ def init_db() -> None:
         """)
         conn.commit()
 
+        # La carga de datos de ejemplo ocurre una sola vez por base. Si el
+        # equipo borra todo, el siguiente arranque no los resucita.
+        cursor.execute("SELECT 1 FROM ajustes WHERE clave = 'seed_demo'")
+        seed_demo_hecho = cursor.fetchone() is not None
+
         # 1. Tabla de Salones del Hotel
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS salones (
@@ -204,20 +210,6 @@ def init_db() -> None:
                 ubicacion, equipamiento, descripcion, propiedad, montajes, es_provisional
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, seed_salones)
-        salon_updates = [
-            (s[1], s[2], s[3], s[6], s[7], s[8], s[9], s[10], s[11], s[0])
-            for s in seed_salones
-        ]
-        # El documento del hotel manda sobre todo lo que el catalogo define.
-        # Solo se conservan tarifa y horario, que el documento no publica y que
-        # el hotel puede cargar o ajustar manualmente.
-        cursor.executemany("""
-            UPDATE salones SET
-                nombre = ?, tipo = ?, capacidad_maxima = ?, ubicacion = ?,
-                equipamiento = ?, descripcion = ?, propiedad = ?,
-                montajes = ?, es_provisional = ?
-            WHERE id_salon = ?
-        """, salon_updates)
         conn.commit()
 
         # 2. Tabla de Reservas y Ocupacion de Salones (Agenda / Bookings)
@@ -243,7 +235,7 @@ def init_db() -> None:
 
         cursor.execute("SELECT COUNT(*) FROM reservas_salones")
         count_reservas = cursor.fetchone()[0]
-        if count_reservas == 0:
+        if count_reservas == 0 and not seed_demo_hecho:
             seed_reservas = [
                 (
                     "SALON-DANUBIO",
@@ -365,45 +357,6 @@ def init_db() -> None:
                     estado_reserva, id_licitacion, contacto_responsable, observaciones
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, seed_reservas)
-            conn.commit()
-
-        # El catalogo oficial reemplaza a los salones de prueba de versiones
-        # anteriores: se retiran los que ya no existen en el documento del hotel.
-        # Las filas oficiales jamas se sobrescriben, para no pisar tarifas o
-        # aforos ajustados manualmente por el hotel.
-        ids_oficiales = {s[0] for s in seed_salones}
-        cursor.execute("SELECT id_salon FROM salones")
-        retirados = [r[0] for r in cursor.fetchall() if r[0] not in ids_oficiales]
-        if retirados:
-            marcadores = ",".join("?" for _ in retirados)
-            # Cada licitacion se reasigna al salon oficial mas pequeno que aun
-            # alcanza su aforo, con la misma regla que get_salones_aptos; si
-            # ninguno sirve, queda sin salon.
-            cursor.execute(
-                "SELECT id_licitacion, cantidad_asistentes FROM licitaciones "
-                f"WHERE id_salon_asignado IN ({marcadores})",
-                retirados,
-            )
-            pendientes = cursor.fetchall()
-            cursor.execute(
-                f"DELETE FROM reservas_salones WHERE id_salon IN ({marcadores})",
-                retirados,
-            )
-            cursor.execute(
-                f"DELETE FROM salones WHERE id_salon IN ({marcadores})", retirados
-            )
-            for id_lic, asistentes in pendientes:
-                cursor.execute(
-                    "SELECT id_salon FROM salones WHERE capacidad_maxima >= ? "
-                    "ORDER BY capacidad_maxima ASC LIMIT 1",
-                    (asistentes or 0,),
-                )
-                reemplazo = cursor.fetchone()
-                cursor.execute(
-                    "UPDATE licitaciones SET id_salon_asignado = ? "
-                    "WHERE id_licitacion = ?",
-                    (reemplazo[0] if reemplazo else "", id_lic),
-                )
             conn.commit()
 
         # 2. Tabla de Licitaciones
@@ -662,7 +615,7 @@ def init_db() -> None:
                     "SALON-PERGOLA"
                 )
             ]
-        if count == 0:
+        if count == 0 and not seed_demo_hecho:
             cursor.executemany("""
                 INSERT INTO licitaciones (
                     id_licitacion, titulo, organismo, categoria, modalidad, region,
@@ -673,13 +626,18 @@ def init_db() -> None:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, seed_data)
             conn.commit()
-        else:
+        elif not seed_demo_hecho:
             lic_updates = [(row[17], row[20], row[0]) for row in seed_data if row[20]]
             cursor.executemany("""
                 UPDATE licitaciones SET cantidad_asistentes = ?, id_salon_asignado = ?
                 WHERE id_licitacion = ? AND (id_salon_asignado = '' OR id_salon_asignado IS NULL)
             """, lic_updates)
             conn.commit()
+
+        cursor.execute(
+            "INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('seed_demo', 1)"
+        )
+        conn.commit()
     finally:
         conn.close()
 
@@ -755,7 +713,11 @@ def registrar_evaluacion(id_licitacion: str, datos: Dict[str, Any]) -> Dict[str,
         return {}
 
     cambios = dict(datos)
-    if cambios.get("costeo_validado") and cambios.get("costo_base_hotel", 0) > 0:
+    if (
+        cambios.get("costeo_validado")
+        and cambios.get("costo_base_hotel", 0) > 0
+        and lic["estado_embudo"] != "Adjudicada"
+    ):
         if cambios["costo_base_hotel"] > lic["presupuesto_mandante"]:
             cambios["estado_embudo"] = "Descartada"
             cambios["motivo_descarte"] = "Precio"
@@ -922,7 +884,7 @@ def delete_reserva(id_reserva: int) -> bool:
         conn.close()
 
 
-def create_reserva(data: Dict[str, Any]) -> int:
+def create_reserva(data: Dict[str, Any]) -> Optional[int]:
     conn = get_db_connection()
     try:
         payload = {
@@ -930,6 +892,19 @@ def create_reserva(data: Dict[str, Any]) -> int:
             "id_licitacion": "", "contacto_responsable": "", "observaciones": "",
             **data
         }
+        # BEGIN IMMEDIATE serializa el chequeo y el INSERT: dos usuarios no
+        # pueden pasar el control de colisiones a la vez.
+        conn.execute("BEGIN IMMEDIATE")
+        if payload["estado_reserva"] == "Confirmada":
+            choque = conn.execute("""
+                SELECT 1 FROM reservas_salones
+                WHERE id_salon = ? AND estado_reserva = 'Confirmada'
+                  AND fecha_inicio <= ? AND fecha_fin >= ?
+                LIMIT 1
+            """, (payload["id_salon"], payload["fecha_fin"], payload["fecha_inicio"])).fetchone()
+            if choque:
+                conn.rollback()
+                return None
         cursor = conn.execute("""
             INSERT INTO reservas_salones (
                 id_salon, cliente_evento, organismo_o_empresa, tipo_evento,
@@ -974,8 +949,13 @@ def _filtros_licitaciones(
     if cliente_clave:
         alias = _alias_cliente_clave(cliente_clave)
         if alias:
-            where += " AND (" + " OR ".join("l.organismo LIKE ?" for _ in alias) + ")"
-            params.extend(f"%{a}%" for a in alias)
+            # SQLite LIKE no ignora tildes: "educacion" no calza con "Educación".
+            where += " AND (" + " OR ".join(
+                "(sin_acentos(l.organismo) LIKE ? OR sin_acentos(l.titulo) LIKE ?)"
+                for _ in alias
+            ) + ")"
+            for a in alias:
+                params.extend([f"%{a}%", f"%{a}%"])
         else:
             where += " AND 1=0"  # cliente fuera de la lista configurable
     if q:
@@ -1036,6 +1016,22 @@ def get_all_licitaciones(
         conn.close()
 
 
+def get_licitaciones_para_reserva(limit: int = 300) -> List[Dict[str, Any]]:
+    """Opciones del formulario de reserva: recientes, sin descartadas, con tope."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT id_licitacion, titulo
+            FROM licitaciones
+            WHERE estado_embudo != 'Descartada'
+            ORDER BY fecha_cierre DESC
+            LIMIT ?
+        """, (int(limit),)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
 def get_licitacion_by_id(id_licitacion: str) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
     try:
@@ -1080,6 +1076,7 @@ def get_oportunidades_prioritarias(
             LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
             WHERE l.estado_embudo NOT IN ('Descartada', 'Adjudicada')
               AND l.fecha_cierre >= ?
+              AND l.presupuesto_mandante > 0
               AND l.costo_base_hotel <= l.presupuesto_mandante
               AND (
                     l.cantidad_asistentes = 0
@@ -1173,6 +1170,21 @@ def update_licitacion(id_licitacion: str, data: Dict[str, Any]) -> bool:
         conn.close()
 
 
+def append_nota(id_licitacion: str, linea: str) -> bool:
+    """Agrega una nota en una sola escritura, sin leer y reescribir el historial."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute("""
+            UPDATE licitaciones
+            SET notas = CASE WHEN notas = '' THEN ? ELSE notas || char(10) || ? END
+            WHERE id_licitacion = ?
+        """, (linea, linea, id_licitacion))
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+
 def delete_licitacion(id_licitacion: str) -> bool:
     conn = get_db_connection()
     try:
@@ -1260,13 +1272,16 @@ COLUMNAS_OC = {
 
 def _normalizar_encabezado(texto: Any) -> str:
     limpio = _sin_acentos(str(texto or "")).lower().replace(".", "")
+    limpio = re.sub(r"\([^)]*\)", " ", limpio).replace("$", " ")
     return " ".join(limpio.split())
 
 
 def _monto_oc(valor: Any) -> int:
-    """Pesos chilenos: '$1.234.567', '1.234.567' o '1234567'. Ignora decimales."""
+    """Pesos chilenos: '$1.234.567', '1.234.567', '4800000.0' o '1234567'."""
+    if isinstance(valor, (int, float)):
+        return int(valor)
     s = str(valor or "").strip()
-    decimal = re.search(r",\d{1,2}$", s)
+    decimal = re.search(r"[,.]\d{1,2}$", s)
     if decimal:
         s = s[:decimal.start()]
     digitos = re.sub(r"\D", "", s)
@@ -1330,6 +1345,9 @@ def importar_historial_oc(filas: List[List[Any]], archivo: str = "") -> int:
 
     conn = get_db_connection()
     try:
+        # Re-subir el mismo archivo reemplaza su carga anterior, no la duplica.
+        if archivo:
+            conn.execute("DELETE FROM historial_oc WHERE archivo = ?", (archivo,))
         conn.executemany(
             """
             INSERT INTO historial_oc
@@ -1374,13 +1392,22 @@ def get_experiencia_organismo(organismo: str) -> Dict[str, int]:
     ponytail: comparacion en memoria sobre una palabra comun; basta mientras el
     historial sea de cientos de filas, no de decenas de miles.
     """
-    propio = {w for w in _sin_acentos(organismo).lower().split() if len(w) >= 5}
+    # Palabras que aparecen en casi cualquier organismo publico y no identifican
+    # a un cliente: sin este filtro Mineduc "comparte" historial con Minsal.
+    genericas = {
+        "ministerio", "servicio", "servicios", "nacional", "gobierno",
+        "regional", "subsecretaria", "direccion", "consejo", "agencia",
+        "instituto", "universidad", "municipalidad", "corporacion",
+        "fundacion", "comision", "secretaria", "departamento", "unidad",
+        "division", "centro",
+    }
+    propio = {w for w in _sin_acentos(organismo).lower().split() if len(w) >= 5} - genericas
     if not propio:
         return {"registros": 0, "monto_total": 0}
 
     registros = monto_total = 0
     for oc in get_historial_oc(limit=5000):
-        otro = {w for w in _sin_acentos(oc["organismo"]).lower().split() if len(w) >= 5}
+        otro = {w for w in _sin_acentos(oc["organismo"]).lower().split() if len(w) >= 5} - genericas
         if propio & otro:
             registros += 1
             monto_total += int(oc["monto"])

@@ -12,7 +12,6 @@ import re
 import ssl
 import time
 from typing import Any, Dict, List, Optional
-import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -51,7 +50,7 @@ FUZZY_ALOJAMIENTO = tuple(w for w in VOCAB_ALOJAMIENTO if " " not in w)
 FUZZY_EVENTOS = tuple(w for w in VOCAB_EVENTOS if " " not in w)
 
 PATRON_EXCLUSIONES = re.compile(
-    r"\b(almacenamiento|almacen|habitabilidad|habitacional|vial|veredas|pavimentacion|petroleo|clinico|medicamento|medicamentos|quirurgico|oxigeno|repuesto|repuestos|techumbre|cubierta de zinc)\b",
+    r"\b(almacenamiento|almacen|habitabilidad|habitacional|reparacion|reparaciones|vial|veredas|pavimentacion|petroleo|clinico|medicamento|medicamentos|quirurgico|oxigeno|repuesto|repuestos|techumbre|cubierta de zinc)\b",
     re.IGNORECASE
 )
 
@@ -73,20 +72,9 @@ CAMPOS_LOCALES = (
     "estado_embudo", "revisada", "motivo_descarte", "notas", "propiedad",
     "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado",
     "costo_base_hotel", "costeo_validado", "sello_mujer", "jornada_40h",
-    "sello_sernatur", "inclusion_laboral"
+    "sello_sernatur", "inclusion_laboral", "validacion_adjuntos",
+    "tiene_anexo4", "tiene_escrituras", "tiene_poderes", "tiene_vigencias"
 )
-
-
-def _normalizar_texto(texto: str) -> str:
-    """
-    Normaliza el texto eliminando acentos y convirtiendo a minusculas
-    para comparacion semantica uniforme.
-    """
-    if not texto:
-        return ""
-    nfkd = unicodedata.normalize("NFKD", texto)
-    ascii_bytes = nfkd.encode("ASCII", "ignore")
-    return ascii_bytes.decode("utf-8").lower()
 
 
 def _distancia_edicion(a: str, b: str, tope: int) -> int:
@@ -121,8 +109,9 @@ def contar_terminos_fuzzy(texto: str, vocabulario) -> int:
     """
     Cuenta cuantas palabras del vocabulario aparecen en el texto, tolerando
     tipeos del comprador publico ("catring" por "catering", "hospedagh" por
-    "hospedaje"). Distancia de edicion a mano: una palabra corta admite un
-    error, una larga dos. Sin dependencias NLP.
+    "hospedaje"). Las palabras largas admiten dos ediciones solo si conservan
+    el largo (+-1): asi "habilitacion" no se confunde con "habitacion".
+    Sin dependencias NLP.
     """
     if not texto:
         return 0
@@ -130,12 +119,22 @@ def contar_terminos_fuzzy(texto: str, vocabulario) -> int:
     tokens = [t for t in set(re.findall(r"[a-z]+", texto)) if len(t) >= 4]
     encontradas = 0
     for palabra in vocabulario:
-        tope = 1 if len(palabra) <= 7 else 2
+        tope = 2 if len(palabra) >= 8 else 1
         if palabra in tokens:
             encontradas += 1
             continue
+        # Las palabras cortas solo valen exactas: "cuna" no es "cena".
+        if len(palabra) < 6:
+            continue
         for token in tokens:
-            if abs(len(token) - len(palabra)) > tope:
+            if abs(len(token) - len(palabra)) > 1:
+                continue
+            # El tipeo conserva la primera letra: "balones" no es "salones".
+            if token[0] != palabra[0]:
+                continue
+            # Dos ediciones solo si conserva el inicio: "hospedagh" si,
+            # "paqueteria" por "banqueteria" no.
+            if tope == 2 and token[:3] != palabra[:3]:
                 continue
             if _distancia_edicion(token, palabra, tope) <= tope:
                 encontradas += 1
@@ -151,10 +150,10 @@ def _create_ssl_context() -> ssl.SSLContext:
     verify = os.environ.get("MERCADO_PUBLICO_SSL_VERIFY", "").strip().lower()
     if verify in ("0", "false", "no"):
         return ssl._create_unverified_context()
-    try:
-        return ssl.create_default_context()
-    except Exception:
-        return ssl._create_unverified_context()
+    cafile = os.environ.get("MERCADO_PUBLICO_CA_BUNDLE") or os.environ.get("SSL_CERT_FILE")
+    if cafile and os.path.isfile(cafile):
+        return ssl.create_default_context(cafile=cafile)
+    return ssl.create_default_context()
 
 
 MP_REINTENTOS_LIMITE = 3
@@ -162,8 +161,12 @@ MP_ESPERA_MAX_S = 60
 
 # Estado compartido entre consultas de una misma sincronizacion.
 _ultima_consulta = {"ts": 0.0}
-_ssl_roto = {"v": False}
 avisos_rate_limit = {"cantidad": 0}
+
+
+def _url_sin_ticket(url: str) -> str:
+    """Evita dejar el ticket de la API en los logs."""
+    return re.sub(r"(ticket=)[^&]+", r"\1***", url)
 
 
 def _intervalo_ms() -> int:
@@ -198,35 +201,15 @@ def _espera_reintento(exc: urllib.error.HTTPError, intento: int) -> float:
     return float(min(4 * (2 ** intento), MP_ESPERA_MAX_S))
 
 
-def _contexto_peticion() -> ssl.SSLContext:
-    """Si la red corporativa ya rompio la verificacion SSL, se va directo al
-    contexto sin verificacion y se ahorra un intento por consulta."""
-    if _ssl_roto["v"]:
-        return ssl._create_unverified_context()
-    return _create_ssl_context()
-
-
 def _leer(req: urllib.request.Request, timeout: int, contexto: ssl.SSLContext) -> bytes:
-    """
-    Ejecuta la peticion. Si falla la verificacion del certificado (proxy
-    corporativo que intercepta SSL) se reintenta una vez sin verificar.
-    """
-    try:
-        with urllib.request.urlopen(req, timeout=timeout, context=contexto) as resp:
-            return resp.read()
-    except urllib.error.URLError as exc:
-        if "CERTIFICATE_VERIFY_FAILED" not in str(exc):
-            raise
-        _ssl_roto["v"] = True
-        logger.warning(f"Fallo de verificacion SSL; reintento sin verificar en {req.full_url}")
-        with urllib.request.urlopen(req, timeout=timeout, context=ssl._create_unverified_context()) as resp:
-            return resp.read()
+    """Ejecuta la peticion. Un certificado invalido falla; no se reintenta sin verificar."""
+    with urllib.request.urlopen(req, timeout=timeout, context=contexto) as resp:
+        return resp.read()
 
 
 def _fetch_url(url: str, timeout: int = 15) -> Optional[bytes]:
     """
-    Peticion HTTP a la API con espaciado de rate limit, reintento ante 429/503
-    y tolerancia a proxies corporativos de red.
+    Peticion HTTP a la API con espaciado de rate limit y reintento ante 429/503.
     """
     req = urllib.request.Request(
         url,
@@ -236,26 +219,26 @@ def _fetch_url(url: str, timeout: int = 15) -> Optional[bytes]:
     for intento in range(MP_REINTENTOS_LIMITE + 1):
         _esperar_rate_limit()
         try:
-            return _leer(req, timeout, _contexto_peticion())
+            return _leer(req, timeout, _create_ssl_context())
         except urllib.error.HTTPError as exc:
             # HTTPError hereda de URLError: hay que evaluarlo antes, si no un
             # 429 queda clasificado como error de red o de certificado.
             if exc.code in (429, 503) and intento < MP_REINTENTOS_LIMITE:
                 espera = _espera_reintento(exc, intento)
                 logger.warning(
-                    f"Mercado Publico respondio HTTP {exc.code}; reintento en {espera}s ({url})"
+                    f"Mercado Publico respondio HTTP {exc.code}; reintento en {espera}s ({_url_sin_ticket(url)})"
                 )
                 time.sleep(espera)
                 continue
             # Solo se cuenta lo que queda sin resolver: la ficha completa.
             avisos_rate_limit["cantidad"] += 1
-            logger.error(f"Mercado Publico respondio HTTP {exc.code} en {url}")
+            logger.error(f"Mercado Publico respondio HTTP {exc.code} en {_url_sin_ticket(url)}")
             return None
         except urllib.error.URLError as exc:
-            logger.error(f"Error de red al consultar {url}: {exc}")
+            logger.error(f"Error de red al consultar {_url_sin_ticket(url)}: {exc}")
             return None
         except Exception as exc:
-            logger.error(f"Error al consultar {url}: {exc}")
+            logger.error(f"Error al consultar {_url_sin_ticket(url)}: {exc}")
             return None
 
     return None
@@ -330,7 +313,7 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
     if not codigo or not nombre:
         return None
 
-    texto_evaluacion = _normalizar_texto(f"{nombre} {descripcion}")
+    texto_evaluacion = database._sin_acentos(f"{nombre} {descripcion}").lower()
 
     if PATRON_EXCLUSIONES.search(texto_evaluacion):
         return None
@@ -406,11 +389,11 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
         "presupuesto_mandante": monto_estimado,
         "costo_base_hotel": costo_base,
         "estado_embudo": "Identificada",
-        "validacion_adjuntos": "Valida",
-        "tiene_anexo4": 1,
-        "tiene_escrituras": 1,
-        "tiene_poderes": 1,
-        "tiene_vigencias": 1,
+        "validacion_adjuntos": "Sin verificar",
+        "tiene_anexo4": 0,
+        "tiene_escrituras": 0,
+        "tiene_poderes": 0,
+        "tiene_vigencias": 0,
         "fecha_publicacion": fecha_pub,
         "fecha_cierre": fecha_cierre,
         "descripcion_tdr": descripcion,
@@ -508,6 +491,14 @@ def consultar_licitaciones_fecha(fecha: str, ticket: Optional[str] = None) -> Li
         return []
 
 
+def _cierre_vencido(fecha_iso: str) -> bool:
+    """True si la fecha de cierre ya paso. Una fecha ausente no se descarta."""
+    try:
+        return datetime.strptime(str(fecha_iso)[:10], "%Y-%m-%d").date() < datetime.now().date()
+    except (TypeError, ValueError):
+        return False
+
+
 def sincronizar_licitaciones(
     fecha: Optional[str] = None,
     ticket: Optional[str] = None,
@@ -554,6 +545,12 @@ def sincronizar_licitaciones(
                 total_descartadas += 1
                 continue
 
+            # El listado por fecha incluye adjudicaciones y cierres: una
+            # licitacion con fecha de cierre pasada ya no es una oportunidad.
+            if _cierre_vencido(clasificada["fecha_cierre"]):
+                total_descartadas += 1
+                continue
+
             total_pertinentes += 1
 
             # El listado por fecha trae solo datos basicos; la ficha detalle aporta
@@ -568,6 +565,10 @@ def sincronizar_licitaciones(
                     total_descartadas += 1
                     continue
                 clasificada = reclasificada
+                if _cierre_vencido(clasificada["fecha_cierre"]):
+                    total_pertinentes -= 1
+                    total_descartadas += 1
+                    continue
 
             id_lic = clasificada["id_licitacion"]
             existente = database.get_licitacion_by_id(id_lic)

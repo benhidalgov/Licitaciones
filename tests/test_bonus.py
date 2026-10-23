@@ -264,6 +264,67 @@ class TestBonus(unittest.TestCase):
         self.assertIn("Cliente clave: Mineduc", html)
         self.assertIn("Benchmarking de Adjudicacion", html)
 
+    def test_monto_con_decimal_punto_no_multiplica(self):
+        self.assertEqual(database._monto_oc("4800000.0"), 4800000)
+        self.assertEqual(database._monto_oc(4800000.0), 4800000)
+        self.assertEqual(database._monto_oc("4.800.000"), 4800000)
+
+    def test_filtro_cliente_clave_tolera_tildes(self):
+        database.create_licitacion(_lic(id_licitacion="1", organismo="Ministerio de Educación"))
+        database.create_licitacion(_lic(id_licitacion="2", organismo="Dirección de Compras"))
+        self.assertEqual(database.count_licitaciones(cliente_clave="Mineduc"), 1)
+        self.assertEqual(len(database.get_all_licitaciones(cliente_clave="Mineduc")), 1)
+
+    def test_experiencia_no_confunde_ministerios(self):
+        database.importar_historial_oc(
+            [
+                ["fecha", "organismo", "objeto", "monto"],
+                ["2025-05-01", "Ministerio de Salud", "Hospedaje", 999],
+            ],
+            archivo="minsal.csv",
+        )
+        experiencia = database.get_experiencia_organismo("Ministerio de Educación")
+        self.assertEqual(experiencia["registros"], 0)
+        self.assertEqual(experiencia["monto_total"], 0)
+
+    def test_exportacion_respeta_cliente_clave(self):
+        database.create_licitacion(_lic(id_licitacion="MIN-1", organismo="Ministerio de Educación"))
+        database.create_licitacion(_lic(id_licitacion="OTRO-1", organismo="Dirección de Compras"))
+        csv_texto = self.client.get(
+            "/licitaciones/exportar.csv?cliente_clave=Mineduc"
+        ).data.decode("utf-8-sig")
+        self.assertIn("MIN-1", csv_texto)
+        self.assertNotIn("OTRO-1", csv_texto)
+
+    def test_importar_mismo_archivo_no_duplica(self):
+        filas = [
+            ["fecha", "organismo", "objeto", "monto"],
+            ["2026-01-01", "Mineduc", "Hospedaje", "1000000"],
+        ]
+        database.importar_historial_oc(filas, archivo="mismo.csv")
+        database.importar_historial_oc(filas, archivo="mismo.csv")
+        self.assertEqual(database.get_resumen_historial_oc()["registros"], 1)
+        self.assertEqual(database.get_resumen_historial_oc()["monto_total"], 1000000)
+
+    def test_dos_archivos_distintos_con_el_mismo_nombre_se_conservan(self):
+        uno = "organismo,objeto,monto\nMineduc,Hospedaje,1000\n"
+        dos = "organismo,objeto,monto\nMinsal,Catering,2000\n"
+        for texto in (uno, dos):
+            self.client.post(
+                "/analitica/historial",
+                data={"archivo": (io.BytesIO(texto.encode("utf-8-sig")), "historial.csv")},
+                content_type="multipart/form-data",
+            )
+        self.assertEqual(database.get_resumen_historial_oc()["registros"], 2)
+
+    def test_importa_encabezado_con_unidad(self):
+        filas = [
+            ["Fecha (dd/mm/aaaa)", "Organismo", "Objeto", "Monto Total (CLP)"],
+            ["01/02/2026", "Mineduc", "Hospedaje", "$1.500.000"],
+        ]
+        database.importar_historial_oc(filas, archivo="unidad.csv")
+        self.assertEqual(database.get_historial_oc()[0]["monto"], 1500000)
+
 
 if __name__ == "__main__":
     unittest.main()
