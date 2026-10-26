@@ -133,6 +133,33 @@ class TestDetail(unittest.TestCase):
         self.assertIn("Viable / Margen Positivo", html)
         self.assertIn("$5.500.000 CLP", html)
 
+    def test_detail_muestra_margen_bajo_tolerancia(self):
+        database.set_margen_tolerancia("porcentaje", 10)
+        database.create_licitacion({
+            "id_licitacion": "TEST-MARGEN-DETALLE",
+            "titulo": "Evento con margen bajo",
+            "organismo": "Ministerio de Prueba",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Licitacion Publica",
+            "region": "Region Metropolitana",
+            "presupuesto_mandante": 1000,
+            "costo_base_hotel": 950,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Valida",
+            "tiene_anexo4": 1,
+            "tiene_escrituras": 1,
+            "tiene_poderes": 1,
+            "tiene_vigencias": 1,
+            "fecha_publicacion": "2026-10-23",
+            "fecha_cierre": "2027-10-23",
+            "descripcion_tdr": "Evento con margen bajo",
+        })
+        response = self.client.get("/licitaciones/TEST-MARGEN-DETALLE")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+        self.assertIn("Margen Bajo / Tolerancia", html)
+        self.assertIn("no alcanza el margen mínimo", html)
+
     def test_detail_budget_no_informado(self):
         database.create_licitacion({
             "id_licitacion": "TEST-SIN-MONTO",

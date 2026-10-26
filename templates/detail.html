@@ -288,7 +288,7 @@
 
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
                 <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Margen Proyectado / Diferencia</div>
-                <div class="text-2xl font-bold mt-1 font-mono {% if lic.presupuesto_mandante <= 0 %}text-[#6E6D6A]{% elif es_inviable %}text-[#9F2F2D]{% else %}text-[#346538]{% endif %}">
+                <div class="text-2xl font-bold mt-1 font-mono {% if lic.presupuesto_mandante <= 0 %}text-[#6E6D6A]{% elif es_inviable %}text-[#9F2F2D]{% elif margen_bajo %}text-[#956400]{% else %}text-[#346538]{% endif %}">
                     {% if lic.presupuesto_mandante <= 0 %}
                     —
                     {% elif es_inviable %}
@@ -302,6 +302,8 @@
                     No calculable sin presupuesto
                     {% elif es_inviable %}
                     Deficit operacional directo
+                    {% elif margen_bajo %}
+                    Margen bajo el minimo exigido: {{ margen_minimo | clp }}
                     {% else %}
                     Margen de contribucion: {{ margen_porcentaje }}%
                     {% endif %}
@@ -319,6 +321,10 @@
                     <span class="badge-spot badge-spot-red">
                         Inviable / Costo Excede
                     </span>
+                    {% elif margen_bajo %}
+                    <span class="badge-spot badge-spot-yellow">
+                        Margen Bajo / Tolerancia
+                    </span>
                     {% else %}
                     <span class="badge-spot badge-spot-green">
                         Viable / Margen Positivo
@@ -330,6 +336,8 @@
                     Requiere costeo manual
                     {% elif es_inviable %}
                     Requiere descarte o renegociacion
+                    {% elif margen_bajo %}
+                    No se prioriza con el margen configurado
                     {% else %}
                     Parametros de rentabilidad conformes
                     {% endif %}
@@ -360,6 +368,15 @@
                 </p>
             </div>
         </div>
+        {% elif margen_bajo %}
+        <div class="p-4 rounded-[6px] border text-xs space-y-1" style="background: var(--pastel-yellow-bg); border-color: #F3E0A9; color: var(--pastel-yellow-text);">
+            <span class="font-semibold uppercase tracking-wider">
+                Alerta de Margen: Bajo la Tolerancia Configurada
+            </span>
+            <p class="leading-relaxed">
+                El margen proyectado ({{ diferencia | clp }}) no alcanza el margen mínimo exigido ({{ margen_minimo | clp }}). La oportunidad no se descarta porque el costo no supera el presupuesto, pero no aparece en la vista priorizada hasta que se ajuste el costeo o el margen de tolerancia.
+            </p>
+        </div>
         {% else %}
         <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-green-bg); border-color: #D6E8D4; color: var(--pastel-green-text);">
             <div class="flex flex-col space-y-1">
@@ -367,7 +384,7 @@
                     Viabilidad Financiera Aprobada
                 </span>
                 <p class="leading-relaxed">
-                    El presupuesto mandante ({{ lic.presupuesto_mandante | clp }}) cubre satisfactoriamente el costo base operativo del hotel ({{ lic.costo_base_hotel | clp }}), generando un margen positivo proyectado de {{ diferencia | clp }} ({{ margen_porcentaje }}% sobre presupuesto). La propuesta califica para avanzar a la fase de postulacion formal.
+                    El presupuesto mandante ({{ lic.presupuesto_mandante | clp }}) cubre satisfactoriamente el costo base operativo del hotel ({{ lic.costo_base_hotel | clp }}), generando un margen positivo proyectado de {{ diferencia | clp }} ({{ margen_porcentaje }}% sobre presupuesto) y cumple el margen mínimo configurado ({{ margen_minimo | clp }}). La propuesta califica para avanzar a la fase de postulacion formal.
                 </p>
             </div>
         </div>

@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Informes Ejecutivos - Gestion de Licitaciones{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-5 border-b border-[#EAEAEA]">
+        <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+                <span class="badge-spot badge-spot-neutral">Reportabilidad Ejecutiva</span>
+                <span class="text-xs text-[#6E6D6A] font-mono">Gerencia General y Direccion de Finanzas</span>
+            </div>
+            <h1 class="text-3xl font-serif font-normal tracking-tight text-[#111111]">
+                Informe {{ 'Semanal' if periodo == 'semanal' else 'Mensual' }}
+            </h1>
+            <p class="text-xs text-[#6E6D6A]">
+                Periodo: {{ desde.strftime('%d-%m-%Y') }} al {{ hasta.strftime('%d-%m-%Y') }}.
+                Consolidado de demanda estatal, conversion comercial y margen proyectado.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ url_for('exportar_informe', periodo=periodo) }}" class="btn-secondary text-xs px-3 py-2">
+                Exportar CSV
+            </a>
+            <button type="button" onclick="window.print()" class="btn-secondary text-xs px-3 py-2">
+                Imprimir / PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-1 border-b border-[#EAEAEA] pb-2">
+        <a href="{{ url_for('informes', periodo='semanal') }}" class="px-3 py-1.5 text-xs font-medium rounded {% if periodo == 'semanal' %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111]{% endif %}">
+            Semanal (7 dias)
+        </a>
+        <a href="{{ url_for('informes', periodo='mensual') }}" class="px-3 py-1.5 text-xs font-medium rounded {% if periodo == 'mensual' %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111]{% endif %}">
+            Mensual (30 dias)
+        </a>
+    </div>
+
+    {% if reporte.total == 0 %}
+    <div class="card-editorial p-6 bg-[#FBFBFA] text-xs text-[#6E6D6A]">
+        No hay oportunidades publicadas en este periodo. Sincronice Mercado Publico o seleccione otro periodo.
+    </div>
+    {% else %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Oportunidades</div>
+            <div class="text-2xl font-bold font-mono mt-1">{{ reporte.total | miles }}</div>
+            <div class="text-[11px] text-[#6E6D6A]">Publicadas en el periodo</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Presupuesto total</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.presupuesto | clp }}</div>
+            <div class="text-[11px] text-[#6E6D6A]">Monto informado por los mandantes</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Costo base hotel</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.costo | clp }}</div>
+            <div class="text-[11px] text-[#6E6D6A]">Costeo estimado acumulado</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Margen proyectado</div>
+            <div class="text-xl font-bold font-mono mt-1 {% if reporte.margen >= 0 %}text-[#346538]{% else %}text-[#9F2F2D]{% endif %}">
+                {{ reporte.margen | clp }}
+            </div>
+            <div class="text-[11px] text-[#6E6D6A]">Presupuesto menos costo base</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Identificadas</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.identificadas | miles }}</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Calificadas</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.calificadas | miles }}</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Participadas</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.participadas | miles }}</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Adjudicadas</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.adjudicadas | miles }}</div>
+            <div class="text-[11px] text-[#6E6D6A]">Tasa de cierre: {{ reporte.tasa_cierre }}%</div>
+        </div>
+    </div>
+
+    <div class="card-editorial overflow-hidden bg-white">
+        <div class="px-4 py-3 border-b border-[#EAEAEA]">
+            <h2 class="text-sm font-semibold text-[#111111]">Demanda por categoria</h2>
+            <p class="text-[11px] text-[#6E6D6A]">Volumen y presupuesto identificado por linea de servicio.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
+                <thead class="bg-[#FBFBFA] text-[#6E6D6A] uppercase text-[10px] tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Categoria</th>
+                        <th class="px-4 py-3 text-right">Oportunidades</th>
+                        <th class="px-4 py-3 text-right">Presupuesto</th>
+                        <th class="px-4 py-3 text-right">Costo base</th>
+                        <th class="px-4 py-3 text-right">Margen</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#EAEAEA]">
+                    {% for fila in reporte.por_categoria %}
+                    <tr>
+                        <td class="px-4 py-3 font-medium">{{ fila.categoria }}</td>
+                        <td class="px-4 py-3 text-right font-mono">{{ fila.total | miles }}</td>
+                        <td class="px-4 py-3 text-right font-mono">{{ fila.presupuesto | clp }}</td>
+                        <td class="px-4 py-3 text-right font-mono">{{ fila.costo | clp }}</td>
+                        <td class="px-4 py-3 text-right font-mono {% if fila.presupuesto - fila.costo >= 0 %}text-[#346538]{% else %}text-[#9F2F2D]{% endif %}">
+                            {{ (fila.presupuesto - fila.costo) | clp }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card-editorial overflow-hidden bg-white">
+            <div class="px-4 py-3 border-b border-[#EAEAEA]">
+                <h2 class="text-sm font-semibold text-[#111111]">Principales organismos</h2>
+                <p class="text-[11px] text-[#6E6D6A]">Top 5 por presupuesto informado.</p>
+            </div>
+            <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
+                <thead class="bg-[#FBFBFA] text-[#6E6D6A] uppercase text-[10px] tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Organismo</th>
+                        <th class="px-4 py-3 text-right">Oportunidades</th>
+                        <th class="px-4 py-3 text-right">Presupuesto</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#EAEAEA]">
+                    {% for fila in reporte.por_organismo %}
+                    <tr>
+                        <td class="px-4 py-3">{{ fila.organismo }}</td>
+                        <td class="px-4 py-3 text-right font-mono">{{ fila.total | miles }}</td>
+                        <td class="px-4 py-3 text-right font-mono">{{ fila.presupuesto | clp }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="px-4 py-4 text-[#6E6D6A]">Sin organismos en el periodo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-editorial overflow-hidden bg-white">
+            <div class="px-4 py-3 border-b border-[#EAEAEA]">
+                <h2 class="text-sm font-semibold text-[#111111]">Motivos de descarte</h2>
+                <p class="text-[11px] text-[#6E6D6A]">Causas registradas por el equipo comercial.</p>
+            </div>
+            <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
+                <thead class="bg-[#FBFBFA] text-[#6E6D6A] uppercase text-[10px] tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Motivo</th>
+                        <th class="px-4 py-3 text-right">Oportunidades</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#EAEAEA]">
+                    {% for fila in reporte.por_motivo %}
+                    <tr>
+                        <td class="px-4 py-3">{{ fila.motivo_descarte }}</td>
+                        <td class="px-4 py-3 text-right font-mono">{{ fila.total | miles }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="2" class="px-4 py-4 text-[#6E6D6A]">Sin descartes registrados en el periodo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="text-[11px] text-[#6E6D6A]">
+        Informe generado el {{ hasta.strftime('%d-%m-%Y') }}. Los montos son referenciales y el costo base debe validarse con el area operativa.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

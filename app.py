@@ -6,7 +6,7 @@ import os
 import secrets
 import threading
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import wraps
 from flask import Flask, abort, flash, make_response, redirect, render_template, request, session, url_for
 import database
@@ -169,6 +169,12 @@ def format_miles(value):
         return str(value)
 
 
+def _celda_csv(valor):
+    """Evita que un texto importado de la API se ejecute como formula en Excel."""
+    texto = "" if valor is None else str(valor)
+    return "'" + texto if texto[:1] in ("=", "+", "-", "@") else texto
+
+
 MAX_PAGINA = 25
 
 
@@ -204,6 +210,7 @@ def dashboard():
     metrics = database.get_funnel_metrics()
     ticket_configurado = bool(mercado_publico.get_ticket())
     tope_compra_agil = database.get_tope_compra_agil()
+    margen_tolerancia = database.get_margen_tolerancia()
     priorizadas = database.get_oportunidades_prioritarias(**filtros)
 
     return render_template(
@@ -222,6 +229,7 @@ def dashboard():
         filtros=filtros,
         ticket_configurado=ticket_configurado,
         tope_compra_agil=tope_compra_agil,
+        margen_tolerancia=margen_tolerancia,
         priorizadas=priorizadas,
         propiedades=database.PROPIEDADES,
         clientes_clave=[c[0] for c in database.CLIENTES_CLAVE],
@@ -243,6 +251,9 @@ def licitacion_detalle(id_licitacion):
     es_inviable = costo > presupuesto
     deficit = abs(diferencia) if es_inviable else 0
     margen_porcentaje = round((diferencia / presupuesto) * 100, 1) if presupuesto > 0 else 0
+    margen_tolerancia = database.get_margen_tolerancia()
+    margen_minimo = database.margen_minimo_clp(presupuesto, margen_tolerancia)
+    margen_bajo = presupuesto > 0 and not es_inviable and diferencia < margen_minimo
 
     # Dimensionamiento de Capacidad, Aforo y Salones
     propiedad = lic.get("propiedad") or "Plaza San Francisco"
@@ -289,6 +300,9 @@ def licitacion_detalle(id_licitacion):
         es_inviable=es_inviable,
         deficit=deficit,
         margen_porcentaje=margen_porcentaje,
+        margen_tolerancia=margen_tolerancia,
+        margen_minimo=margen_minimo,
+        margen_bajo=margen_bajo,
         salon_asignado=salon_asignado,
         excede_aforo=excede_aforo,
         sobrecupo=sobrecupo,
@@ -321,11 +335,6 @@ def exportar_licitaciones():
     filtros = {k: v for k, v in filtros.items() if v}
     licitaciones = database.get_all_licitaciones(**filtros)
 
-    def celda(valor):
-        """Evita que un texto importado de la API se ejecute como formula en Excel."""
-        texto = "" if valor is None else str(valor)
-        return "'" + texto if texto[:1] in ("=", "+", "-", "@") else texto
-
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
     writer.writerow([
@@ -337,24 +346,24 @@ def exportar_licitaciones():
     for lic in licitaciones:
         margen = lic["presupuesto_mandante"] - lic["costo_base_hotel"]
         writer.writerow([
-            celda(lic["id_licitacion"]),
-            celda(lic["titulo"]),
-            celda(lic["organismo"]),
-            celda(lic["propiedad"]),
-            celda(lic["categoria"]),
-            celda(lic["modalidad"]),
-            celda(lic["region"]),
+            _celda_csv(lic["id_licitacion"]),
+            _celda_csv(lic["titulo"]),
+            _celda_csv(lic["organismo"]),
+            _celda_csv(lic["propiedad"]),
+            _celda_csv(lic["categoria"]),
+            _celda_csv(lic["modalidad"]),
+            _celda_csv(lic["region"]),
             lic["presupuesto_mandante"],
             lic["costo_base_hotel"],
             margen,
-            celda(lic["estado_embudo"]),
-            celda(lic["motivo_descarte"]),
+            _celda_csv(lic["estado_embudo"]),
+            _celda_csv(lic["motivo_descarte"]),
             "Si" if lic["revisada"] else "No",
             lic["fecha_publicacion"],
             lic["fecha_cierre"],
             lic["cantidad_asistentes"],
-            celda(lic.get("nombre_salon") or ""),
-            celda((lic.get("notas") or "").replace("\n", " | ")),
+            _celda_csv(lic.get("nombre_salon") or ""),
+            _celda_csv((lic.get("notas") or "").replace("\n", " | ")),
         ])
 
     respuesta = make_response("\ufeff" + buffer.getvalue())
@@ -603,6 +612,79 @@ def analitica():
     )
 
 
+def _rango_reporte(periodo):
+    if periodo not in ("semanal", "mensual"):
+        periodo = "semanal"
+    dias = 7 if periodo == "semanal" else 30
+    hasta = date.today()
+    desde = hasta - timedelta(days=dias - 1)
+    return periodo, desde, hasta
+
+
+@app.route("/informes")
+@login_required
+def informes():
+    periodo, desde, hasta = _rango_reporte(request.args.get("periodo", "semanal"))
+    reporte = database.get_reporte_periodo(desde.isoformat(), hasta.isoformat())
+    return render_template(
+        "informes.html",
+        periodo=periodo,
+        desde=desde,
+        hasta=hasta,
+        reporte=reporte,
+        user=session.get("user"),
+        nombre=session.get("nombre") or session.get("user"),
+    )
+
+
+@app.route("/informes/exportar.csv")
+@login_required
+def exportar_informe():
+    periodo, desde, hasta = _rango_reporte(request.args.get("periodo", "semanal"))
+    reporte = database.get_reporte_periodo(desde.isoformat(), hasta.isoformat())
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
+    writer.writerow(["Informe consolidado", "Semanal" if periodo == "semanal" else "Mensual"])
+    writer.writerow(["Desde", desde.isoformat(), "Hasta", hasta.isoformat()])
+    writer.writerow(["Preparado para", "Gerencia General y Direccion de Finanzas"])
+    writer.writerow([])
+    writer.writerow(["Resumen"])
+    writer.writerow(["Oportunidades", reporte["total"]])
+    writer.writerow(["Presupuesto CLP", reporte["presupuesto"]])
+    writer.writerow(["Costo base CLP", reporte["costo"]])
+    writer.writerow(["Margen CLP", reporte["margen"]])
+    writer.writerow(["Identificadas", reporte["identificadas"]])
+    writer.writerow(["Calificadas", reporte["calificadas"]])
+    writer.writerow(["Participadas", reporte["participadas"]])
+    writer.writerow(["Adjudicadas", reporte["adjudicadas"]])
+    writer.writerow(["Descartadas", reporte["descartadas"]])
+    writer.writerow(["Tasa de cierre %", reporte["tasa_cierre"]])
+    writer.writerow([])
+    writer.writerow(["Categoria", "Oportunidades", "Presupuesto CLP", "Costo CLP", "Margen CLP"])
+    for fila in reporte["por_categoria"]:
+        writer.writerow([
+            _celda_csv(fila["categoria"]), fila["total"], fila["presupuesto"],
+            fila["costo"], fila["presupuesto"] - fila["costo"],
+        ])
+    writer.writerow([])
+    writer.writerow(["Organismo", "Oportunidades", "Presupuesto CLP"])
+    for fila in reporte["por_organismo"]:
+        writer.writerow([
+            _celda_csv(fila["organismo"]), fila["total"], fila["presupuesto"],
+        ])
+    writer.writerow([])
+    writer.writerow(["Motivo de descarte", "Oportunidades"])
+    for fila in reporte["por_motivo"]:
+        writer.writerow([_celda_csv(fila["motivo_descarte"]), fila["total"]])
+
+    respuesta = make_response("\ufeff" + buffer.getvalue())
+    respuesta.headers["Content-Type"] = "text/csv; charset=utf-8"
+    respuesta.headers["Content-Disposition"] = (
+        f"attachment; filename=informe_{periodo}_{hasta.isoformat()}.csv"
+    )
+    return respuesta
+
+
 @app.route("/analitica/historial", methods=["POST"])
 @login_required
 def cargar_historial_oc():
@@ -722,6 +804,30 @@ def guardar_tope_compra_agil():
     else:
         database.set_tope_compra_agil(valor)
         flash(f"Tope de Compra Agil actualizado a {format_clp(valor)}.", "success")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/ajustes/margen_tolerancia", methods=["POST"])
+@login_required
+def guardar_margen_tolerancia():
+    modo = request.form.get("modo", "porcentaje").strip()
+    bruto = request.form.get("valor", "").strip()
+    if modo == "clp":
+        digitos = bruto.replace(".", "").replace("$", "").replace(" ", "")
+    else:
+        digitos = bruto.replace("%", "").replace(" ", "")
+    try:
+        valor = int(digitos)
+    except ValueError:
+        valor = -1
+    if modo not in ("porcentaje", "clp"):
+        flash("El tipo de margen debe ser porcentaje o monto CLP.", "error")
+    elif valor < 0 or (modo == "porcentaje" and valor > 100):
+        flash("El margen debe estar entre 0 y 100% o ser un monto CLP mayor o igual a cero.", "error")
+    else:
+        database.set_margen_tolerancia(modo, valor)
+        etiqueta = f"{valor}%" if modo == "porcentaje" else format_clp(valor)
+        flash(f"Margen de tolerancia actualizado a {etiqueta}.", "success")
     return redirect(url_for("dashboard"))
 
 

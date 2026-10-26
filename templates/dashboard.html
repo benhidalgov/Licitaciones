@@ -39,6 +39,34 @@
         </div>
     </div>
 
+    <!-- Parametro configurable de viabilidad -->
+    <div class="card-editorial p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">
+                Margen de tolerancia
+            </div>
+            <div class="text-[11px] text-[#6E6D6A]">
+                Margen minimo exigido para priorizar. No relaja el descarte cuando el costo supera el presupuesto.
+            </div>
+        </div>
+        <form method="POST" action="{{ url_for('guardar_margen_tolerancia') }}" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input
+                type="text"
+                inputmode="numeric"
+                name="valor"
+                value="{{ margen_tolerancia.valor | miles }}"
+                aria-label="Valor del margen de tolerancia"
+                class="w-28 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
+            >
+            <select name="modo" aria-label="Tipo de margen" class="text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111]">
+                <option value="porcentaje" {% if margen_tolerancia.modo == 'porcentaje' %}selected{% endif %}>% del presupuesto</option>
+                <option value="clp" {% if margen_tolerancia.modo == 'clp' %}selected{% endif %}>CLP fijo</option>
+            </select>
+            <button type="submit" class="btn-secondary text-xs px-3 py-1">Guardar margen</button>
+        </form>
+    </div>
+
     <!-- Vista Priorizada: oportunidades abiertas con match viable -->
     <div class="space-y-3">
         <div class="flex items-center justify-between">

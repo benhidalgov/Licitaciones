@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Flask_3.0-111111?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
 [![Base de Datos](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-188_Aprobadas-10B981?style=flat-square)](tests)
+[![Tests](https://img.shields.io/badge/Tests-197_Aprobadas-10B981?style=flat-square)](tests)
 [![Interfaz](https://img.shields.io/badge/UI-Minimalist_Editorial-111111?style=flat-square)](templates)
 [![Normativa](https://img.shields.io/badge/Mercado_Publico-Ley_19.886-0284C7?style=flat-square)](https://www.mercadopublico.cl/)
 
@@ -72,6 +72,8 @@ El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el
 * **Benchmarking de Adjudicaciones:** Bloque en la ficha para registrar adjudicatario, puntaje (0 a 100) y precio final. Calcula la desviacion sobre el presupuesto mandante y el margen sobre el costo minimo del hotel. La pagina `/analitica` concentra el comparativo ordenado por precio.
 * **Historial de Ordenes de Compra:** Importador de `.xlsx` o `.csv` del archivo que entrega el hotel, con encabezados tolerantes (Organismo/Cliente, Objeto/Descripcion, Fecha y Monto) y soporte de formato chileno (`$1.234.567`, `15/03/2026`).
 * **Cruce de Experiencia:** La ficha indica cuantas OC previas existen con el mismo organismo y por cuanto monto, para dimensionar la relacion historica antes de ofertar.
+* **Margen de Tolerancia:** Parametro configurable en el tablero como porcentaje del presupuesto o monto fijo CLP. Exige un margen minimo para priorizar oportunidades, sin relajar el descarte duro cuando el costo supera el presupuesto.
+* **Informes Ejecutivos:** Pagina `/informes` con consolidado semanal (7 dias) o mensual (30 dias), exportable a CSV e imprimible para Gerencia y Finanzas.
 * **Ficha Resumen:** Fechas del evento, personas, salones u habitaciones sugeridos, servicios de alimentacion y desglose de ponderacion de criterios que suma 100. Se genera con reglas deterministas; si se configura `RESUMEN_IA_API_KEY` se enriquece con IA y degrada a reglas si falla.
 
 ### 5. Diseno Editorial Minimalista (Minimalist UI)
@@ -115,6 +117,7 @@ C:\Licitaciones\
 |   |-- dashboard.html         # Tablero Bento Grid con embudo de conversion y filtros
 |   |-- detail.html            # Ficha de detalle, evaluacion financiera, checklist y aforo
 |   |-- analitica.html         # Benchmarking de adjudicaciones e importador de historial de OC
+|   |-- informes.html          # Informe ejecutivo semanal/mensual y exportacion CSV
 |   |-- salones.html           # Catalogo de infraestructura y agenda de reservas
 |   |-- salon_detail.html      # Ficha monografica por salon, montajes y cronograma
 |   |-- reserva_form.html      # Formulario para registro, edicion y bloqueo de fechas
@@ -203,7 +206,7 @@ Al iniciarse, el servidor verifica automaticamente la base de datos `licitacione
 
 ## Suite de Pruebas Automatizadas y Flujo de Calidad
 
-El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 188 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
+El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 197 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
 
 ### 1. Verificacion Oficial Previa a Integracion
 

@@ -243,6 +243,9 @@
                         <a href="{{ url_for('analitica') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['analitica', 'cargar_historial_oc'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
                             Analitica
                         </a>
+                        <a href="{{ url_for('informes') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['informes', 'exportar_informe'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
+                            Informes
+                        </a>
                     </nav>
 
                     <div class="flex items-center space-x-3 pl-3 border-l border-[#EAEAEA]">

@@ -1065,6 +1065,7 @@ def get_oportunidades_prioritarias(
     el bloque priorizado respete la misma busqueda que el listado de abajo.
     """
     fecha_referencia = hoy or date.today().isoformat()
+    tolerancia = get_margen_tolerancia()
     conn = get_db_connection()
     try:
         query = """
@@ -1085,6 +1086,15 @@ def get_oportunidades_prioritarias(
               )
         """
         params: List[Any] = [fecha_referencia]
+
+        # El margen minimo no relaja el descarte duro por costo > presupuesto:
+        # solo decide que oportunidades aparecen en la vista priorizada.
+        if tolerancia["modo"] == "porcentaje":
+            query += " AND l.costo_base_hotel <= (l.presupuesto_mandante * ? / 100.0)"
+            params.append(100 - tolerancia["valor"])
+        else:
+            query += " AND l.costo_base_hotel <= (l.presupuesto_mandante - ?)"
+            params.append(tolerancia["valor"])
 
         # Los filtros del tablero se reutilizan tal cual; solo se retira la
         # clausula WHERE porque la base de esta consulta ya la trae.
@@ -1229,6 +1239,59 @@ def get_funnel_metrics() -> Dict[str, int]:
         conn.close()
 
 
+def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
+    """Consolidado de oportunidades publicadas entre dos fechas ISO."""
+    filtro = " WHERE fecha_publicacion BETWEEN ? AND ?"
+    params = (desde, hasta)
+    conn = get_db_connection()
+    try:
+        resumen = conn.execute("""
+            SELECT COUNT(*) AS total,
+                   COALESCE(SUM(presupuesto_mandante), 0) AS presupuesto,
+                   COALESCE(SUM(costo_base_hotel), 0) AS costo,
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Identificada' THEN 1 ELSE 0 END), 0) AS identificadas,
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Calificada' THEN 1 ELSE 0 END), 0) AS calificadas,
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Participada' THEN 1 ELSE 0 END), 0) AS participadas,
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Adjudicada' THEN 1 ELSE 0 END), 0) AS adjudicadas,
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Descartada' THEN 1 ELSE 0 END), 0) AS descartadas
+            FROM licitaciones
+        """ + filtro, params).fetchone()
+
+        por_categoria = conn.execute("""
+            SELECT categoria,
+                   COUNT(*) AS total,
+                   COALESCE(SUM(presupuesto_mandante), 0) AS presupuesto,
+                   COALESCE(SUM(costo_base_hotel), 0) AS costo
+            FROM licitaciones
+        """ + filtro + " GROUP BY categoria ORDER BY presupuesto DESC, categoria", params).fetchall()
+
+        por_organismo = conn.execute("""
+            SELECT organismo,
+                   COUNT(*) AS total,
+                   COALESCE(SUM(presupuesto_mandante), 0) AS presupuesto
+            FROM licitaciones
+        """ + filtro + " GROUP BY organismo ORDER BY presupuesto DESC, organismo LIMIT 5", params).fetchall()
+
+        por_motivo = conn.execute("""
+            SELECT motivo_descarte,
+                   COUNT(*) AS total
+            FROM licitaciones
+        """ + filtro + " AND motivo_descarte != '' GROUP BY motivo_descarte ORDER BY total DESC", params).fetchall()
+
+        datos = dict(resumen)
+        datos["margen"] = datos["presupuesto"] - datos["costo"]
+        datos["por_categoria"] = [dict(row) for row in por_categoria]
+        datos["por_organismo"] = [dict(row) for row in por_organismo]
+        datos["por_motivo"] = [dict(row) for row in por_motivo]
+        datos["tasa_cierre"] = (
+            round(datos["adjudicadas"] * 100.0 / datos["participadas"], 1)
+            if datos["participadas"] else 0.0
+        )
+        return datos
+    finally:
+        conn.close()
+
+
 TOPE_COMPRA_AGIL_DEFECTO = 6900000
 
 
@@ -1253,6 +1316,55 @@ def set_tope_compra_agil(valor: int) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def get_margen_tolerancia() -> Dict[str, Any]:
+    """Margen minimo configurable: porcentaje del presupuesto o monto CLP."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT clave, valor FROM ajustes "
+            "WHERE clave IN ('margen_tolerancia_modo', 'margen_tolerancia_valor')"
+        ).fetchall()
+        ajustes = {row["clave"]: int(row["valor"]) for row in rows}
+        modo = "clp" if ajustes.get("margen_tolerancia_modo", 0) == 1 else "porcentaje"
+        valor = max(0, ajustes.get("margen_tolerancia_valor", 0))
+        if modo == "porcentaje":
+            valor = min(100, valor)
+        return {"modo": modo, "valor": valor}
+    finally:
+        conn.close()
+
+
+def set_margen_tolerancia(modo: str, valor: int) -> None:
+    if modo not in ("porcentaje", "clp"):
+        raise ValueError("Modo de margen invalido")
+    valor = int(valor)
+    if valor < 0 or (modo == "porcentaje" and valor > 100):
+        raise ValueError("Margen de tolerancia invalido")
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('margen_tolerancia_modo', ?)",
+            (1 if modo == "clp" else 0,)
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('margen_tolerancia_valor', ?)",
+            (valor,)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def margen_minimo_clp(presupuesto: int, tolerancia: Optional[Dict[str, Any]] = None) -> int:
+    """Margen minimo exigido para priorizar una oportunidad."""
+    if not presupuesto or presupuesto <= 0:
+        return 0
+    tolerancia = tolerancia or get_margen_tolerancia()
+    if tolerancia["modo"] == "clp":
+        return int(tolerancia["valor"])
+    return int(round(presupuesto * tolerancia["valor"] / 100.0))
 
 
 # ---------------------------------------------------------------------------

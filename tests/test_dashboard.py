@@ -87,6 +87,34 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(database.get_tope_compra_agil(), 7500000)
         self.assertIn("numero entero mayor a cero", bad.data.decode("utf-8"))
 
+    def test_margen_tolerancia_editable_en_tablero(self):
+        response = self.client.post(
+            "/ajustes/margen_tolerancia",
+            data={"modo": "porcentaje", "valor": "10"},
+            follow_redirects=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(database.get_margen_tolerancia(), {"modo": "porcentaje", "valor": 10})
+        self.assertIn("10%", response.data.decode("utf-8"))
+
+        # Un porcentaje fuera de rango no altera el valor guardado
+        bad = self.client.post(
+            "/ajustes/margen_tolerancia",
+            data={"modo": "porcentaje", "valor": "150"},
+            follow_redirects=True
+        )
+        self.assertEqual(database.get_margen_tolerancia(), {"modo": "porcentaje", "valor": 10})
+        self.assertIn("entre 0 y 100", bad.data.decode("utf-8"))
+
+    def test_margen_tolerancia_fijo_en_clp(self):
+        response = self.client.post(
+            "/ajustes/margen_tolerancia",
+            data={"modo": "clp", "valor": "500.000"},
+            follow_redirects=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(database.get_margen_tolerancia(), {"modo": "clp", "valor": 500000})
+
     def test_dashboard_filter_modalidad(self):
         response = self.client.get("/?modalidad=Compra+Agil")
         self.assertEqual(response.status_code, 200)

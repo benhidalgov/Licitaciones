@@ -177,6 +177,35 @@ class TestEvaluacionOperativa(unittest.TestCase):
         priorizadas = database.get_oportunidades_prioritarias(hoy="2026-01-01", limit=100)
         self.assertIn("TEST-PRIORIDAD-01", {p["id_licitacion"] for p in priorizadas})
 
+    def test_tolerancia_excluye_margen_bajo_de_priorizadas(self):
+        database.set_margen_tolerancia("porcentaje", 10)
+        database.create_licitacion({
+            "id_licitacion": "TEST-MARGEN-01",
+            "titulo": "Oportunidad con margen bajo",
+            "organismo": "Ministerio de Prueba",
+            "categoria": "Eventos / Catering",
+            "modalidad": "Compra Agil",
+            "region": "Region Metropolitana",
+            "presupuesto_mandante": 1000,
+            "costo_base_hotel": 950,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Valida",
+            "tiene_anexo4": 1,
+            "tiene_escrituras": 1,
+            "tiene_poderes": 1,
+            "tiene_vigencias": 1,
+            "fecha_publicacion": "2026-01-01",
+            "fecha_cierre": "2026-12-31",
+            "descripcion_tdr": "Servicio de salon",
+        })
+
+        priorizadas = database.get_oportunidades_prioritarias(hoy="2026-01-01", limit=100)
+        self.assertNotIn("TEST-MARGEN-01", {p["id_licitacion"] for p in priorizadas})
+
+        database.update_licitacion("TEST-MARGEN-01", {"costo_base_hotel": 850})
+        priorizadas = database.get_oportunidades_prioritarias(hoy="2026-01-01", limit=100)
+        self.assertIn("TEST-MARGEN-01", {p["id_licitacion"] for p in priorizadas})
+
     def test_clasificacion_estima_aforo_desde_la_descripcion(self):
         item = {
             "CodigoExterno": "9100-1-COT24",
