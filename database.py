@@ -4,7 +4,9 @@ import sqlite3
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
-DB_NAME = os.path.join(os.path.dirname(os.path.abspath(__file__)), "licitaciones.db")
+DB_NAME = os.environ.get("LICITACIONES_DB_PATH") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "licitaciones.db"
+)
 
 ALLOWED_COLUMNS = {
     "titulo", "organismo", "categoria", "modalidad", "region",
