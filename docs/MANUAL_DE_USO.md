@@ -41,9 +41,9 @@ hotel, aunque la licitacion sea de un cliente conocido.
 pip install -r requirements.txt
 ```
 
-Son solo dos dependencias: Flask y openpyxl (esta ultima solo se usa para
-importar el historial de ordenes de compra desde Excel; si falta, la plataforma
-funciona igual y avisa al intentar importar un `.xlsx`).
+Son tres dependencias: Flask, openpyxl (solo para importar el historial de
+ordenes de compra desde Excel; si falta, la plataforma funciona igual y avisa al
+intentar importar un `.xlsx`) y Gunicorn (solo para produccion).
 
 ### 2.3 Configuracion (archivo `.env`)
 
@@ -57,6 +57,7 @@ Copiar `.env.example` a `.env` y completar:
 | `MERCADO_PUBLICO_INTERVALO_MS` | No | Milisegundos entre consultas a la API. Por defecto 500. |
 | `HOST` / `PORT` | No | Donde escucha el servidor. Por defecto `127.0.0.1:5000`. |
 | `RESUMEN_IA_API_KEY` | No | Activa el enriquecimiento con IA de la ficha resumen. Sin ella se usa la version por reglas. |
+| `LICITACIONES_DB_PATH` | No | Ruta de la base de datos. En produccion conviene apuntar a un disco persistente para no perder datos en cada despliegue. |
 
 ### 2.4 Arranque
 
