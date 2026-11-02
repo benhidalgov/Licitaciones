@@ -152,7 +152,8 @@ pip install -r requirements.txt
 ```
 
 > [!TIP]
-> Las dependencias de terceros son `Flask>=3.0.0` y `openpyxl>=3.1.0` (esta ultima solo para importar el historial de ordenes de compra desde Excel; la plataforma funciona sin ella y avisa al intentar leer un `.xlsx`). El motor de persistencia utiliza `sqlite3` provisto por la biblioteca estandar de Python.
+> [!TIP]
+> Las dependencias de terceros son `Flask>=3.0.0`, `openpyxl>=3.1.0` (solo para importar el historial de ordenes de compra desde Excel; la plataforma funciona sin ella y avisa al intentar leer un `.xlsx`) y `Gunicorn>=22.0.0` (solo para produccion en Render). El motor de persistencia utiliza `sqlite3` provisto por la biblioteca estandar de Python.
 
 > [!NOTE]
 > El manual para el equipo comercial esta en `docs/MANUAL_DE_USO.md`.
@@ -180,7 +181,17 @@ Al iniciarse, el servidor verifica automaticamente la base de datos `licitacione
 ========================================================================
 ```
 
-### 4. Acceso al Sistema
+### 4. Despliegue en Render
+
+El punto de entrada WSGI es `wsgi.py`. En Render configure el **Start Command**:
+
+```bash
+gunicorn wsgi:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 1 --threads 4 --timeout 120
+```
+
+Variables de entorno minimas: `FLASK_SECRET_KEY`, `FLASK_COOKIE_SECURE=1` y las cuatro `LICITACIONES_PASSWORD_<USUARIO>`. El arranque falla a proposito si quedan las claves demo. Para conservar la base entre despliegues, monte un disco persistente y defina `LICITACIONES_DB_PATH` (por ejemplo `/var/data/licitaciones.db`).
+
+### 5. Acceso al Sistema
 1. Abra su navegador en: `http://127.0.0.1:5000`
 2. El sistema redirigira a la pantalla de autenticacion.
 3. Ingrese con cualquiera de los perfiles demo:
