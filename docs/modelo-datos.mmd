@@ -1,0 +1,87 @@
+erDiagram
+    salones ||--o{ reservas_salones : "FK id_salon"
+    salones |o--o{ licitaciones : "id_salon_asignado TEXT sin FK"
+    licitaciones |o--o{ reservas_salones : "id_licitacion TEXT sin FK"
+
+    ajustes {
+        TEXT clave PK
+        INTEGER valor
+    }
+
+    salones {
+        TEXT id_salon PK
+        TEXT nombre
+        TEXT tipo
+        INTEGER capacidad_maxima
+        TEXT horario_disponible
+        INTEGER tarifa_referencial
+        TEXT ubicacion
+        TEXT equipamiento
+        TEXT descripcion
+        TEXT propiedad
+        TEXT montajes
+        INTEGER es_provisional
+    }
+
+    reservas_salones {
+        INTEGER id_reserva PK
+        TEXT id_salon FK
+        TEXT cliente_evento
+        TEXT organismo_o_empresa
+        TEXT tipo_evento
+        TEXT fecha_inicio
+        TEXT fecha_fin
+        TEXT horario
+        INTEGER asistentes_estimados
+        TEXT estado_reserva
+        TEXT id_licitacion
+        TEXT contacto_responsable
+        TEXT observaciones
+    }
+
+    licitaciones {
+        TEXT id_licitacion PK
+        TEXT titulo
+        TEXT organismo
+        TEXT categoria
+        TEXT modalidad
+        TEXT region
+        INTEGER presupuesto_mandante
+        INTEGER costo_base_hotel
+        TEXT estado_embudo
+        TEXT validacion_adjuntos
+        INTEGER tiene_anexo4
+        INTEGER tiene_escrituras
+        INTEGER tiene_poderes
+        INTEGER tiene_vigencias
+        TEXT fecha_publicacion
+        TEXT fecha_cierre
+        TEXT descripcion_tdr
+        INTEGER cantidad_asistentes
+        TEXT tipo_jornada
+        TEXT horario_evento
+        TEXT id_salon_asignado
+        TEXT propiedad
+        INTEGER revisada
+        TEXT motivo_descarte
+        TEXT notas
+        INTEGER costeo_validado
+        INTEGER sello_mujer
+        INTEGER jornada_40h
+        INTEGER sello_sernatur
+        INTEGER inclusion_laboral
+        TEXT adjudicatario
+        REAL puntaje_adjudicacion
+        INTEGER precio_final
+    }
+
+    historial_oc {
+        INTEGER id_oc PK
+        TEXT fecha
+        TEXT organismo
+        TEXT objeto
+        INTEGER monto
+        TEXT modalidad
+        TEXT archivo
+        TEXT cargado_en
+    }
