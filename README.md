@@ -110,6 +110,7 @@ C:\Licitaciones\
 |-- README.md                  # Manual tecnico y documentacion general del proyecto
 |-- docs/                      # Guias tecnicas y protocolos de ingenieria
 |   |-- ALINEACION_REUNION.md  # Brechas y plan de alineacion con la reunion de levantamiento
+|   |-- MANUAL_DE_USO.md       # Manual operativo para el equipo comercial
 |   `-- WORKFLOW.md            # Protocolo de ramas Git, convenciones de commit y verificacion
 |-- templates/                 # Plantillas HTML con Jinja2 y tokens Minimalist UI
 |   |-- base.html              # Layout corporativo base, navegacion superior y CSS unificado
@@ -151,7 +152,10 @@ pip install -r requirements.txt
 ```
 
 > [!TIP]
-> La unica dependencia de terceros requerida es `Flask>=3.0.0`. El motor de persistencia utiliza `sqlite3` provisto por la biblioteca estandar de Python.
+> Las dependencias de terceros son `Flask>=3.0.0` y `openpyxl>=3.1.0` (esta ultima solo para importar el historial de ordenes de compra desde Excel; la plataforma funciona sin ella y avisa al intentar leer un `.xlsx`). El motor de persistencia utiliza `sqlite3` provisto por la biblioteca estandar de Python.
+
+> [!NOTE]
+> El manual para el equipo comercial esta en `docs/MANUAL_DE_USO.md`.
 
 ### 3. Puesta en Marcha del Servidor
 

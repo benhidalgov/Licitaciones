@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-10-26T18:11:00.000Z" agent="Cursor" version="22.1.16" type="device">
+  <diagram id="er-licitaciones" name="Modelo de datos SQLite">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+      <mxCell id="t-salones" value="salones" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;swimlaneFillColor=#ffffff;strokeColor=#6b7280;fillColor=#dbeafe;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+        <mxGeometry x="380" y="40" width="300" height="344" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c0" value="id_salon PK  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#fef3c7;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-salones">
+        <mxGeometry y="32" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c1" value="nombre  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="58" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c2" value="tipo  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="84" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c3" value="capacidad_maxima  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="110" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c4" value="horario_disponible  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="136" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c5" value="tarifa_referencial  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="162" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c6" value="ubicacion  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="188" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c7" value="equipamiento  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="214" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c8" value="descripcion  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="240" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c9" value="propiedad  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="266" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c10" value="montajes  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="292" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-salones-c11" value="es_provisional  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-salones">
+        <mxGeometry y="318" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas" value="reservas_salones" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;swimlaneFillColor=#ffffff;strokeColor=#6b7280;fillColor=#ede9fe;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+        <mxGeometry x="760" y="40" width="300" height="370" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c0" value="id_reserva PK  INTEGER PK AUTOINCREMENT" style="text;strokeColor=#e5e7eb;fillColor=#fef3c7;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-reservas">
+        <mxGeometry y="32" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c1" value="id_salon FK  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#e0e7ff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-reservas">
+        <mxGeometry y="58" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c2" value="cliente_evento  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="84" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c3" value="organismo_o_empresa  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="110" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c4" value="tipo_evento  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="136" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c5" value="fecha_inicio  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="162" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c6" value="fecha_fin  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="188" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c7" value="horario  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="214" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c8" value="asistentes_estimados  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="240" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c9" value="estado_reserva  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="266" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c10" value="id_licitacion  TEXT sin FK" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="292" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c11" value="contacto_responsable  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="318" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-reservas-c12" value="observaciones  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-reservas">
+        <mxGeometry y="344" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones" value="licitaciones" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;swimlaneFillColor=#ffffff;strokeColor=#6b7280;fillColor=#dcfce7;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+        <mxGeometry x="20" y="40" width="300" height="890" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c0" value="id_licitacion PK  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#fef3c7;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="32" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c1" value="titulo  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="58" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c2" value="organismo  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="84" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c3" value="categoria  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="110" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c4" value="modalidad  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="136" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c5" value="region  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="162" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c6" value="presupuesto_mandante  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="188" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c7" value="costo_base_hotel  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="214" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c8" value="estado_embudo  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="240" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c9" value="validacion_adjuntos  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="266" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c10" value="tiene_anexo4  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="292" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c11" value="tiene_escrituras  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="318" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c12" value="tiene_poderes  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="344" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c13" value="tiene_vigencias  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="370" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c14" value="fecha_publicacion  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="396" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c15" value="fecha_cierre  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="422" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c16" value="descripcion_tdr  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="448" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c17" value="cantidad_asistentes  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="474" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c18" value="tipo_jornada  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="500" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c19" value="horario_evento  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="526" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c20" value="id_salon_asignado FK  TEXT sin FK" style="text;strokeColor=#e5e7eb;fillColor=#e0e7ff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="552" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c21" value="propiedad  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="578" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c22" value="revisada  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="604" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c23" value="motivo_descarte  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="630" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c24" value="notas  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="656" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c25" value="costeo_validado  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="682" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c26" value="sello_mujer  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="708" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c27" value="jornada_40h  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="734" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c28" value="sello_sernatur  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="760" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c29" value="inclusion_laboral  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="786" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c30" value="adjudicatario  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="812" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c31" value="puntaje_adjudicacion  REAL" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="838" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-licitaciones-c32" value="precio_final  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-licitaciones">
+        <mxGeometry y="864" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-ajustes" value="ajustes" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;swimlaneFillColor=#ffffff;strokeColor=#6b7280;fillColor=#fef9c3;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+        <mxGeometry x="380" y="460" width="300" height="84" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-ajustes-c0" value="clave PK  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#fef3c7;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-ajustes">
+        <mxGeometry y="32" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-ajustes-c1" value="valor  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-ajustes">
+        <mxGeometry y="58" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial" value="historial_oc" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=32;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;swimlaneFillColor=#ffffff;strokeColor=#6b7280;fillColor=#fecaca;fontColor=#111827;fontSize=13;" vertex="1" parent="1">
+        <mxGeometry x="760" y="460" width="300" height="240" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c0" value="id_oc PK  INTEGER PK AUTOINCREMENT" style="text;strokeColor=#e5e7eb;fillColor=#fef3c7;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=1;" vertex="1" parent="t-historial">
+        <mxGeometry y="32" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c1" value="fecha  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="58" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c2" value="organismo  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="84" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c3" value="objeto  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="110" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c4" value="monto  INTEGER" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="136" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c5" value="modalidad  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="162" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c6" value="archivo  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="188" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="t-historial-c7" value="cargado_en  TEXT" style="text;strokeColor=#e5e7eb;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=11;fontColor=#111827;fontStyle=0;" vertex="1" parent="t-historial">
+        <mxGeometry y="214" width="300" height="26" as="geometry"/>
+      </mxCell>
+      <mxCell id="e-fk-salon" value="FK id_salon" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;fontColor=#374151;labelBackgroundColor=#ffffff;dashed=0;startArrow=ERmany;startFill=0;endArrow=ERmandOne;endFill=0;strokeColor=#4b5563;" edge="1" parent="1" source="t-reservas-c1" target="t-salones-c0">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+      <mxCell id="e-join-salon" value="JOIN sin FK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;fontColor=#374151;labelBackgroundColor=#ffffff;dashed=1;dashPattern=8 8;startArrow=ERzeroToMany;startFill=0;endArrow=ERzeroToOne;endFill=0;strokeColor=#4b5563;" edge="1" parent="1" source="t-licitaciones-c20" target="t-salones-c0">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+      <mxCell id="e-text-lic" value="id_licitacion TEXT" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;fontColor=#374151;labelBackgroundColor=#ffffff;dashed=1;dashPattern=8 8;startArrow=ERzeroToMany;startFill=0;endArrow=ERzeroToOne;endFill=0;strokeColor=#4b5563;" edge="1" parent="1" source="t-reservas-c10" target="t-licitaciones-c0">
+        <mxGeometry relative="1" as="geometry"/>
+      </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
