@@ -108,6 +108,14 @@ def login_required(f):
     return decorated_function
 
 
+def _registrar(id_licitacion, tipo, detalle):
+    """Deja una linea en el historial del sistema con el usuario de la sesion."""
+    database.registrar_evento(
+        id_licitacion, tipo, detalle,
+        session.get("nombre") or session.get("user") or "Equipo"
+    )
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -115,7 +123,7 @@ def login():
         if _is_login_blocked(ip):
             flash("Demasiados intentos fallidos. Espere unos minutos antes de volver a intentar.", "error")
             return render_template("login.html"), 429
-        user = request.form.get("username", "").strip()
+        user = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "").strip()
         cuenta = USERS.get(user)
         user_ok = cuenta is not None
@@ -158,6 +166,7 @@ app.jinja_env.globals["format_clp"] = format_clp
 # Etiqueta de cliente clave (Mineduc, Minsal, universidades, productoras)
 # calculada al vuelo sobre organismo + titulo, sin columna nueva.
 app.jinja_env.globals["detectar_cliente_clave"] = database.detectar_cliente_clave
+app.jinja_env.globals["margen_minimo_clp"] = database.margen_minimo_clp
 
 
 @app.template_filter("miles")
@@ -175,7 +184,7 @@ def _celda_csv(valor):
     return "'" + texto if texto[:1] in ("=", "+", "-", "@") else texto
 
 
-MAX_PAGINA = 25
+MAX_PAGINA = 8
 
 
 @app.route("/")
@@ -188,12 +197,13 @@ def dashboard():
     q = request.args.get("q", "").strip() or None
     propiedad = request.args.get("propiedad", "").strip() or None
     cliente_clave = request.args.get("cliente_clave", "").strip() or None
+    motivo = request.args.get("motivo", "").strip() or None
 
     # Filtros no vacios, reutilizados para construir los enlaces del paginador
     filtros = {
         k: v for k, v in dict(
             categoria=categoria, modalidad=modalidad, estado=estado,
-            q=q, propiedad=propiedad, cliente_clave=cliente_clave
+            q=q, propiedad=propiedad, cliente_clave=cliente_clave, motivo=motivo
         ).items()
         if v
     }
@@ -223,6 +233,7 @@ def dashboard():
         q=q or "",
         propiedad=propiedad or "",
         cliente_clave=cliente_clave or "",
+        motivo=motivo or "",
         total=total,
         pagina=pagina,
         paginas=paginas,
@@ -233,6 +244,7 @@ def dashboard():
         priorizadas=priorizadas,
         propiedades=database.PROPIEDADES,
         clientes_clave=[c[0] for c in database.CLIENTES_CLAVE],
+        motivos_descarte=database.MOTIVOS_DESCARTE,
         user=session.get("user"),
         nombre=session.get("nombre") or session.get("user")
     )
@@ -292,6 +304,7 @@ def licitacion_detalle(id_licitacion):
 
     # Historial de OC: experiencia previa con el mismo organismo.
     experiencia_oc = database.get_experiencia_organismo(lic.get("organismo") or "")
+    historial = database.get_historial_licitacion(id_licitacion)
 
     return render_template(
         "detail.html",
@@ -312,6 +325,7 @@ def licitacion_detalle(id_licitacion):
         ia_disponible=ia_disponible,
         cliente_clave=cliente_clave,
         experiencia_oc=experiencia_oc,
+        historial=historial,
         tope_compra_agil=database.get_tope_compra_agil(),
         valid_estados=VALID_ESTADOS,
         propiedades=database.PROPIEDADES,
@@ -396,6 +410,7 @@ def cambiar_estado_licitacion(id_licitacion):
         return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
     database.update_licitacion(id_licitacion, {"estado_embudo": nuevo_estado})
+    _registrar(id_licitacion, "Estado", f"{lic['estado_embudo']} -> {nuevo_estado}")
     flash(f"Estado en el embudo comercial actualizado exitosamente a '{nuevo_estado}' para la licitacion {id_licitacion}.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
@@ -470,15 +485,20 @@ def evaluar_licitacion(id_licitacion):
     }
     actualizada = database.registrar_evaluacion(id_licitacion, datos)
 
+    _registrar(
+        id_licitacion, "Evaluacion",
+        f"{asistentes} asistentes, salon {id_salon or 'sin asignar'}, "
+        f"costo {format_clp(costo)}"
+    )
     if actualizada.get("estado_embudo") == "Descartada" and actualizada.get("motivo_descarte") == "Precio":
         flash(
-            f"[CRIT] La oportunidad {id_licitacion} fue descartada: el costo minimo "
+            f"La oportunidad {id_licitacion} fue descartada: el costo minimo "
             f"({format_clp(actualizada['costo_base_hotel'])}) supera el presupuesto mandante "
             f"({format_clp(actualizada['presupuesto_mandante'])}).",
             "warning"
         )
     else:
-        flash("Evaluacion operativa guardada. La disponibilidad final debe validarse en el PMS del hotel.", "success")
+        flash("Asignacion de salon y costo guardada.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
 
@@ -508,13 +528,20 @@ def decision_licitacion(id_licitacion):
         if motivo not in database.MOTIVOS_DESCARTE:
             flash("Debe indicar un motivo de descarte valido.", "error")
             return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
-        datos = {"estado_embudo": "Descartada", "motivo_descarte": motivo, "revisada": 1}
+        descripcion = request.form.get("descripcion_descarte", "").strip()[:500]
+        datos = {
+            "estado_embudo": "Descartada",
+            "motivo_descarte": motivo,
+            "descripcion_descarte": descripcion,
+            "revisada": 1,
+        }
         mensaje = f"Oportunidad marcada como No participamos ({motivo})."
     else:
         flash("Decision invalida.", "error")
         return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
     database.update_licitacion(id_licitacion, datos)
+    _registrar(id_licitacion, "Decision", mensaje)
     flash(mensaje, "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
@@ -535,8 +562,9 @@ def agregar_nota_licitacion(id_licitacion):
         return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
     autor = session.get("nombre") or session.get("user") or "Equipo"
-    linea = f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] {autor}: {nota}"
+    linea = f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {autor}: {nota}"
     database.append_nota(id_licitacion, linea)
+    _registrar(id_licitacion, "Nota", nota[:200])
     flash("Nota agregada al historial compartido.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
@@ -560,6 +588,7 @@ def actualizar_documentos_licitacion(id_licitacion):
         "tiene_poderes": 1 if request.form.get("tiene_poderes") else 0,
         "tiene_vigencias": 1 if request.form.get("tiene_vigencias") else 0,
     })
+    _registrar(id_licitacion, "Documentos", f"Validacion: {validacion}")
     flash("Verificacion documental guardada.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
@@ -595,8 +624,12 @@ def guardar_benchmarking(id_licitacion):
         "puntaje_adjudicacion": round(puntaje, 2),
         "precio_final": precio,
     })
-    flash("Datos de adjudicacion guardados para el benchmarking.", "success")
-    return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+    _registrar(
+        id_licitacion, "Adjudicacion",
+        f"{adjudicatario or 'Sin adjudicatario'}, {format_clp(precio)}"
+    )
+    flash("Datos de adjudicacion guardados.", "success")
+    return redirect(request.referrer or url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
 
 @app.route("/analitica")
@@ -612,7 +645,17 @@ def analitica():
     )
 
 
-def _rango_reporte(periodo):
+def _rango_reporte(periodo, desde_txt="", hasta_txt=""):
+    if periodo == "personalizado":
+        try:
+            hasta = date.fromisoformat(hasta_txt)
+            desde = date.fromisoformat(desde_txt)
+        except ValueError:
+            periodo = "semanal"
+        else:
+            if desde > hasta:
+                desde, hasta = hasta, desde
+            return periodo, desde, hasta
     if periodo not in ("semanal", "mensual"):
         periodo = "semanal"
     dias = 7 if periodo == "semanal" else 30
@@ -621,11 +664,19 @@ def _rango_reporte(periodo):
     return periodo, desde, hasta
 
 
+def _datos_reporte():
+    periodo, desde, hasta = _rango_reporte(
+        request.args.get("periodo", "semanal"),
+        request.args.get("desde", ""),
+        request.args.get("hasta", ""),
+    )
+    return periodo, desde, hasta, database.get_reporte_periodo(desde.isoformat(), hasta.isoformat())
+
+
 @app.route("/informes")
 @login_required
 def informes():
-    periodo, desde, hasta = _rango_reporte(request.args.get("periodo", "semanal"))
-    reporte = database.get_reporte_periodo(desde.isoformat(), hasta.isoformat())
+    periodo, desde, hasta, reporte = _datos_reporte()
     return render_template(
         "informes.html",
         periodo=periodo,
@@ -640,11 +691,11 @@ def informes():
 @app.route("/informes/exportar.csv")
 @login_required
 def exportar_informe():
-    periodo, desde, hasta = _rango_reporte(request.args.get("periodo", "semanal"))
-    reporte = database.get_reporte_periodo(desde.isoformat(), hasta.isoformat())
+    periodo, desde, hasta, reporte = _datos_reporte()
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
-    writer.writerow(["Informe consolidado", "Semanal" if periodo == "semanal" else "Mensual"])
+    etiqueta = {"semanal": "Semanal", "mensual": "Mensual"}.get(periodo, "Personalizado")
+    writer.writerow(["Informe consolidado", etiqueta])
     writer.writerow(["Desde", desde.isoformat(), "Hasta", hasta.isoformat()])
     writer.writerow(["Preparado para", "Gerencia General y Direccion de Finanzas"])
     writer.writerow([])
@@ -676,6 +727,15 @@ def exportar_informe():
     writer.writerow(["Motivo de descarte", "Oportunidades"])
     for fila in reporte["por_motivo"]:
         writer.writerow([_celda_csv(fila["motivo_descarte"]), fila["total"]])
+    writer.writerow([])
+    writer.writerow(["Licitacion descartada", "Organismo", "Motivo", "Descripcion"])
+    for fila in reporte["descartes"]:
+        writer.writerow([
+            _celda_csv(fila["id_licitacion"]),
+            _celda_csv(fila["organismo"]),
+            _celda_csv(fila["motivo_descarte"]),
+            _celda_csv(fila["descripcion_descarte"]),
+        ])
 
     respuesta = make_response("\ufeff" + buffer.getvalue())
     respuesta.headers["Content-Type"] = "text/csv; charset=utf-8"
@@ -760,6 +820,7 @@ def refrescar_licitacion(id_licitacion):
         reclasificada[campo] = lic[campo]
 
     database.update_licitacion(id_licitacion, reclasificada)
+    _registrar(id_licitacion, "Refresco", "Ficha actualizada desde Mercado Publico")
     flash(f"Ficha {id_licitacion} refrescada desde Mercado Publico.", "success")
     return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
@@ -850,11 +911,11 @@ def sincronizar_licitaciones_route():
     finally:
         _sync_lock.release()
     if resumen.get("total_guardadas", 0) > 0:
-        flash(f"[OK] {resumen['mensaje']}", "success")
+        flash(resumen["mensaje"], "success")
     elif resumen.get("total_consultadas", 0) > 0:
-        flash(f"[INFO] {resumen['mensaje']}", "info")
+        flash(resumen["mensaje"], "info")
     else:
-        flash(f"[WARN] {resumen['mensaje']}", "warning")
+        flash(resumen["mensaje"], "warning")
     return redirect(url_for("dashboard"))
 
 
@@ -869,22 +930,50 @@ def salones_catalogo():
     filtros = {k: v for k, v in filtros.items() if v}
 
     total_reservas = database.count_reservas(**filtros)
-    paginas = max(1, -(-total_reservas // MAX_PAGINA))
+    # La agenda mantiene su propio tamano de pagina; el tope de 8 es solo para licitaciones.
+    reservas_por_pagina = 25
+    paginas = max(1, -(-total_reservas // reservas_por_pagina))
     pagina = min(max(1, request.args.get("pagina", 1, type=int)), paginas)
 
     reservas = database.get_all_reservas(
-        limit=MAX_PAGINA,
-        offset=(pagina - 1) * MAX_PAGINA,
+        limit=reservas_por_pagina,
+        offset=(pagina - 1) * reservas_por_pagina,
         **filtros
     )
 
     total_salones = len(salones)
     capacidad_total = sum(s["capacidad_maxima"] for s in salones)
 
+    def _coincide(reserva):
+        if not q:
+            return True
+        texto = " ".join(
+            str(reserva.get(k) or "")
+            for k in ("cliente_evento", "organismo_o_empresa", "tipo_evento", "id_licitacion")
+        ).lower()
+        return q.lower() in texto
+
+    # Rango de fechas ocupadas por salon, filtrado igual que la agenda.
+    ocupacion = {}
+    for s in salones:
+        if filtro_salon and s["id_salon"] != filtro_salon:
+            ocupacion[s["id_salon"]] = []
+        else:
+            ocupacion[s["id_salon"]] = [
+                r for r in database.get_reservas_by_salon(s["id_salon"]) if _coincide(r)
+            ]
+
+    clientes_reserva = database.get_clientes_reserva()
+    if filtro_salon or q:
+        visibles = {r["organismo_o_empresa"] for rs in ocupacion.values() for r in rs}
+        clientes_reserva = [c for c in clientes_reserva if c in visibles]
+
     return render_template(
         "salones.html",
         salones=salones,
         reservas=reservas,
+        ocupacion=ocupacion,
+        clientes_reserva=clientes_reserva,
         filtro_salon=filtro_salon or "",
         q=q or "",
         total_salones=total_salones,

@@ -1,7 +1,7 @@
 import os
 import re
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 DB_NAME = os.environ.get("LICITACIONES_DB_PATH") or os.path.join(
@@ -15,7 +15,8 @@ ALLOWED_COLUMNS = {
     "tiene_poderes", "tiene_vigencias", "fecha_publicacion",
     "fecha_cierre", "descripcion_tdr",
     "cantidad_asistentes", "tipo_jornada", "horario_evento", "id_salon_asignado",
-    "propiedad", "revisada", "motivo_descarte", "notas", "costeo_validado",
+    "propiedad", "revisada", "motivo_descarte", "descripcion_descarte",
+    "notas", "costeo_validado",
     "sello_mujer", "jornada_40h", "sello_sernatur", "inclusion_laboral",
     "adjudicatario", "puntaje_adjudicacion", "precio_final"
 }
@@ -388,6 +389,7 @@ def init_db() -> None:
                 propiedad TEXT NOT NULL DEFAULT 'Plaza San Francisco',
                 revisada INTEGER NOT NULL DEFAULT 0,
                 motivo_descarte TEXT NOT NULL DEFAULT '',
+                descripcion_descarte TEXT NOT NULL DEFAULT '',
                 notas TEXT NOT NULL DEFAULT '',
                 costeo_validado INTEGER NOT NULL DEFAULT 0,
                 sello_mujer INTEGER NOT NULL DEFAULT 0,
@@ -396,7 +398,8 @@ def init_db() -> None:
                 inclusion_laboral INTEGER NOT NULL DEFAULT 0,
                 adjudicatario TEXT NOT NULL DEFAULT '',
                 puntaje_adjudicacion REAL NOT NULL DEFAULT 0,
-                precio_final INTEGER NOT NULL DEFAULT 0
+                precio_final INTEGER NOT NULL DEFAULT 0,
+                actualizado_en TEXT NOT NULL DEFAULT ''
             )
         """)
         conn.commit()
@@ -412,6 +415,7 @@ def init_db() -> None:
             ("propiedad", "TEXT NOT NULL DEFAULT 'Plaza San Francisco'"),
             ("revisada", "INTEGER NOT NULL DEFAULT 0"),
             ("motivo_descarte", "TEXT NOT NULL DEFAULT ''"),
+            ("descripcion_descarte", "TEXT NOT NULL DEFAULT ''"),
             ("notas", "TEXT NOT NULL DEFAULT ''"),
             ("costeo_validado", "INTEGER NOT NULL DEFAULT 0"),
             ("sello_mujer", "INTEGER NOT NULL DEFAULT 0"),
@@ -421,6 +425,7 @@ def init_db() -> None:
             ("adjudicatario", "TEXT NOT NULL DEFAULT ''"),
             ("puntaje_adjudicacion", "REAL NOT NULL DEFAULT 0"),
             ("precio_final", "INTEGER NOT NULL DEFAULT 0"),
+            ("actualizado_en", "TEXT NOT NULL DEFAULT ''"),
         ]
         for nombre, definicion in nuevas_columnas:
             if nombre not in existing_cols:
@@ -438,6 +443,18 @@ def init_db() -> None:
                 modalidad TEXT NOT NULL DEFAULT '',
                 archivo TEXT NOT NULL DEFAULT '',
                 cargado_en TEXT NOT NULL DEFAULT ''
+            )
+        """)
+
+        # 4. Historial de actividad del sistema por licitacion.
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS historial_licitacion (
+                id_evento INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_licitacion TEXT NOT NULL,
+                fecha TEXT NOT NULL DEFAULT '',
+                usuario TEXT NOT NULL DEFAULT '',
+                tipo TEXT NOT NULL DEFAULT '',
+                detalle TEXT NOT NULL DEFAULT ''
             )
         """)
         conn.commit()
@@ -801,6 +818,21 @@ def get_reservas_by_salon(id_salon: str) -> List[Dict[str, Any]]:
     return get_all_reservas(id_salon=id_salon) if id_salon else []
 
 
+def get_clientes_reserva() -> List[str]:
+    """Organismos/clientes distintos en la agenda, para el desplegable."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT DISTINCT organismo_o_empresa
+            FROM reservas_salones
+            WHERE organismo_o_empresa != ''
+            ORDER BY organismo_o_empresa
+        """).fetchall()
+        return [r["organismo_o_empresa"] for r in rows]
+    finally:
+        conn.close()
+
+
 def get_conflictos_reserva(
     id_salon: str,
     fecha_inicio: str,
@@ -931,7 +963,8 @@ def _filtros_licitaciones(
     estado: Optional[str] = None,
     q: Optional[str] = None,
     propiedad: Optional[str] = None,
-    cliente_clave: Optional[str] = None
+    cliente_clave: Optional[str] = None,
+    motivo: Optional[str] = None
 ) -> Tuple[str, List[Any]]:
     """Construye el WHERE compartido entre listado y conteo (evita divergencia)."""
     where = " WHERE 1=1"
@@ -945,6 +978,9 @@ def _filtros_licitaciones(
     if estado:
         where += " AND l.estado_embudo = ?"
         params.append(estado)
+    if motivo:
+        where += " AND l.motivo_descarte = ?"
+        params.append(motivo)
     if propiedad:
         where += " AND l.propiedad = ?"
         params.append(propiedad)
@@ -961,9 +997,12 @@ def _filtros_licitaciones(
         else:
             where += " AND 1=0"  # cliente fuera de la lista configurable
     if q:
-        where += " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ? OR l.notas LIKE ?)"
+        where += (
+            " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ?"
+            " OR l.notas LIKE ? OR l.region LIKE ?)"
+        )
         term = f"%{q}%"
-        params.extend([term, term, term, term])
+        params.extend([term, term, term, term, term])
     return where, params
 
 
@@ -973,9 +1012,12 @@ def count_licitaciones(
     estado: Optional[str] = None,
     q: Optional[str] = None,
     propiedad: Optional[str] = None,
-    cliente_clave: Optional[str] = None
+    cliente_clave: Optional[str] = None,
+    motivo: Optional[str] = None
 ) -> int:
-    where, params = _filtros_licitaciones(categoria, modalidad, estado, q, propiedad, cliente_clave)
+    where, params = _filtros_licitaciones(
+        categoria, modalidad, estado, q, propiedad, cliente_clave, motivo
+    )
     conn = get_db_connection()
     try:
         row = conn.execute(
@@ -993,12 +1035,15 @@ def get_all_licitaciones(
     q: Optional[str] = None,
     propiedad: Optional[str] = None,
     cliente_clave: Optional[str] = None,
+    motivo: Optional[str] = None,
     limit: Optional[int] = None,
     offset: int = 0
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
-        where, params = _filtros_licitaciones(categoria, modalidad, estado, q, propiedad, cliente_clave)
+        where, params = _filtros_licitaciones(
+            categoria, modalidad, estado, q, propiedad, cliente_clave, motivo
+        )
         query = """
             SELECT l.*,
                    s.nombre AS nombre_salon,
@@ -1137,9 +1182,11 @@ def create_licitacion(data: Dict[str, Any]) -> str:
             "cantidad_asistentes": 0, "tipo_jornada": "",
             "horario_evento": "", "id_salon_asignado": "",
             "propiedad": "Plaza San Francisco", "revisada": 0,
-            "motivo_descarte": "", "notas": "", "costeo_validado": 0,
+            "motivo_descarte": "", "descripcion_descarte": "", "notas": "",
+            "costeo_validado": 0,
             "sello_mujer": 0, "jornada_40h": 0,
             "sello_sernatur": 0, "inclusion_laboral": 0,
+            "actualizado_en": datetime.now().strftime("%Y-%m-%d %H:%M"),
             **data
         }
         conn.execute("""
@@ -1149,16 +1196,18 @@ def create_licitacion(data: Dict[str, Any]) -> str:
                 tiene_anexo4, tiene_escrituras, tiene_poderes, tiene_vigencias,
                 fecha_publicacion, fecha_cierre, descripcion_tdr,
                 cantidad_asistentes, tipo_jornada, horario_evento, id_salon_asignado,
-                propiedad, revisada, motivo_descarte, notas, costeo_validado,
-                sello_mujer, jornada_40h, sello_sernatur, inclusion_laboral
+                propiedad, revisada, motivo_descarte, descripcion_descarte, notas, costeo_validado,
+                sello_mujer, jornada_40h, sello_sernatur, inclusion_laboral,
+                actualizado_en
             ) VALUES (
                 :id_licitacion, :titulo, :organismo, :categoria, :modalidad, :region,
                 :presupuesto_mandante, :costo_base_hotel, :estado_embudo, :validacion_adjuntos,
                 :tiene_anexo4, :tiene_escrituras, :tiene_poderes, :tiene_vigencias,
                 :fecha_publicacion, :fecha_cierre, :descripcion_tdr,
                 :cantidad_asistentes, :tipo_jornada, :horario_evento, :id_salon_asignado,
-                :propiedad, :revisada, :motivo_descarte, :notas, :costeo_validado,
-                :sello_mujer, :jornada_40h, :sello_sernatur, :inclusion_laboral
+                :propiedad, :revisada, :motivo_descarte, :descripcion_descarte, :notas, :costeo_validado,
+                :sello_mujer, :jornada_40h, :sello_sernatur, :inclusion_laboral,
+                :actualizado_en
             )
         """, payload)
         conn.commit()
@@ -1171,6 +1220,8 @@ def update_licitacion(id_licitacion: str, data: Dict[str, Any]) -> bool:
     valid_data = {k: v for k, v in data.items() if k in ALLOWED_COLUMNS}
     if not valid_data:
         return False
+    # La marca de actualizacion la pone el sistema, no el formulario.
+    valid_data["actualizado_en"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     conn = get_db_connection()
     try:
         fields = [f"{k} = ?" for k in valid_data]
@@ -1188,11 +1239,46 @@ def append_nota(id_licitacion: str, linea: str) -> bool:
     try:
         cursor = conn.execute("""
             UPDATE licitaciones
-            SET notas = CASE WHEN notas = '' THEN ? ELSE notas || char(10) || ? END
+            SET notas = CASE WHEN notas = '' THEN ? ELSE notas || char(10) || ? END,
+                actualizado_en = ?
             WHERE id_licitacion = ?
-        """, (linea, linea, id_licitacion))
+        """, (linea, linea, datetime.now().strftime("%Y-%m-%d %H:%M"), id_licitacion))
         conn.commit()
         return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+
+def registrar_evento(id_licitacion: str, tipo: str, detalle: str, usuario: str = "") -> None:
+    """Registra una linea del historial del sistema para una licitacion."""
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            INSERT INTO historial_licitacion (id_licitacion, fecha, usuario, tipo, detalle)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            id_licitacion,
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            usuario or "",
+            tipo or "",
+            detalle or "",
+        ))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_historial_licitacion(id_licitacion: str, limit: int = 100) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT fecha, usuario, tipo, detalle
+            FROM historial_licitacion
+            WHERE id_licitacion = ?
+            ORDER BY id_evento DESC
+            LIMIT ?
+        """, (id_licitacion, int(limit))).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()
 
@@ -1221,7 +1307,8 @@ def get_funnel_metrics() -> Dict[str, int]:
             "SELECT estado_embudo, COUNT(*) as total FROM licitaciones GROUP BY estado_embudo"
         ).fetchall()
         ca_row = conn.execute(
-            "SELECT COUNT(*) as total FROM licitaciones WHERE modalidad = 'Compra Agil'"
+            "SELECT COUNT(*) as total, COALESCE(SUM(presupuesto_mandante), 0) as monto "
+            "FROM licitaciones WHERE modalidad = 'Compra Agil'"
         ).fetchone()
 
         metrics = {
@@ -1231,6 +1318,7 @@ def get_funnel_metrics() -> Dict[str, int]:
             "Adjudicada": 0,
             "Descartada": 0,
             "Compra_Agil": ca_row["total"] if ca_row else 0,
+            "Compra_Agil_Monto": ca_row["monto"] if ca_row else 0,
             "Total": 0
         }
         for r in rows:
@@ -1272,19 +1360,28 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
                    COUNT(*) AS total,
                    COALESCE(SUM(presupuesto_mandante), 0) AS presupuesto
             FROM licitaciones
-        """ + filtro + " GROUP BY organismo ORDER BY presupuesto DESC, organismo LIMIT 5", params).fetchall()
+        """ + filtro + " GROUP BY organismo ORDER BY presupuesto DESC, organismo", params).fetchall()
 
         por_motivo = conn.execute("""
-            SELECT motivo_descarte,
+            SELECT CASE WHEN motivo_descarte = '' THEN 'Sin motivo' ELSE motivo_descarte END AS motivo_descarte,
                    COUNT(*) AS total
             FROM licitaciones
-        """ + filtro + " AND motivo_descarte != '' GROUP BY motivo_descarte ORDER BY total DESC", params).fetchall()
+        """ + filtro + " GROUP BY motivo_descarte ORDER BY total DESC", params).fetchall()
+
+        descartes = conn.execute("""
+            SELECT id_licitacion, titulo, organismo, motivo_descarte, descripcion_descarte
+            FROM licitaciones
+        """ + filtro + " AND estado_embudo = 'Descartada' ORDER BY fecha_cierre ASC", params).fetchall()
 
         datos = dict(resumen)
         datos["margen"] = datos["presupuesto"] - datos["costo"]
         datos["por_categoria"] = [dict(row) for row in por_categoria]
         datos["por_organismo"] = [dict(row) for row in por_organismo]
         datos["por_motivo"] = [dict(row) for row in por_motivo]
+        datos["descartes"] = [
+            {**dict(row), "motivo_descarte": row["motivo_descarte"] or "Sin motivo"}
+            for row in descartes
+        ]
         datos["tasa_cierre"] = (
             round(datos["adjudicadas"] * 100.0 / datos["participadas"], 1)
             if datos["participadas"] else 0.0

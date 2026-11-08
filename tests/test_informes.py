@@ -75,6 +75,28 @@ class TestInformes(unittest.TestCase):
         self.assertIn("Informe consolidado;Semanal", texto)
         self.assertIn("Categoria;Oportunidades", texto)
 
+    def test_informe_personalizado_respeta_rango(self):
+        database.update_licitacion("TEST-INFORME-BASE", {"estado_embudo": "Descartada"})
+        lic = _licitacion_informe("TEST-FUERA-RANGO", estado="Descartada")
+        lic["fecha_publicacion"] = "2020-01-01"
+        database.create_licitacion(lic)
+        hoy = date.today().isoformat()
+        response = self.client.get(
+            f"/informes?periodo=personalizado&desde={hoy}&hasta={hoy}"
+        )
+        html = response.data.decode("utf-8")
+        self.assertIn("Informe Personalizado", html)
+        self.assertIn("TEST-INFORME-BASE", html)
+        self.assertNotIn("TEST-FUERA-RANGO", html)
+
+    def test_informe_muestra_todos_los_organismos(self):
+        lic = _licitacion_informe("TEST-ORG-SECUNDARIO", presupuesto=1)
+        lic["organismo"] = "Organismo Secundario"
+        database.create_licitacion(lic)
+        html = self.client.get("/informes?periodo=semanal").data.decode("utf-8")
+        self.assertIn("Ministerio de Prueba", html)
+        self.assertIn("Organismo Secundario", html)
+
     def test_informe_requiere_login(self):
         response = flask_app.app.test_client().get("/informes")
         self.assertEqual(response.status_code, 302)

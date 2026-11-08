@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Analitica de Adjudicaciones e Historial de OC - Hotel Plaza San Francisco{% endblock %}
+{% block title %}Historial de Adjudicacion e Historial de OC - Hotel Plaza San Francisco{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
@@ -13,10 +13,10 @@
                 <span class="text-[#111111] font-medium">Analitica</span>
             </nav>
             <h1 class="text-3xl font-serif font-normal tracking-tight text-[#111111] pt-1">
-                Analitica de Adjudicaciones e Historial de OC
+                Historial de Adjudicacion y Ordenes de Compra
             </h1>
             <p class="text-xs text-[#6E6D6A] max-w-2xl leading-relaxed">
-                Benchmarking de precios observados en el mercado y experiencia previa del
+                Historial de adjudicacion con precios observados en el mercado y experiencia previa del
                 hotel a partir del historial de ordenes de compra que entrega la entidad.
             </p>
         </div>
@@ -54,10 +54,9 @@
     <!-- Benchmarking -->
     <div class="card-editorial overflow-hidden bg-white">
         <div class="px-6 py-4 border-b border-[#EAEAEA] bg-[#FBFBFA]">
-            <h2 class="text-sm font-semibold text-[#111111]">Benchmarking de Adjudicaciones</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Historial de Adjudicacion</h2>
             <p class="text-[11px] text-[#6E6D6A] mt-0.5">
-                Ordenado por precio final descendente. El precio y el puntaje se cargan desde
-                la ficha de cada licitacion.
+                Ordenado por precio final descendente. El precio y el puntaje se editan en la misma fila.
             </p>
         </div>
 
@@ -73,6 +72,7 @@
                         <th scope="col" class="px-4 py-3 text-right">Vs. presupuesto</th>
                         <th scope="col" class="px-4 py-3 text-right">Margen vs. nuestro costo</th>
                         <th scope="col" class="px-4 py-3 text-right">Puntaje</th>
+                        <th scope="col" class="px-4 py-3 text-right">Editar</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#EAEAEA] bg-white">
@@ -103,6 +103,18 @@
                         <td class="px-4 py-3.5 text-right font-mono text-[#111111]">
                             {{ f.puntaje_adjudicacion if f.puntaje_adjudicacion else '-' }}
                         </td>
+                        <td class="px-4 py-3.5 text-right">
+                            <details class="text-left">
+                                <summary class="cursor-pointer text-[11px] font-medium text-[#111111] hover:underline">Editar</summary>
+                                <form method="POST" action="{{ url_for('guardar_benchmarking', id_licitacion=f.id_licitacion) }}" class="mt-2 space-y-1.5 min-w-[220px]">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <input type="text" name="adjudicatario" maxlength="200" value="{{ f.adjudicatario or '' }}" placeholder="Adjudicatario" class="w-full text-[11px] px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111]">
+                                    <input type="text" name="puntaje_adjudicacion" inputmode="decimal" value="{{ f.puntaje_adjudicacion if f.puntaje_adjudicacion else '' }}" placeholder="Puntaje 0-100" class="w-full text-[11px] px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111]">
+                                    <input type="text" name="precio_final" inputmode="numeric" value="{{ f.precio_final if f.precio_final else '' }}" placeholder="Precio final CLP" class="w-full text-[11px] px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111]">
+                                    <button type="submit" class="btn-secondary text-[10px] px-2 py-1 w-full">Guardar</button>
+                                </form>
+                            </details>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -111,9 +123,8 @@
         {% else %}
         <div class="px-6 py-10 text-center">
             <p class="text-xs text-[#6E6D6A] max-w-md mx-auto">
-                Todavia no hay adjudicaciones registradas. Abra una licitacion y complete
-                el bloque <strong class="text-[#111111]">Benchmarking de Adjudicacion</strong>
-                con el adjudicatario, el puntaje y el precio final observado.
+                Todavia no hay adjudicaciones registradas. Edite una fila del listado o abra una
+                licitacion para cargar adjudicatario, puntaje y precio final.
             </p>
         </div>
         {% endif %}

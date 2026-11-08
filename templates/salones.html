@@ -45,76 +45,8 @@
         </div>
     </div>
 
-    <!-- SECCION 1: Catalogo de Salones -->
-    <div class="space-y-4">
-        <div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
-            <div>
-                <h2 class="text-sm font-semibold text-[#111111]">Catalogo de Infraestructura de Salones</h2>
-                <p class="text-xs text-[#6E6D6A]">Caracteristicas tecnicas, formatos de montaje, aforos maximos y tarifas de referencia.</p>
-            </div>
-            <span class="text-xs font-mono text-[#6E6D6A]">{{ salones|length }} salones disponibles</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for s in salones %}
-            <div class="card-editorial bg-white flex flex-col justify-between overflow-hidden">
-                <div class="p-5 space-y-3">
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <span class="badge-spot badge-spot-neutral">
-                                {{ s.tipo }}
-                            </span>
-                            <h3 class="text-sm font-semibold text-[#111111] mt-1.5">
-                                <a href="{{ url_for('salon_detalle', id_salon=s.id_salon) }}" class="hover:underline">
-                                    {{ s.nombre }}
-                                </a>
-                            </h3>
-                        </div>
-                        <span class="badge-spot badge-spot-blue font-mono whitespace-nowrap">
-                            {{ s.capacidad_maxima }} pers.
-                        </span>
-                    </div>
-
-                    <div class="text-xs text-[#6E6D6A] space-y-1 pt-1">
-                        <div>
-                            <span class="font-medium text-[#111111]">Ubicacion:</span>
-                            <span>{{ s.ubicacion or 'Edificio Central' }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-[#111111]">Horario operativo:</span>
-                            <span class="font-mono">{{ s.horario_disponible }}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-[#111111]">Tarifa referencial:</span>
-                            <span class="font-mono text-[#111111] font-semibold">{{ s.tarifa_referencial | clp }} / jornada</span>
-                        </div>
-                    </div>
-
-                    <p class="text-xs text-[#6E6D6A] line-clamp-2 leading-relaxed pt-2 border-t border-[#EAEAEA]">
-                        {{ s.descripcion or 'Espacio formal acondicionado para eventos gubernamentales y reuniones corporativas.' }}
-                    </p>
-
-                    <div class="bg-[#FBFBFA] p-3 rounded-[6px] border border-[#EAEAEA] text-[11px] text-[#6E6D6A] space-y-0.5">
-                        <span class="font-medium text-[#111111] block">Equipamiento integrado:</span>
-                        <span class="line-clamp-2">{{ s.equipamiento or 'Equipamiento estandar hotelero.' }}</span>
-                    </div>
-                </div>
-
-                <div class="p-4 bg-[#FBFBFA] border-t border-[#EAEAEA] flex items-center justify-between">
-                    <a href="{{ url_for('salones_catalogo', salon=s.id_salon) }}" class="text-xs font-medium text-[#111111] hover:underline font-mono">
-                        Ver Agenda de Fechas
-                    </a>
-                    <a href="{{ url_for('salon_detalle', id_salon=s.id_salon) }}" class="btn-secondary text-xs px-2.5 py-1">
-                        Ficha Tecnica
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- SECCION 2: Agenda de Ocupacion -->
-    <div class="card-editorial bg-white space-y-4 p-6">
+    <!-- SECCION 1: Agenda de Ocupacion -->
+    <div class="card-editorial bg-white space-y-4 p-6" id="agenda">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EAEAEA] pb-4">
             <div>
                 <h2 class="text-sm font-semibold text-[#111111]">Agenda de Ocupacion de Salones (Fechas Contratadas y Reservas)</h2>
@@ -141,7 +73,7 @@
                     name="salon"
                     class="w-full text-xs px-3 py-1.5 border border-[#EAEAEA] rounded bg-white text-[#111111] focus:outline-none focus:border-[#111111]"
                 >
-                    <option value="">[TODOS LOS SALONES]</option>
+                    <option value="">Todos los salones</option>
                     {% for sl in salones %}
                     <option value="{{ sl.id_salon }}" {% if filtro_salon == sl.id_salon %}selected{% endif %}>
                         {{ sl.nombre }} ({{ sl.capacidad_maxima }} pers.)
@@ -158,9 +90,16 @@
                     type="text"
                     id="q"
                     name="q"
+                    list="clientes-reserva"
                     value="{{ q }}"
+                    placeholder="Cliente reservado u organismo..."
                     class="w-full text-xs px-3 py-1.5 border border-[#EAEAEA] rounded bg-white text-[#111111] focus:outline-none focus:border-[#111111]"
                 >
+                <datalist id="clientes-reserva">
+                    {% for c in clientes_reserva %}
+                    <option value="{{ c }}"></option>
+                    {% endfor %}
+                </datalist>
             </div>
 
             <div class="flex items-end space-x-2">
@@ -269,7 +208,7 @@
                             {% if r.id_licitacion %}
                             <div class="mt-1">
                                 <a href="{{ url_for('licitacion_detalle', id_licitacion=r.id_licitacion) }}" class="inline-flex items-center font-mono font-semibold text-[#111111] hover:underline">
-                                    [Licitacion: {{ r.id_licitacion }}]
+                                    Licitacion: {{ r.id_licitacion }}
                                 </a>
                             </div>
                             {% endif %}
@@ -324,6 +263,130 @@
             </div>
         </div>
         {% endif %}
+    </div>
+
+    <!-- SECCION 2: Catalogo de Salones -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
+            <div>
+                <h2 class="text-sm font-semibold text-[#111111]">Catalogo de Infraestructura de Salones</h2>
+                <p class="text-xs text-[#6E6D6A]">Caracteristicas tecnicas, formatos de montaje, aforos maximos y tarifas de referencia.</p>
+            </div>
+            <span class="text-xs font-mono text-[#6E6D6A]">{{ salones|length }} salones disponibles</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for s in salones %}
+            <div class="card-editorial bg-white flex flex-col justify-between overflow-hidden">
+                <div class="p-5 space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="badge-spot badge-spot-neutral">
+                                {{ s.tipo }}
+                            </span>
+                            <h3 class="text-sm font-semibold text-[#111111] mt-1.5">
+                                <a href="{{ url_for('salon_detalle', id_salon=s.id_salon) }}" class="hover:underline">
+                                    {{ s.nombre }}
+                                </a>
+                            </h3>
+                        </div>
+                        <span class="badge-spot badge-spot-blue font-mono whitespace-nowrap">
+                            {{ s.capacidad_maxima }} pers.
+                        </span>
+                    </div>
+
+                    <div class="text-xs text-[#6E6D6A] space-y-1 pt-1">
+                        <div>
+                            <span class="font-medium text-[#111111]">Ubicacion:</span>
+                            <span>{{ s.ubicacion or 'Edificio Central' }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-[#111111]">Horario operativo:</span>
+                            <span class="font-mono">{{ s.horario_disponible }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-[#111111]">Tarifa referencial:</span>
+                            <span class="font-mono text-[#111111] font-semibold">{{ s.tarifa_referencial | clp }} / jornada</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-[#6E6D6A] line-clamp-2 leading-relaxed pt-2 border-t border-[#EAEAEA]">
+                        {{ s.descripcion or 'Espacio formal acondicionado para eventos gubernamentales y reuniones corporativas.' }}
+                    </p>
+
+                    <div class="bg-[#FBFBFA] p-3 rounded-[6px] border border-[#EAEAEA] text-[11px] text-[#6E6D6A] space-y-0.5">
+                        <span class="font-medium text-[#111111] block">Equipamiento integrado:</span>
+                        <span class="line-clamp-2">{{ s.equipamiento or 'Equipamiento estandar hotelero.' }}</span>
+                    </div>
+
+                    <div class="text-[11px] text-[#6E6D6A] space-y-1">
+                        <span class="font-medium text-[#111111] block">Ocupacion:</span>
+                        {% if ocupacion[s.id_salon] %}
+                        <div class="flex flex-wrap gap-1">
+                            {% for r in ocupacion[s.id_salon] %}
+                            <span class="badge-spot badge-spot-yellow">{{ r.fecha_inicio }} a {{ r.fecha_fin }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="badge-spot badge-spot-green">Disponible</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#FBFBFA] border-t border-[#EAEAEA] flex items-center justify-between gap-2">
+                    <a href="{{ url_for('salones_catalogo', salon=s.id_salon) }}#agenda" class="text-xs font-medium text-[#111111] hover:underline font-mono">
+                        Ver Agenda de Fechas
+                    </a>
+                    <button type="button" onclick="document.getElementById('ficha-{{ s.id_salon }}').showModal()" class="btn-secondary text-xs px-2.5 py-1">
+                        Ficha Tecnica
+                    </button>
+                </div>
+
+                <dialog id="ficha-{{ s.id_salon }}" class="rounded-[8px] border border-[#EAEAEA] p-0 w-full max-w-lg backdrop:bg-black/30">
+                    <div class="p-5 space-y-4 text-xs text-[#111111]">
+                        <div class="flex items-start justify-between gap-3 border-b border-[#EAEAEA] pb-3">
+                            <div>
+                                <h3 class="text-base font-semibold">{{ s.nombre }}</h3>
+                                <div class="text-[11px] text-[#6E6D6A]">{{ s.tipo }} - {{ s.ubicacion or 'Edificio Central' }}</div>
+                            </div>
+                            <form method="dialog">
+                                <button class="btn-secondary text-xs px-2 py-1">Cerrar</button>
+                            </form>
+                        </div>
+                        <dl class="grid grid-cols-2 gap-3">
+                            <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Capacidad maxima</dt><dd class="font-mono font-semibold">{{ s.capacidad_maxima }} personas</dd></div>
+                            <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Horario operativo</dt><dd class="font-mono">{{ s.horario_disponible }}</dd></div>
+                            <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Tarifa referencial</dt><dd class="font-mono font-semibold">{{ s.tarifa_referencial | clp }} / jornada</dd></div>
+                            <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Montajes</dt><dd>{{ s.montajes or 'Formatos estandar' }}</dd></div>
+                        </dl>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A] mb-1">Equipamiento</div>
+                            <p class="text-[#111111]">{{ s.equipamiento or 'Equipamiento estandar hotelero.' }}</p>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A] mb-1">Fechas ocupadas</div>
+                            {% if ocupacion[s.id_salon] %}
+                            <ul class="space-y-1">
+                                {% for r in ocupacion[s.id_salon] %}
+                                <li class="flex flex-wrap items-center gap-2">
+                                    <span class="font-mono">{{ r.fecha_inicio }} a {{ r.fecha_fin }}</span>
+                                    <span class="text-[#6E6D6A]">{{ r.organismo_o_empresa }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-[#346538]">Sin fechas ocupadas registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-[#EAEAEA]">
+                            <a href="{{ url_for('salon_detalle', id_salon=s.id_salon) }}" class="text-xs font-medium hover:underline">Abrir ficha completa</a>
+                            <a href="{{ url_for('crear_reserva', salon=s.id_salon) }}" class="btn-primary text-xs px-3 py-1.5">Reservar salon</a>
+                        </div>
+                    </div>
+                </dialog>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

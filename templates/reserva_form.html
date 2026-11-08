@@ -39,7 +39,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
             {% if mode == 'create' %}
             Registrar Nueva Reserva de Salon
             {% else %}
-            Editar Reserva <span class="font-mono text-neutral-900 font-normal">[#{{ reserva.id_reserva }}]</span>
+            Editar Reserva <span class="font-mono text-neutral-900 font-normal">#{{ reserva.id_reserva }}</span>
             {% endif %}
         </h1>
         <p class="text-xs text-neutral-500 mt-1">
@@ -73,7 +73,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                        <option value="">[SELECCIONAR SALON]</option>
+                        <option value="">Seleccionar salon</option>
                         {% for salon in salones %}
                         <option value="{{ salon.id_salon }}" {% if reserva.id_salon == salon.id_salon %}selected{% endif %}>
                             {{ salon.nombre }} (Aforo: {{ salon.capacidad_maxima }} pers. - {{ salon.tipo }})
@@ -95,7 +95,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                     >
                         {% for est in valid_estados_reserva %}
                         <option value="{{ est }}" {% if reserva.estado_reserva == est %}selected{% endif %}>
-                            [{{ est | upper }}]
+                            {{ est }}
                         </option>
                         {% endfor %}
                     </select>
@@ -240,7 +240,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         name="id_licitacion"
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                        <option value="">[NINGUNA - EVENTO CORPORATIVO PRIVADO]</option>
+                        <option value="">Ninguna - evento corporativo privado</option>
                         {% for lic in licitaciones %}
                         <option value="{{ lic.id_licitacion }}" {% if reserva.id_licitacion == lic.id_licitacion %}selected{% endif %}>
                             {{ lic.id_licitacion }} - {{ lic.titulo[:45] }}...

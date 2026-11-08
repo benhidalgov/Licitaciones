@@ -11,18 +11,18 @@
                 <span class="badge-spot badge-spot-neutral">Consola Comercial</span>
                 <span class="text-xs text-[#6E6D6A] font-mono">Hotel Plaza San Francisco</span>
             </div>
-            <h1 class="text-3xl font-serif font-normal tracking-tight text-[#111111]">
+            <h1 class="text-4xl md:text-5xl font-serif font-medium tracking-tight text-[#111111]">
                 Tablero Principal de Oportunidades
             </h1>
-            <p class="text-xs text-[#6E6D6A] max-w-2xl leading-relaxed">
+            <p class="text-sm text-[#6E6D6A] max-w-2xl leading-relaxed">
                 Monitoreo del embudo comercial, control preventivo de costos y cruce documental en Mercado Publico.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             {% if ticket_configurado %}
-                <span class="badge-spot badge-spot-green text-[10px] font-mono" title="Ticket de API configurado en .env">[API ACTIVA]</span>
+                <span class="badge-spot badge-spot-green text-[10px] font-mono" title="Ticket de API configurado en .env">API activa</span>
             {% else %}
-                <span class="badge-spot badge-spot-yellow text-[10px] font-mono" title="Configure MERCADO_PUBLICO_TICKET en el archivo .env">[TICKET PENDIENTE]</span>
+                <span class="badge-spot badge-spot-yellow text-[10px] font-mono" title="Configure MERCADO_PUBLICO_TICKET en el archivo .env">Ticket pendiente</span>
             {% endif %}
 
             <a href="{{ url_for('exportar_licitaciones', **filtros) }}" class="btn-secondary text-xs px-3 py-2 inline-flex items-center" title="Exportar el listado filtrado a planilla">
@@ -57,6 +57,7 @@
                 name="valor"
                 value="{{ margen_tolerancia.valor | miles }}"
                 aria-label="Valor del margen de tolerancia"
+                placeholder="15"
                 class="w-28 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
             >
             <select name="modo" aria-label="Tipo de margen" class="text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111]">
@@ -81,16 +82,19 @@
         {% if priorizadas %}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             {% for lic in priorizadas %}
-            <div class="card-editorial p-4 bg-white space-y-2.5">
+            <div class="card-editorial p-4 bg-white space-y-2.5 cursor-pointer hover:border-[#111111] transition-colors"
+                 onclick="if(!event.target.closest('a,button,input,form,select')) window.location.href='{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}'">
                 <div class="flex items-start justify-between gap-3">
                     <div class="space-y-1">
                         <div class="flex flex-wrap items-center gap-1.5">
                             <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="badge-spot badge-spot-blue font-mono font-bold hover:underline">
                                 {{ lic.id_licitacion }}
                             </a>
-                            <span class="badge-spot badge-spot-neutral">{{ lic.propiedad }}</span>
                             {% if lic.revisada %}
                             <span class="badge-spot badge-spot-green">Revisada</span>
+                            {% endif %}
+                            {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
+                            <span class="badge-spot badge-spot-yellow">Sobre tope Compra Agil</span>
                             {% endif %}
                         </div>
                         <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="text-sm font-medium text-[#111111] hover:underline line-clamp-2 block">
@@ -98,8 +102,8 @@
                         </a>
                         <div class="text-[11px] text-[#6E6D6A]">{{ lic.organismo }}</div>
                     </div>
-                    <a href="https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion={{ lic.id_licitacion }}" target="_blank" rel="noopener" class="btn-secondary text-[10px] px-2 py-1 whitespace-nowrap">
-                        Mercado Publico
+                    <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="btn-secondary text-[10px] px-2 py-1 whitespace-nowrap">
+                        Ver detalle
                     </a>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-[11px] pt-2 border-t border-[#EAEAEA]">
@@ -129,7 +133,6 @@
                     {% else %}
                     <span class="badge-spot badge-spot-yellow">Salon por asignar</span>
                     {% endif %}
-                    <span class="text-[10px] text-[#6E6D6A]">Disponibilidad a validar en PMS</span>
                 </div>
             </div>
             {% endfor %}
@@ -141,20 +144,32 @@
         {% endif %}
     </div>
 
-    <!-- Metricas en Bento Grid Asimetrico -->
+    <!-- Metricas en Bento Grid -->
     <div class="space-y-3">
         <div class="flex items-center justify-between">
             <h2 class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">
                 Metricas del Embudo Comercial
             </h2>
-            <span class="text-xs text-[#6E6D6A]">
-                Total Oportunidades: <strong class="font-mono text-[#111111]">{{ metrics.Total | miles }}</strong>
-            </span>
+            <span class="text-[11px] text-[#6E6D6A]">Cada tarjeta abre el listado filtrado</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <!-- Bento 1: Foco Normativo Compra Agil (Doble Ancho en Desktop) -->
-            <div class="card-editorial p-5 lg:col-span-2 flex flex-col justify-between bg-white relative overflow-hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Total -->
+            <a href="{{ url_for('dashboard') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="badge-spot badge-spot-neutral">Universo</span>
+                    <span class="text-[10px] font-mono text-[#6E6D6A]">Embudo completo</span>
+                </div>
+                <div class="my-3">
+                    <div class="text-xs font-medium text-[#6E6D6A]">Total Oportunidades</div>
+                    <div class="text-3xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Total | miles }}</div>
+                </div>
+                <div class="text-[10px] text-[#6E6D6A]">Todas las etapas</div>
+            </a>
+
+            <!-- Compra Agil -->
+            <div class="card-editorial p-5 lg:col-span-2 flex flex-col justify-between bg-white relative overflow-hidden hover:border-[#111111] transition-colors cursor-pointer"
+                 onclick="if(!event.target.closest('a,button,input,form,select,label')) window.location.href='{{ url_for('dashboard', modalidad='Compra Agil') }}'">
                 <div class="flex items-center justify-between">
                     <span class="badge-spot badge-spot-blue">Modalidad Prioritaria</span>
                     <span class="text-[10px] font-mono text-[#6E6D6A]">Ley 19.886</span>
@@ -162,10 +177,12 @@
                 <div class="my-4">
                     <div class="text-xs font-medium text-[#6E6D6A] uppercase tracking-wide">Compra Agil</div>
                     <div class="text-3xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Compra_Agil | miles }}</div>
+                    <div class="text-[11px] text-[#346538] font-mono mt-1">
+                        Monto total sin comision: {{ metrics.Compra_Agil_Monto | clp }}
+                    </div>
                 </div>
                 <div class="text-[11px] text-[#6E6D6A] pt-2 border-t border-[#EAEAEA] space-y-2">
-                    <div>(Adquisicion simplificada sin comision)</div>
-                    <form id="tope-compra-agil" method="POST" action="{{ url_for('guardar_tope_compra_agil') }}" class="flex items-center gap-2">
+                    <form id="tope-compra-agil" method="POST" action="{{ url_for('guardar_tope_compra_agil') }}" class="flex items-center gap-2" onclick="event.stopPropagation()">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <label for="tope_compra_agil" class="text-[10px] uppercase tracking-wide">Tope CLP:</label>
                         <input
@@ -175,15 +192,17 @@
                             id="tope_compra_agil"
                             name="tope_compra_agil"
                             value="{{ tope_compra_agil | miles }}"
+                            placeholder="6.900.000"
                             class="w-32 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
                         >
                         <button type="submit" class="btn-secondary text-xs px-3 py-1">Guardar</button>
                     </form>
+                    <a href="{{ url_for('dashboard', modalidad='Compra Agil') }}" class="inline-block font-medium text-[#111111] hover:underline">Ver oportunidades de Compra Agil</a>
                 </div>
             </div>
 
-            <!-- Bento 2: Identificadas -->
-            <div class="card-editorial p-5 flex flex-col justify-between bg-white">
+            <!-- Identificadas -->
+            <a href="{{ url_for('dashboard', estado='Identificada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Fase 1</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#6E6D6A]"></span>
@@ -193,10 +212,10 @@
                     <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Identificada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#6E6D6A]">Deteccion inicial</div>
-            </div>
+            </a>
 
-            <!-- Bento 3: Calificadas -->
-            <div class="card-editorial p-5 flex flex-col justify-between bg-white">
+            <!-- Calificadas -->
+            <a href="{{ url_for('dashboard', estado='Calificada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Fase 2</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#1F6C9F]"></span>
@@ -206,10 +225,10 @@
                     <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Calificada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#6E6D6A]">TDR y aforo viable</div>
-            </div>
+            </a>
 
-            <!-- Bento 4: Participadas -->
-            <div class="card-editorial p-5 flex flex-col justify-between bg-white">
+            <!-- Participadas -->
+            <a href="{{ url_for('dashboard', estado='Participada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Fase 3</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#956400]"></span>
@@ -219,10 +238,10 @@
                     <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Participada | miles }}</div>
                 </div>
                 <div class="text-[10px] text-[#6E6D6A]">Oferta enviada</div>
-            </div>
+            </a>
 
-            <!-- Bento 5: Adjudicadas y Descartadas -->
-            <div class="card-editorial p-5 flex flex-col justify-between bg-white">
+            <!-- Adjudicadas -->
+            <a href="{{ url_for('dashboard', estado='Adjudicada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="badge-spot badge-spot-green">Cierre</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#346538]"></span>
@@ -231,11 +250,21 @@
                     <div class="text-xs font-medium text-[#346538]">Adjudicadas</div>
                     <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Adjudicada | miles }}</div>
                 </div>
-                <div class="text-[10px] text-[#6E6D6A] flex items-center justify-between pt-1 border-t border-[#EAEAEA]">
-                    <span>Descartadas:</span>
-                    <span class="font-mono font-semibold text-[#111111]">{{ metrics.Descartada | miles }}</span>
+                <div class="text-[10px] text-[#6E6D6A]">Oferta ganadora</div>
+            </a>
+
+            <!-- Descartadas -->
+            <a href="{{ url_for('dashboard', estado='Descartada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Salida</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#9F2F2D]"></span>
                 </div>
-            </div>
+                <div class="my-3">
+                    <div class="text-xs font-medium text-[#9F2F2D]">Descartadas</div>
+                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Descartada | miles }}</div>
+                </div>
+                <div class="text-[10px] text-[#6E6D6A]">Ver motivos de descarte</div>
+            </a>
         </div>
     </div>
 
@@ -252,25 +281,9 @@
                         id="filter-q"
                         name="q"
                         value="{{ q }}"
-                        placeholder="ID, palabra clave u organismo..."
+                        placeholder="ID, palabra clave, organismo o region..."
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] placeholder-[#6E6D6A] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
                     >
-                </div>
-
-                <div>
-                    <label for="filter-propiedad" class="block text-xs font-medium text-[#111111] mb-1.5">
-                        Propiedad
-                    </label>
-                    <select
-                        id="filter-propiedad"
-                        name="propiedad"
-                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
-                    >
-                        <option value="">Todas las Propiedades</option>
-                        {% for p in propiedades %}
-                        <option value="{{ p }}" {% if propiedad == p %}selected{% endif %}>{{ p }}</option>
-                        {% endfor %}
-                    </select>
                 </div>
 
                 <div>
@@ -336,14 +349,31 @@
                         <option value="Descartada" {% if estado == 'Descartada' %}selected{% endif %}>Descartada</option>
                     </select>
                 </div>
+
+                <div>
+                    <label for="filter-motivo" class="block text-xs font-medium text-[#111111] mb-1.5">
+                        Motivo de Descarte
+                    </label>
+                    <select
+                        id="filter-motivo"
+                        name="motivo"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
+                    >
+                        <option value="">Todos los Motivos</option>
+                        {% for m in motivos_descarte %}
+                        <option value="{{ m }}" {% if motivo == m %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
 
             <div class="flex items-center justify-between pt-3 border-t border-[#EAEAEA]">
                 <div class="text-xs text-[#6E6D6A]">
                     Resultados encontrados: <strong class="font-mono text-[#111111]">{{ total | miles }}</strong>
+                    <span class="ml-2">Hasta 8 por pagina</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    {% if categoria or modalidad or estado or q or propiedad or cliente_clave %}
+                    {% if categoria or modalidad or estado or q or cliente_clave or motivo %}
                     <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5">
                         Limpiar Filtros
                     </a>
@@ -364,7 +394,7 @@
                 <p class="text-[11px] text-[#6E6D6A]">Ordenado cronologicamente por fecha de cierre</p>
             </div>
             <span class="text-xs font-mono text-[#6E6D6A]">
-                {{ total }} registros activos
+                {{ total }} registros
             </span>
         </div>
 
@@ -386,6 +416,7 @@
                 </thead>
                 <tbody class="divide-y divide-[#EAEAEA] bg-white">
                     {% for lic in licitaciones %}
+                    {% set minimo = margen_minimo_clp(lic.presupuesto_mandante, margen_tolerancia) %}
                     <tr class="hover:bg-[#FBFBFA] transition-colors cursor-pointer" onclick="if(!event.target.closest('a,button,input,form,select')) window.location.href='{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}'">
                         <!-- ID y Fecha Cierre -->
                         <td class="px-4 py-3.5 whitespace-nowrap">
@@ -395,6 +426,11 @@
                             <div class="text-[11px] font-mono text-[#6E6D6A] mt-0.5">
                                 Cierre: {{ lic.fecha_cierre }}
                             </div>
+                            {% if lic.actualizado_en %}
+                            <div class="text-[10px] font-mono text-[#6E6D6A]">
+                                Actualizado: {{ lic.actualizado_en }}
+                            </div>
+                            {% endif %}
                         </td>
 
                         <!-- Titulo y Organismo -->
@@ -409,7 +445,6 @@
                                 {{ lic.region }}
                             </div>
                             <div class="mt-1 flex flex-wrap items-center gap-1">
-                                <span class="badge-spot badge-spot-neutral">{{ lic.propiedad }}</span>
                                 {% set cc = detectar_cliente_clave(lic.organismo ~ ' ' ~ lic.titulo) %}
                                 {% if cc %}
                                 <span class="badge-spot badge-spot-blue">Cliente: {{ cc }}</span>
@@ -476,7 +511,14 @@
 
                         <!-- Viabilidad Presupuestaria -->
                         <td class="px-4 py-3.5 whitespace-nowrap text-center">
-                            {% if lic.presupuesto_mandante <= 0 %}
+                            {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
+                            <span class="badge-spot badge-spot-yellow">
+                                Sobre tope Compra Agil
+                            </span>
+                            <div class="text-[10px] font-mono text-[#956400] mt-0.5">
+                                Tope: {{ tope_compra_agil | clp }}
+                            </div>
+                            {% elif lic.presupuesto_mandante <= 0 %}
                             <span class="badge-spot badge-spot-neutral">
                                 Monto no informado
                             </span>
@@ -489,6 +531,13 @@
                             </span>
                             <div class="text-[10px] font-mono text-[#9F2F2D] mt-0.5">
                                 Deficit: {{ (lic.costo_base_hotel - lic.presupuesto_mandante) | clp }}
+                            </div>
+                            {% elif (lic.presupuesto_mandante - lic.costo_base_hotel) < minimo %}
+                            <span class="badge-spot badge-spot-yellow">
+                                Margen bajo el minimo
+                            </span>
+                            <div class="text-[10px] font-mono text-[#956400] mt-0.5">
+                                Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}
                             </div>
                             {% else %}
                             <span class="badge-spot badge-spot-green">
@@ -547,6 +596,9 @@
                                 {{ lic.estado_embudo }}
                             </span>
                             {% endif %}
+                            <div class="text-[10px] font-mono text-[#6E6D6A] mt-0.5">
+                                {% if lic.cantidad_asistentes %}{{ lic.cantidad_asistentes | miles }} pers.{% else %}Sin aforo{% endif %}
+                            </div>
                         </td>
 
                         <!-- Acciones -->
@@ -554,10 +606,6 @@
                             <div class="flex items-center justify-center space-x-1.5 text-[11px]">
                                 <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="text-[#111111] hover:underline font-medium">
                                     Ver Detalle
-                                </a>
-                                <span class="text-[#EAEAEA]">|</span>
-                                <a href="https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion={{ lic.id_licitacion }}" target="_blank" rel="noopener" class="text-[#1F6C9F] hover:underline font-medium">
-                                    MP
                                 </a>
                                 <span class="text-[#EAEAEA]">|</span>
                                 <form method="POST" action="{{ url_for('eliminar_licitacion', id_licitacion=lic.id_licitacion) }}" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">

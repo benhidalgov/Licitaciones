@@ -206,7 +206,7 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("Sincronizar Mercado Publico", html)
-        self.assertTrue("[API ACTIVA]" in html or "[TICKET PENDIENTE]" in html)
+        self.assertTrue("API activa" in html or "Ticket pendiente" in html)
 
     def test_sincronizar_route_unauthenticated(self):
         unauth_client = flask_app.app.test_client()

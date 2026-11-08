@@ -3,7 +3,6 @@
 {% block title %}Ficha de Licitacion {{ lic.id_licitacion }} - Gestion Comercial{% endblock %}
 
 {% block content %}
-{% set mp_url = "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=" ~ lic.id_licitacion %}
 <div class="space-y-8">
     <!-- Migas de Pan y Navegacion Superior -->
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-6 border-b border-[#EAEAEA]">
@@ -17,9 +16,6 @@
         <div class="flex items-center space-x-2">
             <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5">
                 Volver al Tablero
-            </a>
-            <a href="{{ mp_url }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
-                Ver en Mercado Publico
             </a>
             <a href="{{ url_for('adjuntos_licitacion', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
                 Ver documentos
@@ -56,9 +52,6 @@
                     <span class="badge-spot badge-spot-neutral">
                         {{ lic.categoria }}
                     </span>
-                    <span class="badge-spot badge-spot-neutral">
-                        {{ lic.propiedad }}
-                    </span>
                     {% set cc = detectar_cliente_clave(lic.organismo ~ ' ' ~ lic.titulo) %}
                     {% if cc %}
                     <span class="badge-spot badge-spot-blue">Cliente clave: {{ cc }}</span>
@@ -79,9 +72,12 @@
                     </span>
                     {% endif %}
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-serif font-normal text-[#111111] tracking-tight">
+                <h1 class="text-3xl sm:text-4xl font-serif font-semibold text-[#111111] tracking-tight">
                     {{ lic.titulo }}
                 </h1>
+                {% if lic.actualizado_en %}
+                <div class="text-[11px] font-mono text-[#6E6D6A]">Actualizado: {{ lic.actualizado_en }}</div>
+                {% endif %}
                 <div class="text-xs text-[#6E6D6A] space-y-0.5">
                     <div>Organismo Mandante: <strong class="text-[#111111]">{{ lic.organismo }}</strong></div>
                     {% if experiencia_oc.registros > 0 %}
@@ -93,11 +89,12 @@
                     </div>
                     {% endif %}
                     <div>Region de Ejecucion: <span class="text-[#111111] font-medium">{{ lic.region }}</span></div>
-                    <div class="pt-1">
-                        <a href="{{ mp_url }}" target="_blank" rel="noopener" class="text-[#111111] font-medium hover:underline">
-                            Ver ficha original en Mercado Publico
-                        </a>
+                    {% if lic.descripcion_descarte %}
+                    <div class="text-[#9F2F2D]">
+                        Motivo de descarte: <strong>{{ lic.motivo_descarte }}</strong>.
+                        {{ lic.descripcion_descarte }}
                     </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -134,6 +131,7 @@
                 <div class="text-[11px] font-mono text-[#6E6D6A] pt-2 border-t border-[#EAEAEA] space-y-0.5">
                     <div>Publicacion: <span class="text-[#111111]">{{ lic.fecha_publicacion }}</span></div>
                     <div>Cierre Ofertas: <span class="text-[#111111] font-semibold">{{ lic.fecha_cierre }}</span></div>
+                    <div>Actualizado: <span class="text-[#111111]">{{ lic.actualizado_en or 'Sin registro' }}</span></div>
                 </div>
             </div>
         </div>
@@ -197,6 +195,9 @@
                         <option value="{{ motivo }}" {% if lic.motivo_descarte == motivo %}selected{% endif %}>{{ motivo }}</option>
                         {% endfor %}
                     </select>
+                    <input type="text" name="descripcion_descarte" maxlength="500" value="{{ lic.descripcion_descarte or '' }}"
+                           placeholder="Descripcion del motivo (opcional)"
+                           class="w-full text-xs px-2 py-1.5 border border-[#EAEAEA] rounded bg-white text-[#111111] placeholder-[#6E6D6A]">
                     <button type="submit" class="btn-secondary text-xs px-3 py-1.5 w-full text-[#9F2F2D]">
                         No participamos
                     </button>
@@ -230,24 +231,14 @@
         <p class="text-xs text-[#111111] leading-relaxed">{{ ficha_resumen.texto }}</p>
 
         {% if ficha_resumen.ponderacion %}
-        <div class="pt-2 border-t border-[#EAEAEA]">
-            <h3 class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A] mb-2">Desglose de Ponderacion de Criterios</h3>
-            <ul class="space-y-2">
-                {% for c in ficha_resumen.ponderacion %}
-                <li>
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-[#111111]">{{ c.criterio }} <span class="text-[#6E6D6A]">(peso {{ c.peso }}%)</span></span>
-                        <span class="font-mono {% if c.puntuacion >= 70 %}text-[#346538]{% elif c.puntuacion >= 40 %}text-[#956400]{% else %}text-[#9F2F2D]{% endif %}">{{ c.puntuacion }}/100</span>
-                    </div>
-                    <div class="w-full bg-[#F3F3F1] rounded-full h-1 mt-1">
-                        <div class="{% if c.puntuacion >= 70 %}bg-[#346538]{% elif c.puntuacion >= 40 %}bg-[#956400]{% else %}bg-[#9F2F2D]{% endif %} h-1 rounded-full" style="width: {{ c.puntuacion }}%"></div>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-            <p class="text-[11px] text-[#6E6D6A] mt-2">
-                Puntaje ponderado total: <span class="font-mono font-semibold text-[#111111]">{{ ficha_resumen.puntaje_total }}/100</span>
-            </p>
+        <div class="pt-2 border-t border-[#EAEAEA] flex flex-wrap items-center gap-2 text-[11px]">
+            <span class="font-semibold uppercase tracking-wider text-[#6E6D6A]">Puntaje ponderado:</span>
+            <span class="font-mono font-semibold text-[#111111]">{{ ficha_resumen.puntaje_total }}/100</span>
+            {% for c in ficha_resumen.ponderacion %}
+            <span class="badge-spot {% if c.puntuacion >= 70 %}badge-spot-green{% elif c.puntuacion >= 40 %}badge-spot-yellow{% else %}badge-spot-red{% endif %}">
+                {{ c.criterio }} {{ c.puntuacion }}
+            </span>
+            {% endfor %}
         </div>
         {% endif %}
     </div>
@@ -410,108 +401,20 @@
         {% endif %}
     </div>
 
-    <!-- Benchmarking de Adjudicaciones -->
-    <div class="card-editorial p-6 bg-white space-y-4" id="benchmarking">
-        <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Benchmarking de Adjudicacion</h2>
-            <p class="text-[11px] text-[#6E6D6A] mt-0.5">
-                Quien adjudico, con que puntaje y a que precio. La API publica de Mercado
-                Publico no expone puntajes: los registra el equipo.
-            </p>
-        </div>
-
-        <form method="POST" action="{{ url_for('guardar_benchmarking', id_licitacion=lic.id_licitacion) }}"
-              class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <div>
-                <label for="bk-adjudicatario" class="block text-xs font-medium text-[#111111] mb-1.5">
-                    Adjudicatario
-                </label>
-                <input type="text" id="bk-adjudicatario" name="adjudicatario" maxlength="200"
-                       value="{{ lic.adjudicatario or '' }}"
-                       placeholder="Empresa ganadora..."
-                       class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] placeholder-[#6E6D6A] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors">
-            </div>
-            <div>
-                <label for="bk-puntaje" class="block text-xs font-medium text-[#111111] mb-1.5">
-                    Puntaje de adjudicacion (0 a 100)
-                </label>
-                <input type="text" id="bk-puntaje" name="puntaje_adjudicacion" inputmode="decimal"
-                       value="{{ lic.puntaje_adjudicacion if lic.puntaje_adjudicacion else '' }}"
-                       placeholder="78,5"
-                       class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] placeholder-[#6E6D6A] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors">
-            </div>
-            <div>
-                <label for="bk-precio" class="block text-xs font-medium text-[#111111] mb-1.5">
-                    Precio final adjudicado (CLP)
-                </label>
-                <input type="text" id="bk-precio" name="precio_final" inputmode="numeric"
-                       value="{{ lic.precio_final if lic.precio_final else '' }}"
-                       placeholder="12345678"
-                       class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] placeholder-[#6E6D6A] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors">
-            </div>
-            <div class="sm:col-span-3 flex justify-end">
-                <button type="submit" class="btn-primary text-xs px-4 py-1.5">Guardar benchmarking</button>
-            </div>
-        </form>
-
-        {% if lic.precio_final and lic.precio_final > 0 %}
-        {% set dif_presu = lic.precio_final - lic.presupuesto_mandante %}
-        {% set margen = lic.precio_final - lic.costo_base_hotel %}
-        <div class="pt-4 border-t border-[#EAEAEA] grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-                <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Precio final</div>
-                <div class="text-sm font-mono font-semibold text-[#111111] mt-0.5">{{ lic.precio_final | clp }}</div>
-            </div>
-            <div>
-                <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Vs. presupuesto mandante</div>
-                <div class="text-sm font-mono font-semibold mt-0.5 {% if dif_presu > 0 %}text-[#9F2F2D]{% else %}text-[#346538]{% endif %}">
-                    {{ dif_presu | clp }}
-                </div>
-            </div>
-            <div>
-                <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Margen sobre nuestro costo</div>
-                <div class="text-sm font-mono font-semibold mt-0.5 {% if margen > 0 %}text-[#346538]{% else %}text-[#9F2F2D]{% endif %}">
-                    {{ margen | clp }}
-                </div>
-            </div>
-            <div>
-                <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Puntaje</div>
-                <div class="text-sm font-mono font-semibold text-[#111111] mt-0.5">
-                    {{ lic.puntaje_adjudicacion if lic.puntaje_adjudicacion else 'No informado' }}
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <p class="text-[11px] text-[#6E6D6A]">
-            Sin datos de adjudicacion registrados. Complete el formulario cuando la
-            ficha en Mercado Publico publique el resultado.
-        </p>
-        {% endif %}
-    </div>
-
     <!-- Panel de Evaluacion Operativa y Costeo Minimo -->
-    <div class="card-editorial p-6 bg-white space-y-4" id="evaluacion-operativa">
+    <div class="card-editorial p-6 bg-white space-y-4">
         <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Evaluacion Operativa y Costeo Minimo</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Asignacion de Salon y Costo</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Complete aforo, propiedad y salon. Si deja el costo vacio, el sistema lo calcula con la tarifa del salon y el consumo por persona. Un costo validado superior al presupuesto descarta la oportunidad por precio.
+                Complete aforo y salon. Si deja el costo vacio, el sistema lo calcula con la tarifa del salon y el consumo por persona. Un costo validado superior al presupuesto descarta la oportunidad por precio.
             </p>
         </div>
 
         <form method="POST" action="{{ url_for('evaluar_licitacion', id_licitacion=lic.id_licitacion) }}" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label for="propiedad" class="block text-xs font-medium text-[#111111] mb-1.5">Propiedad</label>
-                    <select id="propiedad" name="propiedad" class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111]" onchange="document.getElementById('id_salon_asignado').disabled = (this.value === 'Hotel Ismael');">
-                        {% for p in propiedades %}
-                        <option value="{{ p }}" {% if lic.propiedad == p %}selected{% endif %}>{{ p }}</option>
-                        {% endfor %}
-                    </select>
-                    <p class="text-[10px] text-[#6E6D6A] mt-1">Hotel Ismael solo admite alojamiento.</p>
-                </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <input type="hidden" name="propiedad" value="{{ lic.propiedad }}">
 
                 <div>
                     <label for="cantidad_asistentes" class="block text-xs font-medium text-[#111111] mb-1.5">Asistentes / Personas</label>
@@ -540,7 +443,7 @@
                         </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[10px] text-[#6E6D6A] mt-1">La disponibilidad final se valida en el PMS del hotel.</p>
+                    <p class="text-[10px] text-[#6E6D6A] mt-1">La disponibilidad se confirma en la agenda de salones.</p>
                 </div>
 
                 <div>
@@ -563,7 +466,7 @@
             </div>
 
             <div class="flex justify-end pt-2 border-t border-[#EAEAEA]">
-                <button type="submit" class="btn-primary text-xs px-4 py-1.5">Guardar Evaluacion Operativa</button>
+                <button type="submit" class="btn-primary text-xs px-4 py-1.5">Guardar asignacion</button>
             </div>
         </form>
     </div>
@@ -613,7 +516,7 @@
                         {{ salon_asignado.nombre }}
                     </a>
                     {% else %}
-                    <span class="text-[#956400]">[SIN ASIGNAR]</span>
+                    <span class="text-[#956400]">Sin asignar</span>
                     {% endif %}
                 </div>
                 <div class="text-[11px] text-[#6E6D6A] mt-1">
@@ -661,7 +564,7 @@
         <div class="p-4 rounded-[6px] border text-xs space-y-2" style="background: var(--pastel-red-bg); border-color: #F8D1D3; color: var(--pastel-red-text);">
             <div class="flex flex-col space-y-1">
                 <span class="font-semibold uppercase tracking-wider">
-                    [CRIT] Alerta de Inviabilidad Operativa: Aforo Excedido
+                    Alerta de Inviabilidad Operativa: Aforo Excedido
                 </span>
                 <p class="leading-relaxed">
                     La cantidad de asistentes requerida (<strong>{{ lic.cantidad_asistentes }} personas</strong>) sobrepasa la capacidad maxima autorizada para el salon asignado <strong>{{ salon_asignado.nombre }}</strong> (capacidad maxima: <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>). Se genera un sobrecupo de <strong>{{ sobrecupo }} personas</strong>.
@@ -686,7 +589,7 @@
         <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-green-bg); border-color: #D6E8D4; color: var(--pastel-green-text);">
             <div class="flex flex-col space-y-1">
                 <span class="font-semibold uppercase tracking-wider">
-                    [OK] Dimensionamiento Operativo Conforme: Capacidad Adecuada
+                    Dimensionamiento Operativo Conforme: Capacidad Adecuada
                 </span>
                 <p class="leading-relaxed">
                     El salon <strong>{{ salon_asignado.nombre }}</strong> dispone de una capacidad maxima de <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>, cubriendo con holgura los <strong>{{ lic.cantidad_asistentes }} asistentes</strong> solicitados por el mandante (margen disponible: {{ salon_asignado.capacidad_maxima - lic.cantidad_asistentes }} plazas). Franja horaria disponible: {{ salon_asignado.horario_disponible }}.
@@ -697,10 +600,10 @@
         <div class="p-4 rounded-[6px] border text-xs space-y-2 bg-[#FBFBFA] border-[#EAEAEA] text-[#6E6D6A]">
             <div class="flex flex-col space-y-1">
                 <span class="font-semibold uppercase tracking-wider text-[#111111]">
-                    [INFO] Salon Pendiente de Asignacion
+                    Salon Pendiente de Asignacion
                 </span>
                 <p class="leading-relaxed text-[#111111]">
-                    La oportunidad requiere capacidad estimada para <strong>{{ lic.cantidad_asistentes or 0 }} personas</strong> bajo modalidad <strong>{{ lic.tipo_jornada or 'Jornada Completa' }}</strong>. Asigne un salon desde la Evaluacion Operativa para verificar la viabilidad definitiva y validar disponibilidad en el PMS.
+                    La oportunidad requiere capacidad estimada para <strong>{{ lic.cantidad_asistentes or 0 }} personas</strong> bajo modalidad <strong>{{ lic.tipo_jornada or 'Jornada Completa' }}</strong>. Asigne un salon para verificar la viabilidad definitiva y confirmar disponibilidad en la agenda.
                 </p>
             </div>
             {% if salones_compatibles %}
@@ -727,10 +630,10 @@
                 <span class="font-semibold uppercase tracking-wider">
                     Propuesta de Salones por Capacidad
                 </span>
-                <span class="badge-spot badge-spot-yellow">Disponibilidad a validar en PMS</span>
+                <span class="badge-spot badge-spot-yellow">Disponibilidad a confirmar</span>
             </div>
             <p class="text-[#6E6D6A] leading-relaxed">
-                El sistema propone los espacios cuya capacidad maxima cubre los {{ lic.cantidad_asistentes }} asistentes. La confirmacion final de disponibilidad se realiza en el sistema PMS del hotel.
+                El sistema propone los espacios cuya capacidad maxima cubre los {{ lic.cantidad_asistentes }} asistentes. La disponibilidad se confirma en la agenda de salones.
             </p>
             <div class="flex flex-wrap gap-2">
                 {% for sc in salones_compatibles %}
@@ -743,45 +646,6 @@
             </div>
         </div>
         {% endif %}
-
-        <!-- Catalogo Referencial de Salones del Hotel -->
-        <div class="pt-2">
-            <details class="text-xs text-[#6E6D6A]">
-                <summary class="font-medium text-[#111111] cursor-pointer hover:underline pb-2">
-                    [Ver Infraestructura de Salones del Hotel Plaza San Francisco]
-                </summary>
-                <div class="mt-2 overflow-x-auto border border-[#EAEAEA] rounded-[6px]">
-                    <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs bg-white">
-                        <thead class="bg-[#FBFBFA] text-[#6E6D6A] font-medium uppercase text-[10px] tracking-wider">
-                            <tr>
-                                <th class="px-3 py-2">Salon</th>
-                                <th class="px-3 py-2">Tipo / Formato</th>
-                                <th class="px-3 py-2 text-right">Capacidad Maxima</th>
-                                <th class="px-3 py-2">Horario Operativo</th>
-                                <th class="px-3 py-2 text-right">Tarifa Ref. (CLP)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-[#EAEAEA] bg-white">
-                            {% for s in salones %}
-                            <tr class="hover:bg-[#FBFBFA] {% if salon_asignado and salon_asignado.id_salon == s.id_salon %}bg-[#F7F6F3] font-medium{% endif %}">
-                                <td class="px-3 py-2 font-medium text-[#111111]">
-                                    {{ s.nombre }}
-                                    {% if salon_asignado and salon_asignado.id_salon == s.id_salon %}
-                                    <span class="badge-spot badge-spot-blue ml-1 font-mono">[Asignado]</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-3 py-2 text-[#6E6D6A]">{{ s.tipo }}</td>
-                                <td class="px-3 py-2 text-right font-mono">{{ s.capacidad_maxima }} personas</td>
-                                <td class="px-3 py-2 text-[#6E6D6A] font-mono">{{ s.horario_disponible }}</td>
-                                <td class="px-3 py-2 text-right font-mono text-[#111111]">{{ s.tarifa_referencial | clp }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </details>
-        </div>
-    </div>
 
     <!-- Panel de Validacion Robusta (Cruce de ID con Adjuntos / Efecto ID) -->
     <div class="card-editorial p-6 bg-white space-y-4">
@@ -982,6 +846,30 @@
         </form>
     </div>
 
+    <!-- Historial de Actividad del Sistema -->
+    <div class="card-editorial p-6 bg-white space-y-4">
+        <div class="border-b border-[#EAEAEA] pb-3">
+            <h2 class="text-sm font-semibold text-[#111111]">Historial de Actividad</h2>
+            <p class="text-xs text-[#6E6D6A] mt-0.5">
+                Cambios de estado, decisiones, notas y actualizaciones registradas por el equipo.
+            </p>
+        </div>
+        {% if historial %}
+        <ol class="space-y-2 text-xs">
+            {% for h in historial %}
+            <li class="flex flex-wrap items-center gap-2 border-b border-[#EAEAEA] pb-2">
+                <span class="font-mono text-[#6E6D6A] whitespace-nowrap">{{ h.fecha }}</span>
+                <span class="badge-spot badge-spot-neutral">{{ h.tipo }}</span>
+                <span class="text-[#111111]">{{ h.detalle }}</span>
+                <span class="ml-auto text-[#6E6D6A]">{{ h.usuario }}</span>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-xs text-[#6E6D6A]">Sin actividad registrada para esta licitacion.</p>
+        {% endif %}
+    </div>
+
     <!-- Historial de Notas Compartidas -->
     <div class="card-editorial p-6 bg-white space-y-4">
         <div class="border-b border-[#EAEAEA] pb-3">
@@ -998,7 +886,7 @@
         <form method="POST" action="{{ url_for('agregar_nota_licitacion', id_licitacion=lic.id_licitacion) }}" class="space-y-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <label for="nota" class="block text-xs font-medium text-[#111111]">Agregar nota</label>
-            <textarea id="nota" name="nota" rows="2" maxlength="2000" required placeholder="Ej.: Se consulto disponibilidad en PMS; salon bloqueado provisionalmente." class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white"></textarea>
+            <textarea id="nota" name="nota" rows="2" maxlength="2000" required placeholder="Ej.: Se consulto disponibilidad en la agenda; salon bloqueado provisionalmente." class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white"></textarea>
             <div class="flex justify-end">
                 <button type="submit" class="btn-secondary text-xs px-3 py-1.5">Agregar Nota</button>
             </div>

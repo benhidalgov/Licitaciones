@@ -325,7 +325,7 @@ class TestFichaResumen(unittest.TestCase):
         html = resp.get_data(as_text=True)
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Ficha Resumen", html)
-        self.assertIn("Desglose de Ponderacion de Criterios", html)
+        self.assertIn("Puntaje ponderado", html)
 
 
 if __name__ == "__main__":

@@ -54,6 +54,17 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Panel de Control", response.data)
 
+    def test_login_all_usuarios_ignora_mayusculas(self):
+        for usuario in ("admin", "daniela", "francisca", "mari"):
+            client = flask_app.app.test_client()
+            response = client.post(
+                "/login",
+                data={"username": usuario.upper(), "password": flask_app.USERS[usuario]["password"]},
+            )
+            self.assertEqual(response.status_code, 302)
+            with client.session_transaction() as sess:
+                self.assertEqual(sess["user"], usuario)
+
     def test_licitaciones_accessible_when_authenticated(self):
         self.client.post("/login", data={"username": "admin", "password": self.admin_password})
         response = self.client.get("/licitaciones")

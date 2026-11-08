@@ -159,7 +159,7 @@ class TestBonus(unittest.TestCase):
         resp = self.client.get("/analitica")
         html = resp.get_data(as_text=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Benchmarking de Adjudicaciones", html)
+        self.assertIn("Historial de Adjudicacion", html)
         self.assertIn("Historial de Ordenes de Compra", html)
         self.assertIn("Todavia no hay adjudicaciones registradas", html)
 
@@ -262,7 +262,7 @@ class TestBonus(unittest.TestCase):
         html = self.client.get("/licitaciones/1").get_data(as_text=True)
         self.assertEqual(html.count("1 OC"), 1)
         self.assertIn("Cliente clave: Mineduc", html)
-        self.assertIn("Benchmarking de Adjudicacion", html)
+        self.assertIn("Historial de Actividad", html)
 
     def test_monto_con_decimal_punto_no_multiplica(self):
         self.assertEqual(database._monto_oc("4800000.0"), 4800000)
