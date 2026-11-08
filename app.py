@@ -30,7 +30,7 @@ USERS = {
     "admin": {"password": "admin123", "nombre": "Administrador"},
     "daniela": {"password": "daniela123", "nombre": "Daniela"},
     "francisca": {"password": "francisca123", "nombre": "Francisca"},
-    "mari": {"password": "mari123", "nombre": "Mari Carmen"},
+    "mari": {"password": "mari123", "nombre": "Mari"},
 }
 DEMO_PASSWORDS = {u: c["password"] for u, c in USERS.items()}
 for _usuario in USERS:
