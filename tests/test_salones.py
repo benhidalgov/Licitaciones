@@ -52,6 +52,7 @@ class TestSalones(unittest.TestCase):
         self.assertIn("Salon Danubio", html)
         self.assertIn("Salon Parra", html)
         self.assertIn("Salon Sena", html)
+        self.assertIn("Av. Libertador Bernardo O&#39;Higgins 816, Santiago", html)
 
         # Reservation agenda items
         self.assertIn("Subsecretaria de Turismo", html)
@@ -67,6 +68,7 @@ class TestSalones(unittest.TestCase):
         self.assertIn("Salon de gran capacidad", html)
         self.assertIn("450", html)
         self.assertIn("Piso 1 - 362 m2", html)
+        self.assertIn("Av. Libertador Bernardo O&#39;Higgins 816, Santiago", html)
         self.assertIn("Aforos del catalogo oficial", html)
         self.assertIn("Agenda de Ocupacion", html)
         self.assertIn("Fechas de Ocupacion", html)

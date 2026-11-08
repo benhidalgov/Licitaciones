@@ -157,7 +157,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <!-- Total -->
-            <a href="{{ url_for('dashboard') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+            <a href="{{ url_for('dashboard', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="badge-spot badge-spot-neutral">Universo</span>
                     <span class="text-[10px] font-mono text-[#6E6D6A]">Embudo completo</span>
@@ -171,7 +171,7 @@
 
             <!-- Compra Agil -->
             <div class="card-editorial p-5 lg:col-span-2 flex flex-col justify-between bg-white relative overflow-hidden hover:border-[#111111] transition-colors cursor-pointer"
-                 onclick="if(!event.target.closest('a,button,input,form,select,label')) window.location.href='{{ url_for('dashboard', modalidad='Compra Agil') }}'">
+                 onclick="if(!event.target.closest('a,button,input,form,select,label')) window.location.href='{{ url_for('dashboard', modalidad='Compra Agil', _anchor='oportunidades') }}'">
                 <div class="flex items-center justify-between">
                     <span class="badge-spot badge-spot-blue">Modalidad Prioritaria</span>
                     <span class="text-[10px] font-mono text-[#6E6D6A]">Ley 19.886</span>
@@ -199,12 +199,12 @@
                         >
                         <button type="submit" class="btn-secondary text-xs px-3 py-1">Guardar</button>
                     </form>
-                    <a href="{{ url_for('dashboard', modalidad='Compra Agil') }}" class="inline-block font-medium text-[#111111] hover:underline">Ver oportunidades de Compra Agil</a>
+                    <a href="{{ url_for('dashboard', modalidad='Compra Agil', _anchor='oportunidades') }}" class="inline-block font-medium text-[#111111] hover:underline">Ver oportunidades de Compra Agil</a>
                 </div>
             </div>
 
             <!-- Identificadas -->
-            <a href="{{ url_for('dashboard', estado='Identificada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+            <a href="{{ url_for('dashboard', estado='Identificada', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Fase 1</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#6E6D6A]"></span>
@@ -217,7 +217,7 @@
             </a>
 
             <!-- Calificadas -->
-            <a href="{{ url_for('dashboard', estado='Calificada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+            <a href="{{ url_for('dashboard', estado='Calificada', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Fase 2</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#1F6C9F]"></span>
@@ -230,7 +230,7 @@
             </a>
 
             <!-- Participadas -->
-            <a href="{{ url_for('dashboard', estado='Participada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+            <a href="{{ url_for('dashboard', estado='Participada', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Fase 3</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#956400]"></span>
@@ -243,7 +243,7 @@
             </a>
 
             <!-- Adjudicadas -->
-            <a href="{{ url_for('dashboard', estado='Adjudicada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+            <a href="{{ url_for('dashboard', estado='Adjudicada', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="badge-spot badge-spot-green">Cierre</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#346538]"></span>
@@ -256,7 +256,7 @@
             </a>
 
             <!-- Descartadas -->
-            <a href="{{ url_for('dashboard', estado='Descartada') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+            <a href="{{ url_for('dashboard', estado='Descartada', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Salida</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-[#9F2F2D]"></span>
@@ -406,7 +406,7 @@
     </div>
 
     <!-- Tabla Editorial de Licitaciones -->
-    <div class="card-editorial overflow-hidden bg-white">
+    <div id="oportunidades" class="card-editorial overflow-hidden bg-white">
         <div class="px-6 py-4 border-b border-[#EAEAEA] flex items-center justify-between bg-[#FBFBFA]">
             <div>
                 <h2 class="text-sm font-semibold text-[#111111]">Listado de Licitaciones Registradas</h2>

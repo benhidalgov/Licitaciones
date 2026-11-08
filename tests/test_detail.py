@@ -69,6 +69,17 @@ class TestDetail(unittest.TestCase):
         self.assertNotIn("DetailsAcquisition.aspx", html)
         self.assertNotIn("Ver ficha original en Mercado Publico", html)
 
+    def test_detail_muestra_quien_reviso(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = "mari"
+            sess["nombre"] = "Mari"
+        self.client.post(
+            "/licitaciones/1058-12-COT24/decision", data={"decision": "revisar"}
+        )
+        html = self.client.get("/licitaciones/1058-12-COT24").data.decode("utf-8")
+        self.assertIn("Revisada por Mari", html)
+        self.assertIn("Ultima revision: Mari", html)
+
     def test_view_detail_not_found(self):
         response = self.client.get("/licitaciones/NO-EXISTE-999")
         self.assertEqual(response.status_code, 404)

@@ -297,7 +297,11 @@
 
                     <div class="text-xs text-[#6E6D6A] space-y-1 pt-1">
                         <div>
-                            <span class="font-medium text-[#111111]">Ubicacion:</span>
+                            <span class="font-medium text-[#111111]">Direccion:</span>
+                            <span>{{ direccion_hotel }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-[#111111]">Ubicacion interna:</span>
                             <span>{{ s.ubicacion or 'Edificio Central' }}</span>
                         </div>
                         <div>
@@ -348,6 +352,7 @@
                             <div>
                                 <h3 class="text-base font-semibold">{{ s.nombre }}</h3>
                                 <div class="text-[11px] text-[#6E6D6A]">{{ s.tipo }} - {{ s.ubicacion or 'Edificio Central' }}</div>
+                                <div class="text-[11px] text-[#6E6D6A]">{{ direccion_hotel }}</div>
                             </div>
                             <form method="dialog">
                                 <button class="btn-secondary text-xs px-2 py-1">Cerrar</button>

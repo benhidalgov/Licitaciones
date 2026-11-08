@@ -167,6 +167,7 @@ app.jinja_env.globals["format_clp"] = format_clp
 # calculada al vuelo sobre organismo + titulo, sin columna nueva.
 app.jinja_env.globals["detectar_cliente_clave"] = database.detectar_cliente_clave
 app.jinja_env.globals["margen_minimo_clp"] = database.margen_minimo_clp
+app.jinja_env.globals["direccion_hotel"] = "Av. Libertador Bernardo O'Higgins 816, Santiago"
 
 
 @app.template_filter("miles")
@@ -309,6 +310,9 @@ def licitacion_detalle(id_licitacion):
     # Historial de OC: experiencia previa con el mismo organismo.
     experiencia_oc = database.get_experiencia_organismo(lic.get("organismo") or "")
     historial = database.get_historial_licitacion(id_licitacion)
+    ultima_revision = next(
+        (h for h in historial if h["tipo"] in ("Decision", "Evaluacion")), None
+    )
 
     return render_template(
         "detail.html",
@@ -330,6 +334,8 @@ def licitacion_detalle(id_licitacion):
         cliente_clave=cliente_clave,
         experiencia_oc=experiencia_oc,
         historial=historial,
+        revisada_por=ultima_revision["usuario"] if ultima_revision else "",
+        revisada_en=ultima_revision["fecha"] if ultima_revision else "",
         tope_compra_agil=database.get_tope_compra_agil(),
         valid_estados=VALID_ESTADOS,
         propiedades=database.PROPIEDADES,

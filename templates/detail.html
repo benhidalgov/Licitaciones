@@ -56,7 +56,10 @@
                     {% if cc %}
                     <span class="badge-spot badge-spot-blue">Cliente clave: {{ cc }}</span>
                     {% endif %}
-                    {% if lic.revisada %}
+                    {% if revisada_por %}
+                    <span class="badge-spot badge-spot-green">Revisada por {{ revisada_por }}</span>
+                    <span class="text-[10px] font-mono text-[#6E6D6A]">{{ revisada_en }}</span>
+                    {% elif lic.revisada %}
                     <span class="badge-spot badge-spot-green">Revisada</span>
                     {% endif %}
                     {% if lic.motivo_descarte %}
@@ -174,7 +177,13 @@
                     <button type="submit" class="btn-secondary text-xs px-3 py-1.5 w-full">
                         Marcar como Revisada
                     </button>
-                    <p class="text-[10px] text-[#6E6D6A] mt-1.5">Estado compartido para las tres usuarias.</p>
+                    <p class="text-[10px] text-[#6E6D6A] mt-1.5">
+                        {% if revisada_por %}
+                        Ultima revision: {{ revisada_por }} - {{ revisada_en }}
+                        {% else %}
+                        Estado compartido para las tres usuarias.
+                        {% endif %}
+                    </p>
                 </form>
 
                 <form method="POST" action="{{ url_for('decision_licitacion', id_licitacion=lic.id_licitacion) }}" class="bg-white p-3 rounded-[6px] border border-[#EAEAEA]">

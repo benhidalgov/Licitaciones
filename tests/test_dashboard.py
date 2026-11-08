@@ -248,6 +248,12 @@ class TestDashboard(unittest.TestCase):
         self.assertIn("Ya hay una sincronizacion en curso", res.get_data(as_text=True))
         mock_sync.assert_not_called()
 
+    def test_metricas_enlazan_al_listado_filtrado(self):
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn('id="oportunidades"', html)
+        self.assertIn("estado=Identificada#oportunidades", html)
+        self.assertIn("modalidad=Compra+Agil#oportunidades", html)
+
     def test_filtro_revisadas_por_usuario(self):
         with self.client.session_transaction() as sess:
             sess["user"] = "daniela"
