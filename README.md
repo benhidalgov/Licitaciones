@@ -197,7 +197,7 @@ Variables de entorno minimas: `FLASK_SECRET_KEY`, `FLASK_COOKIE_SECURE=1` y las 
 3. Ingrese con cualquiera de los perfiles demo:
    * **Daniela:** `daniela` / `daniela123`
    * **Francisca:** `francisca` / `francisca123`
-   * **Mari Carmen:** `mari` / `mari123`
+   * **Mari:** `mari` / `mari123`
    * **Administrador:** `admin` / `admin123`
 
    Los tres perfiles operativos comparten estados, decisiones y notas.

@@ -81,7 +81,7 @@ detecta claves demo o falta `FLASK_SECRET_KEY`.
 | `admin` | `admin123` | Administrador |
 | `daniela` | `daniela123` | Daniela |
 | `francisca` | `francisca123` | Francisca |
-| `mari` | `mari123` | Mari Carmen |
+| `mari` | `mari123` | Mari |
 
 **Importante:** estas claves estan en el codigo y son solo para pruebas. Antes de
 publicar la plataforma en la red del hotel hay que reemplazarlas con

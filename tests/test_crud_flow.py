@@ -43,6 +43,7 @@ class TestCrudFlow(unittest.TestCase):
         self.assertEqual(self.client.get("/licitaciones/1058-12-COT24/editar").status_code, 404)
 
     def test_delete_licitacion_post_success(self):
+        database.registrar_evento("1058-12-COT24", "Decision", "prueba", "Daniela")
         response = self.client.post("/licitaciones/1058-12-COT24/eliminar", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
@@ -53,6 +54,7 @@ class TestCrudFlow(unittest.TestCase):
         # Database verification
         item = database.get_licitacion_by_id("1058-12-COT24")
         self.assertIsNone(item)
+        self.assertEqual(database.get_historial_licitacion("1058-12-COT24"), [])
 
     def test_delete_licitacion_post_not_found(self):
         response = self.client.post("/licitaciones/NO-EXISTE-999/eliminar")

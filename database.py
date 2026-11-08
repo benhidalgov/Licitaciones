@@ -986,10 +986,10 @@ def _filtros_licitaciones(
         where += " AND l.revisada = 0"
     elif revisada_por:
         where += (
-            " AND EXISTS ("
-            "SELECT 1 FROM historial_licitacion h "
-            "WHERE h.id_licitacion = l.id_licitacion AND h.usuario = ? "
-            "AND h.tipo IN ('Decision', 'Evaluacion'))"
+            " AND (SELECT h.usuario FROM historial_licitacion h "
+            "WHERE h.id_licitacion = l.id_licitacion "
+            "AND h.tipo IN ('Decision', 'Evaluacion') "
+            "ORDER BY h.id_evento DESC LIMIT 1) = ?"
         )
         params.append(revisada_por)
     if propiedad:
@@ -1319,6 +1319,10 @@ def delete_licitacion(id_licitacion: str) -> bool:
             "UPDATE reservas_salones SET id_licitacion = '' WHERE id_licitacion = ?",
             (id_licitacion,)
         )
+        conn.execute(
+            "DELETE FROM historial_licitacion WHERE id_licitacion = ?",
+            (id_licitacion,)
+        )
         cursor = conn.execute(
             "DELETE FROM licitaciones WHERE id_licitacion = ?",
             (id_licitacion,)
@@ -1395,7 +1399,7 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
             SELECT CASE WHEN motivo_descarte = '' THEN 'Sin motivo' ELSE motivo_descarte END AS motivo_descarte,
                    COUNT(*) AS total
             FROM licitaciones
-        """ + filtro + " GROUP BY motivo_descarte ORDER BY total DESC", params).fetchall()
+        """ + filtro + " AND estado_embudo = 'Descartada' GROUP BY motivo_descarte ORDER BY total DESC", params).fetchall()
 
         descartes = conn.execute("""
             SELECT id_licitacion, titulo, organismo, motivo_descarte, descripcion_descarte
@@ -1412,8 +1416,8 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
             for row in descartes
         ]
         datos["tasa_cierre"] = (
-            round(datos["adjudicadas"] * 100.0 / datos["participadas"], 1)
-            if datos["participadas"] else 0.0
+            round(datos["adjudicadas"] * 100.0 / (datos["participadas"] + datos["adjudicadas"]), 1)
+            if (datos["participadas"] + datos["adjudicadas"]) else 0.0
         )
         return datos
     finally:

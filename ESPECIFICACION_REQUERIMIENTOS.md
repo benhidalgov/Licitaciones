@@ -121,7 +121,7 @@ La herramienta debe estructurar la visualizacion del rendimiento comercial en cu
 * **Revisada:** la oportunidad fue vista y analizada por el equipo.
 * **Participamos:** el equipo decide postular.
 * **No participamos:** el equipo descarta la oportunidad indicando motivo: precio, disponibilidad, fuera de alcance u otro.
-* Los estados y las notas son compartidos entre los tres perfiles operativos: Daniela, Francisca y Mari Carmen.
+* Los estados y las notas son compartidos entre los tres perfiles operativos: Daniela, Francisca y Mari.
 
 ### 4.4. Exportabilidad
 * El sistema debe permitir exportar el listado filtrado e indicadores a una planilla compatible con Excel.

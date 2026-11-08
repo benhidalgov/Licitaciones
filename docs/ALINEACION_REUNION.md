@@ -157,7 +157,7 @@ Implementado en el repositorio:
 - [x] Region informativa; sin descarte automatico por comuna.
 - [x] Vista priorizada del dia con enlace a Mercado Publico.
 - [x] Estados Revisada / Participamos / No participamos con motivo y notas compartidas.
-- [x] Tres perfiles operativos: Daniela, Francisca y Mari Carmen.
+- [x] Tres perfiles operativos: Daniela, Francisca y Mari.
 - [x] Exportacion CSV compatible con Excel.
 - [x] Sellos: Sello Mujer, jornada de 40 horas, Sello Sernatur e inclusion laboral.
 - [x] README y especificacion corregidos.

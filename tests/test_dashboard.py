@@ -265,6 +265,20 @@ class TestDashboard(unittest.TestCase):
         self.assertIn("1058-12-COT24", pendientes)
         self.assertNotIn("723-4-LP24", pendientes)
 
+        # Si Mari vuelve a revisar, el filtro debe coincidir con el badge:
+        # Daniela deja de ser la revisora vigente.
+        with self.client.session_transaction() as sess:
+            sess["user"] = "mari"
+            sess["nombre"] = "Mari"
+        self.client.post(
+            "/licitaciones/723-4-LP24/decision", data={"decision": "revisar"}
+        )
+        por_daniela = self.client.get("/licitaciones?revisada_por=Daniela").get_data(as_text=True)
+        self.assertNotIn("723-4-LP24", por_daniela)
+        por_mari = self.client.get("/licitaciones?revisada_por=Mari").get_data(as_text=True)
+        self.assertIn("723-4-LP24", por_mari)
+        self.assertIn("Revisada por Mari", por_mari)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -114,6 +114,29 @@ class TestInformes(unittest.TestCase):
             fila["organismo"] for fila in reporte["por_organismo"]
         })
 
+    def test_informe_sin_motivo_cuenta_solo_descartadas(self):
+        hoy = date.today().isoformat()
+        database.create_licitacion(
+            _licitacion_informe("TEST-SIN-MOTIVO", estado="Descartada")
+        )
+        database.create_licitacion({
+            **_licitacion_informe("TEST-CON-MOTIVO", estado="Descartada"),
+            "motivo_descarte": "Precio",
+        })
+        reporte = database.get_reporte_periodo(hoy, hoy)
+        sin_motivo = next(
+            f["total"] for f in reporte["por_motivo"]
+            if f["motivo_descarte"] == "Sin motivo"
+        )
+        self.assertEqual(sin_motivo, 1)
+
+    def test_tasa_cierre_incluye_adjudicadas_en_el_denominador(self):
+        hoy = date.today().isoformat()
+        database.create_licitacion(_licitacion_informe("TEST-PART", estado="Participada"))
+        database.create_licitacion(_licitacion_informe("TEST-ADJ", estado="Adjudicada"))
+        reporte = database.get_reporte_periodo(hoy, hoy)
+        self.assertEqual(reporte["tasa_cierre"], 50.0)
+
 
 if __name__ == "__main__":
     unittest.main()
