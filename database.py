@@ -964,7 +964,8 @@ def _filtros_licitaciones(
     q: Optional[str] = None,
     propiedad: Optional[str] = None,
     cliente_clave: Optional[str] = None,
-    motivo: Optional[str] = None
+    motivo: Optional[str] = None,
+    revisada_por: Optional[str] = None
 ) -> Tuple[str, List[Any]]:
     """Construye el WHERE compartido entre listado y conteo (evita divergencia)."""
     where = " WHERE 1=1"
@@ -981,6 +982,16 @@ def _filtros_licitaciones(
     if motivo:
         where += " AND l.motivo_descarte = ?"
         params.append(motivo)
+    if revisada_por == "pendientes":
+        where += " AND l.revisada = 0"
+    elif revisada_por:
+        where += (
+            " AND EXISTS ("
+            "SELECT 1 FROM historial_licitacion h "
+            "WHERE h.id_licitacion = l.id_licitacion AND h.usuario = ? "
+            "AND h.tipo IN ('Decision', 'Evaluacion'))"
+        )
+        params.append(revisada_por)
     if propiedad:
         where += " AND l.propiedad = ?"
         params.append(propiedad)
@@ -1013,10 +1024,11 @@ def count_licitaciones(
     q: Optional[str] = None,
     propiedad: Optional[str] = None,
     cliente_clave: Optional[str] = None,
-    motivo: Optional[str] = None
+    motivo: Optional[str] = None,
+    revisada_por: Optional[str] = None
 ) -> int:
     where, params = _filtros_licitaciones(
-        categoria, modalidad, estado, q, propiedad, cliente_clave, motivo
+        categoria, modalidad, estado, q, propiedad, cliente_clave, motivo, revisada_por
     )
     conn = get_db_connection()
     try:
@@ -1036,13 +1048,14 @@ def get_all_licitaciones(
     propiedad: Optional[str] = None,
     cliente_clave: Optional[str] = None,
     motivo: Optional[str] = None,
+    revisada_por: Optional[str] = None,
     limit: Optional[int] = None,
     offset: int = 0
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
         where, params = _filtros_licitaciones(
-            categoria, modalidad, estado, q, propiedad, cliente_clave, motivo
+            categoria, modalidad, estado, q, propiedad, cliente_clave, motivo, revisada_por
         )
         query = """
             SELECT l.*,
@@ -1050,7 +1063,15 @@ def get_all_licitaciones(
                    s.capacidad_maxima AS capacidad_salon,
                    s.tipo AS tipo_salon,
                    s.horario_disponible AS horario_salon,
-                   s.es_provisional AS salon_provisional
+                   s.es_provisional AS salon_provisional,
+                   (SELECT h.usuario FROM historial_licitacion h
+                    WHERE h.id_licitacion = l.id_licitacion
+                      AND h.tipo IN ('Decision', 'Evaluacion')
+                    ORDER BY h.id_evento DESC LIMIT 1) AS revisada_por,
+                   (SELECT h.fecha FROM historial_licitacion h
+                    WHERE h.id_licitacion = l.id_licitacion
+                      AND h.tipo IN ('Decision', 'Evaluacion')
+                    ORDER BY h.id_evento DESC LIMIT 1) AS revisada_en
             FROM licitaciones l
             LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
         """ + where + " ORDER BY l.fecha_cierre ASC"
@@ -1119,7 +1140,15 @@ def get_oportunidades_prioritarias(
             SELECT l.*,
                    s.nombre AS nombre_salon,
                    s.capacidad_maxima AS capacidad_salon,
-                   s.es_provisional AS salon_provisional
+                   s.es_provisional AS salon_provisional,
+                   (SELECT h.usuario FROM historial_licitacion h
+                    WHERE h.id_licitacion = l.id_licitacion
+                      AND h.tipo IN ('Decision', 'Evaluacion')
+                    ORDER BY h.id_evento DESC LIMIT 1) AS revisada_por,
+                   (SELECT h.fecha FROM historial_licitacion h
+                    WHERE h.id_licitacion = l.id_licitacion
+                      AND h.tipo IN ('Decision', 'Evaluacion')
+                    ORDER BY h.id_evento DESC LIMIT 1) AS revisada_en
             FROM licitaciones l
             LEFT JOIN salones s ON l.id_salon_asignado = s.id_salon
             WHERE l.estado_embudo NOT IN ('Descartada', 'Adjudicada')

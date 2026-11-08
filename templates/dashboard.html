@@ -90,7 +90,9 @@
                             <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="badge-spot badge-spot-blue font-mono font-bold hover:underline">
                                 {{ lic.id_licitacion }}
                             </a>
-                            {% if lic.revisada %}
+                            {% if lic.revisada_por %}
+                            <span class="badge-spot badge-spot-green" title="{{ lic.revisada_en or '' }}">Revisada por {{ lic.revisada_por }}</span>
+                            {% elif lic.revisada %}
                             <span class="badge-spot badge-spot-green">Revisada</span>
                             {% endif %}
                             {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
@@ -271,7 +273,7 @@
     <!-- Barra de Filtros Utilitaria -->
     <div class="card-editorial p-5 bg-white">
         <form method="GET" action="{{ url_for('dashboard') }}" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label for="filter-q" class="block text-xs font-medium text-[#111111] mb-1.5">
                         Busqueda General <span class="kbd-shortcut ml-1">/</span>
@@ -365,6 +367,23 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div>
+                    <label for="filter-revision" class="block text-xs font-medium text-[#111111] mb-1.5">
+                        Revision
+                    </label>
+                    <select
+                        id="filter-revision"
+                        name="revisada_por"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
+                    >
+                        <option value="">Todas las Revisiones</option>
+                        <option value="pendientes" {% if revisada_por == 'pendientes' %}selected{% endif %}>Pendientes sin revisar</option>
+                        {% for r in revisores %}
+                        <option value="{{ r }}" {% if revisada_por == r %}selected{% endif %}>Revisadas por {{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
 
             <div class="flex items-center justify-between pt-3 border-t border-[#EAEAEA]">
@@ -373,7 +392,7 @@
                     <span class="ml-2">Hasta 8 por pagina</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    {% if categoria or modalidad or estado or q or cliente_clave or motivo %}
+                    {% if categoria or modalidad or estado or q or cliente_clave or motivo or revisada_por %}
                     <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5">
                         Limpiar Filtros
                     </a>
@@ -449,7 +468,10 @@
                                 {% if cc %}
                                 <span class="badge-spot badge-spot-blue">Cliente: {{ cc }}</span>
                                 {% endif %}
-                                {% if lic.revisada %}
+                                {% if lic.revisada_por %}
+                                <span class="badge-spot badge-spot-green">Revisada por {{ lic.revisada_por }}</span>
+                                <span class="text-[10px] font-mono text-[#6E6D6A]">{{ lic.revisada_en }}</span>
+                                {% elif lic.revisada %}
                                 <span class="badge-spot badge-spot-green">Revisada</span>
                                 {% endif %}
                                 {% if lic.motivo_descarte %}

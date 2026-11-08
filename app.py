@@ -198,12 +198,14 @@ def dashboard():
     propiedad = request.args.get("propiedad", "").strip() or None
     cliente_clave = request.args.get("cliente_clave", "").strip() or None
     motivo = request.args.get("motivo", "").strip() or None
+    revisada_por = request.args.get("revisada_por", "").strip() or None
 
     # Filtros no vacios, reutilizados para construir los enlaces del paginador
     filtros = {
         k: v for k, v in dict(
             categoria=categoria, modalidad=modalidad, estado=estado,
-            q=q, propiedad=propiedad, cliente_clave=cliente_clave, motivo=motivo
+            q=q, propiedad=propiedad, cliente_clave=cliente_clave, motivo=motivo,
+            revisada_por=revisada_por
         ).items()
         if v
     }
@@ -234,6 +236,8 @@ def dashboard():
         propiedad=propiedad or "",
         cliente_clave=cliente_clave or "",
         motivo=motivo or "",
+        revisada_por=revisada_por or "",
+        revisores=[c["nombre"] for c in USERS.values()],
         total=total,
         pagina=pagina,
         paginas=paginas,
@@ -345,6 +349,8 @@ def exportar_licitaciones():
         "q": request.args.get("q", "").strip() or None,
         "propiedad": request.args.get("propiedad", "").strip() or None,
         "cliente_clave": request.args.get("cliente_clave", "").strip() or None,
+        "motivo": request.args.get("motivo", "").strip() or None,
+        "revisada_por": request.args.get("revisada_por", "").strip() or None,
     }
     filtros = {k: v for k, v in filtros.items() if v}
     licitaciones = database.get_all_licitaciones(**filtros)
@@ -354,8 +360,8 @@ def exportar_licitaciones():
     writer.writerow([
         "ID", "Titulo", "Organismo", "Propiedad", "Categoria", "Modalidad",
         "Region", "Presupuesto CLP", "Costo base CLP", "Margen CLP",
-        "Estado", "Motivo descarte", "Revisada", "Fecha publicacion",
-        "Fecha cierre", "Asistentes", "Salon", "Notas"
+        "Estado", "Motivo descarte", "Revisada", "Revisada por", "Fecha revision",
+        "Fecha publicacion", "Fecha cierre", "Asistentes", "Salon", "Notas"
     ])
     for lic in licitaciones:
         margen = lic["presupuesto_mandante"] - lic["costo_base_hotel"]
@@ -373,6 +379,8 @@ def exportar_licitaciones():
             _celda_csv(lic["estado_embudo"]),
             _celda_csv(lic["motivo_descarte"]),
             "Si" if lic["revisada"] else "No",
+            _celda_csv(lic.get("revisada_por") or ""),
+            lic.get("revisada_en") or "",
             lic["fecha_publicacion"],
             lic["fecha_cierre"],
             lic["cantidad_asistentes"],

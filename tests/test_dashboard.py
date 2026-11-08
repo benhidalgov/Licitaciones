@@ -248,6 +248,23 @@ class TestDashboard(unittest.TestCase):
         self.assertIn("Ya hay una sincronizacion en curso", res.get_data(as_text=True))
         mock_sync.assert_not_called()
 
+    def test_filtro_revisadas_por_usuario(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = "daniela"
+            sess["nombre"] = "Daniela"
+        self.client.post(
+            "/licitaciones/723-4-LP24/decision", data={"decision": "revisar"}
+        )
+
+        html = self.client.get("/licitaciones?revisada_por=Daniela").get_data(as_text=True)
+        self.assertIn("723-4-LP24", html)
+        self.assertIn("Revisada por Daniela", html)
+        self.assertNotIn("1058-12-COT24", html)
+
+        pendientes = self.client.get("/licitaciones?revisada_por=pendientes").get_data(as_text=True)
+        self.assertIn("1058-12-COT24", pendientes)
+        self.assertNotIn("723-4-LP24", pendientes)
+
 
 if __name__ == "__main__":
     unittest.main()
