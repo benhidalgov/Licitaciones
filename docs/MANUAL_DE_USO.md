@@ -4,15 +4,16 @@
 Hotel Plaza San Francisco | Programa de Vinculacion con el Medio, DUOC UC
 
 Este manual esta escrito para el equipo comercial que usa la plataforma todos los
-dias. Para la parte tecnica (arquitectura, despliegue, convenciones de codigo)
-ver `README.md` y `docs/WORKFLOW.md`.
+dias. Para instalacion, despliegue y detalles tecnicos ver `README.md` y
+`docs/WORKFLOW.md`.
 
 ---
 
 ## 1. Que hace la plataforma
 
 Centraliza la revision de licitaciones de Mercado Publico que el hotel puede
-atender, y descarta temprano las que no son viables.
+atender, descarta temprano las que no son viables y deja registro de quien
+reviso, evaluo y decidio cada oportunidad.
 
 El alcance es **estrictamente intramuros** del hotel:
 
@@ -26,301 +27,403 @@ hotel, aunque la licitacion sea de un cliente conocido.
 
 ---
 
-## 2. Puesta en marcha
+## 2. Acceso
 
-### 2.1 Requisitos
+La direccion de la plataforma la entrega el administrador. En un equipo local es
+`http://127.0.0.1:5000`.
 
-- Python 3.10 o superior (verificado en Python 3.12).
-- Ticket de la API de Mercado Publico (se obtiene en `api.mercadopublico.cl`).
-- Conexion a internet, solo para sincronizar. El resto de la plataforma funciona
-  sin red.
+| Usuario | Perfil |
+|---|---|
+| `admin` | Administrador |
+| `daniela` | Daniela |
+| `francisca` | Francisca |
+| `mari` | Mari |
 
-### 2.2 Instalacion
+La clave de cada usuario la configura el administrador en el archivo `.env`
+(`LICITACIONES_PASSWORD_<USUARIO>`). Las claves que aparecen en el codigo son
+solo para pruebas locales y deben cambiarse antes de publicar la plataforma.
 
-```bash
-pip install -r requirements.txt
-```
+**Importante:** los cuatro perfiles ven exactamente lo mismo y pueden hacer las
+mismas acciones. No hay datos separados por persona: estados, evaluaciones,
+notas, reservas e historial son compartidos para que cualquiera pueda retomar
+una licitacion que otro empezo.
 
-Son tres dependencias: Flask, openpyxl (solo para importar el historial de
-ordenes de compra desde Excel; si falta, la plataforma funciona igual y avisa al
-intentar importar un `.xlsx`) y Gunicorn (solo para produccion).
-
-### 2.3 Configuracion (archivo `.env`)
-
-Copiar `.env.example` a `.env` y completar:
-
-| Variable | Obligatoria | Para que sirve |
-|---|---|---|
-| `MERCADO_PUBLICO_TICKET` | Si | Ticket de la API. Sin el no se puede sincronizar. |
-| `FLASK_SECRET_KEY` | Si al exponer el servidor | Firma las sesiones. Sin el, la sesion se pierde al reiniciar. |
-| `LICITACIONES_PASSWORD_<USUARIO>` | Si al exponer el servidor | Reemplaza las claves demo. Ejemplo: `LICITACIONES_PASSWORD_DANIELA`. |
-| `MERCADO_PUBLICO_INTERVALO_MS` | No | Milisegundos entre consultas a la API. Por defecto 500. |
-| `HOST` / `PORT` | No | Donde escucha el servidor. Por defecto `127.0.0.1:5000`. |
-| `RESUMEN_IA_API_KEY` | No | Activa el enriquecimiento con IA de la ficha resumen. Sin ella se usa la version por reglas. |
-| `LICITACIONES_DB_PATH` | No | Ruta de la base de datos. En produccion conviene apuntar a un disco persistente para no perder datos en cada despliegue. |
-
-### 2.4 Arranque
-
-```bash
-python run.py
-```
-
-Abrir en el navegador: `http://127.0.0.1:5000`
-
-El servidor se detiene con `CTRL+C`.
-
-Por seguridad, si `HOST` no es local la plataforma **se niega a arrancar** cuando
-detecta claves demo o falta `FLASK_SECRET_KEY`.
+Despues de 5 intentos fallidos desde la misma conexion, el acceso se bloquea por
+5 minutos.
 
 ---
 
-## 3. Acceso y perfiles
+## 3. Flujo diario recomendado
 
-| Usuario | Clave demo | Perfil |
-|---|---|---|
-| `admin` | `admin123` | Administrador |
-| `daniela` | `daniela123` | Daniela |
-| `francisca` | `francisca123` | Francisca |
-| `mari` | `mari123` | Mari |
-
-**Importante:** estas claves estan en el codigo y son solo para pruebas. Antes de
-publicar la plataforma en la red del hotel hay que reemplazarlas con
-`LICITACIONES_PASSWORD_<USUARIO>` en `.env`.
-
-Los cuatro perfiles **ven exactamente lo mismo**. No hay datos separados por
-persona: los estados, las evaluaciones y las notas son compartidos, para que
-cualquiera pueda retomar una licitacion que otro empezo. Lo que identifica quien
-hizo cada cambio es el autor de la nota.
-
-Tras 5 intentos fallidos desde la misma IP, el acceso se bloquea por 5 minutos.
-
----
-
-## 4. Flujo diario recomendado
-
-1. **Sincronizar.** En la pantalla Licitaciones, boton `Sincronizar Mercado
-   Publico`. Sin fecha trae la ultima semana; con fecha trae solo ese dia.
+1. **Sincronizar.** En Licitaciones, boton `Sincronizar Mercado Publico`. Sin
+   fecha trae la ultima semana; con fecha trae solo ese dia.
 2. **Revisar lo priorizado.** La franja "Oportunidades Priorizadas de Hoy"
-   muestra lo que tiene presupuesto viable y capacidad compatible. Es el punto
-   de partida real del dia.
-3. **Abrir la ficha** de cada oportunidad y revisar el resumen, el presupuesto y
-   el dimensionamiento del salon.
-4. **Evaluar.** Completar asistentes, propiedad, salon propuesto y sellos.
-   Guardar.
-5. **Decidir.** Marcar como `Revisada`, `Participamos` o `No participamos` (con
-   motivo). Esto deja el registro de por que se tomo la decision.
-6. **Dejar nota** si hay contexto que el resto del equipo necesita saber.
+   muestra lo que tiene presupuesto viable y capacidad compatible.
+3. **Filtrar el listado** por estado, modalidad, cliente, motivo de descarte o
+   persona que reviso.
+4. **Abrir la ficha**, revisar el resumen, el presupuesto y el dimensionamiento
+   del salon.
+5. **Evaluar**: asistentes, propiedad, salon propuesto y sellos.
+6. **Decidir**: `Revisada`, `Participamos` o `No participamos` con motivo y
+   descripcion.
+7. **Dejar nota** si hay contexto que el resto del equipo necesita saber.
+8. **Revisar informes** al cierre de la semana o del mes.
 
 ---
 
-## 5. Pantalla por pantalla
+## 4. Pantalla Licitaciones (inicio)
 
-### 5.1 Licitaciones (inicio)
+Es la pantalla principal. Arriba estan las metricas del embudo y mas abajo el
+listado de oportunidades.
 
-Es la pantalla principal. Arriba estan los indicadores del embudo:
-oportunidades, calificadas, participadas, adjudicadas y descartadas.
+### 4.1 Metricas del embudo
 
-**Barra de filtros**
+| Tarjeta | Que muestra |
+|---|---|
+| Total Oportunidades | Todas las licitaciones registradas |
+| Compra Agil | Cantidad y monto total sin comision de las compras agiles |
+| Identificadas | Deteccion inicial, sin revisar |
+| Calificadas | Revisadas y con posibilidad real de participar |
+| Participadas | El equipo decidio ofertar |
+| Adjudicadas | Procesos ganados |
+| Descartadas | No se participa |
+
+Cada tarjeta es clickeable: abre el listado con el filtro correspondiente y baja
+directo a la seccion de resultados. El enlace `Ver oportunidades de Compra Agil`
+hace lo mismo con la modalidad Compra Agil.
+
+### 4.2 Ajustes rapidos
+
+- **Margen de tolerancia:** margen minimo exigido para priorizar una
+  oportunidad. Se puede definir como porcentaje del presupuesto o como monto
+  fijo en CLP. No relaja el descarte cuando el costo supera el presupuesto.
+- **Tope Compra Agil:** monto de referencia del limite normativo. Si una compra
+  agil lo supera, la ficha y el listado muestran una advertencia. No descarta la
+  licitacion automaticamente.
+
+### 4.3 Filtros
 
 | Filtro | Que hace |
 |---|---|
-| Busqueda general | Busca en ID, titulo y organismo. Atajo de teclado: `/`. |
-| Propiedad | Plaza San Francisco o Hotel Ismael. |
-| Cliente Clave | Filtra los organismos marcados como prioritarios (Mineduc, Minsal, U. de Chile, Usach, Productoras). |
-| Categoria Comercial | Alojamiento o Eventos / Catering (incluye A&B). |
-| Modalidad de Compra | Compra Agil o Licitacion Publica. |
-| Estado en Embudo | Identificada, Calificada, Participada, Adjudicada, Descartada. |
+| Busqueda general | Busca en ID, titulo, organismo, region y notas. Atajo: `/` |
+| Cliente Clave | Mineduc, Minsal, universidades, productoras y otros clientes prioritarios |
+| Categoria Comercial | Alojamiento o Eventos / Catering |
+| Modalidad de Compra | Compra Agil o Licitacion Publica |
+| Estado en Embudo | Identificada, Calificada, Participada, Adjudicada o Descartada |
+| Motivo de Descarte | Precio, Disponibilidad, Fuera de alcance, Otro o Sin motivo |
+| Revision | Todas, Pendientes sin revisar o Revisadas por una persona |
 
-Los filtros tambien aplican a la vista priorizada y a la exportacion.
+Los filtros se mantienen al paginar y tambien se aplican a la vista priorizada y
+a la exportacion.
 
-**Botones**
+### 4.4 Listado de licitaciones
 
-- `Exportar a Excel`: descarga un CSV con el listado filtrado. Excel lo abre
-  directamente.
-- `Sincronizar Mercado Publico`: consulta la API. Ver tiempos en la seccion 8.
-- `Margen de tolerancia`: se puede definir como porcentaje del presupuesto o
-  como monto fijo en CLP. Es el colchon que se acepta al comparar presupuesto
-  contra costo.
-- `Tope Compra Agil`: monto de referencia del limite normativo de compra agil.
-  Si el presupuesto de una licitacion de esa modalidad lo supera, la ficha
-  muestra una advertencia legal.
+- Se muestran **hasta 8 licitaciones por pagina**.
+- Cada fila muestra: ID, fecha de cierre, fecha y hora de actualizacion, titulo,
+  organismo, region, cliente clave, categoria, modalidad, presupuesto, costo
+  base y estado.
+- **Revisada por:** si alguien marco la oportunidad como revisada, aparece el
+  nombre y la fecha/hora de la ultima revision.
+- **Viabilidad presupuestaria:** `Sobre tope Compra Agil`, `Monto no informado`,
+  `Inviable / Costo Excede`, `Margen bajo el minimo` o `Viable / Margen
+  Positivo`, con el monto de margen o deficit.
+- **Cruce ID Adjuntos:** `ID Verificado`, `Discrepancia ID` o `Sin verificar`.
+- La fila completa es clickeable y abre la ficha.
 
-**Oportunidades Priorizadas de Hoy**
+### 4.5 Botones
 
-Cada tarjeta muestra el ID destacado, el titulo, el organismo, la fecha de
-cierre, el presupuesto, el margen estimado y el salon propuesto. El ID y el
-boton `Mercado Publico` abren la publicacion original en el portal.
-
-Cuando no hay tarjetas, el mensaje indica si es porque no hay oportunidades
-abiertas o porque los filtros actuales no dejan pasar ninguna.
-
-### 5.2 Ficha de la licitacion
-
-Se abre haciendo clic en el ID o en el titulo. Contiene estos bloques:
-
-**Ficha Resumen**
-Fechas, numero de personas, espacio requerido, alimentacion y el desglose de
-ponderacion de criterios, que suma 100 puntos. Se genera por reglas
-deterministicas; si hay proveedor de IA configurado, se enriquece, pero nunca
-depende de ella para funcionar. Si la IA falla, se muestra el aviso y se usa el
-texto por reglas.
-
-**Control Presupuestario Preventivo**
-Compara presupuesto mandante contra costo base del hotel y muestra el margen.
-Aplica la regla mandatoria: si el costo base supera el presupuesto, la
-oportunidad se descarta por precio.
-
-**Evaluacion Operativa y Costeo Minimo**
-Aqui se completa:
-
-| Campo | Detalle |
-|---|---|
-| Propiedad | Si se elige Hotel Ismael, el selector de salon se desactiva: Ismael solo admite alojamiento. |
-| Asistentes / Personas | Base para el dimensionamiento y el costeo. |
-| Tipo de jornada y horario | Texto libre para el evento. |
-| Salon propuesto | Lista de los 17 salones con su aforo. |
-| Costo base minimo | Si se deja vacio, se calcula con la tarifa del salon mas el consumo por persona. |
-| Sellos | Sello Mujer, Jornada de 40 horas, Sello Sernatur, Inclusion laboral. |
-
-**Dimensionamiento Operativo, Aforo y Horarios de Salones**
-Muestra los salones compatibles con el aforo y una advertencia permanente:
-*la disponibilidad final se valida en el PMS del hotel*. La plataforma no se
-sincroniza con el PMS ni con Mercado Publico para disponibilidad.
-
-**Benchmarking de Adjudicacion**
-Registro manual del resultado de procesos anteriores: adjudicatario, puntaje y
-precio final. La API publica de Mercado Publico no expone puntajes, por eso se
-carga a mano.
-
-**Validacion de Consistencia Documental**
-Cruza el ID de la licitacion con el correlativo de las bases adjuntas y avisa si
-no coinciden.
-
-**Checklist de Admisibilidad Administrativa Formal**
-Lista de verificacion de documentos y requisitos formales.
-
-**Notas Compartidas del Equipo**
-Historial de notas con autor y fecha. Es el canal para dejar contexto entre
-turnos.
-
-**Sintesis de Terminos de Referencia (TDR)**
-Resumen de lo que pide el documento.
-
-**Decisiones**
-
-| Boton | Efecto |
-|---|---|
-| `Revisada` | Marca la oportunidad como vista, sin cambiar de estado. |
-| `Participamos` | Pasa a estado Participada. **Se bloquea si el costo base supera el presupuesto.** |
-| `No participamos` | Pasa a Descartada y exige un motivo. |
-
-Motivos de descarte: `Precio`, `Disponibilidad`, `Fuera de alcance`, `Otro`.
-
-### 5.3 Salones y Agenda
-
-**Catalogo de Infraestructura de Salones**
-Los 17 salones del hotel con piso, superficie, aforo maximo y el desglose de
-aforos por montaje (auditorio, escuela, imperial, U, mesas redondas de 1,50 m y
-1,20 m, coctel). Se puede filtrar por salon y buscar por cliente u organismo.
-
-| Salon | Piso | Superficie | Aforo maximo |
-|---|---|---|---|
-| Pergola | 1 | 362 m2 | 450 |
-| Araucaria | -2 | 105 m2 | 100 |
-| Danubio | 2 | 108 m2 | 100 |
-| Sena | 2 | 65 m2 | 60 |
-| Rhin | 2 | 84 m2 | 60 |
-| Duero | 2 | 58 m2 | 50 |
-| Arrau | -1 | 62 m2 | 50 |
-| Tam | 2 | 50 m2 | 50 |
-| Parra | -1 | 62 m2 | 40 |
-| Alerce | -2 | 41 m2 | 30 |
-| Roble | -2 | 41 m2 | 30 |
-| Mistral | -1 | 47 m2 | 30 |
-| Neruda | -1 | 50 m2 | 30 |
-| Ebro | 2 | 48 m2 | 30 |
-| Tiber | 2 | 46 m2 | 30 |
-| Volga | 2 | 49 m2 | 30 |
-| Ejecutivo | 2 | 28 m2 | 8 |
-
-El Salon Tam aparece marcado como **provisional**: el documento del hotel no le
-dedica una fila propia y sus aforos se deducen de las combinaciones "Danubio
-Abierto" y "Dan + Tam + Rhin". Conviene confirmarlo con el hotel.
-
-**Agenda de Ocupacion**
-Reservas y bloqueos por fecha, con deteccion de colisiones. Al crear una reserva
-la plataforma avisa si el salon ya esta ocupado en ese rango de fechas.
-
-### 5.4 Analitica
-
-Dos bloques:
-
-- **Benchmarking de Adjudicaciones**: consolidado de los resultados cargados en
-  las fichas.
-- **Historial de Ordenes de Compra**: importador de `.xlsx` o `.csv`. Los
-  encabezados son tolerantes a variantes de nombre. Con estos datos, la ficha de
-  una licitacion muestra la experiencia previa con ese organismo.
-
-### 5.5 Informes
-
-Resumen ejecutivo con oportunidades, presupuesto total, costo base, margen
-proyectado, el embudo por estado y la tasa de cierre. Ademas:
-
-- Demanda por categoria.
-- Principales organismos.
-- Motivos de descarte.
-
-Se puede descargar todo con `Exportar CSV`.
+- `Exportar a Excel`: descarga un CSV con el listado filtrado, incluyendo quien
+  reviso y la fecha de revision.
+- `Sincronizar Mercado Publico`: consulta la API. Ver tiempos y limites en la
+  seccion 8.
 
 ---
 
-## 6. Reglas de negocio que aplica la plataforma
+## 5. Ficha de la licitacion
 
-Entenderlas evita pelearse con el sistema:
+Se abre haciendo clic en el ID, en el titulo o en cualquier parte de la fila.
+
+### 5.1 Encabezado
+
+Muestra el ID, categoria, cliente clave, estado de revision, motivo de descarte
+si corresponde y modalidad. En la parte superior estan las acciones:
+
+| Accion | Efecto |
+|---|---|
+| `Ver documentos` | Abre el visor oficial de anexos de Mercado Publico |
+| `Ver ficha MD` / `Descargar .md` | Genera una ficha resumida en Markdown |
+| `Refrescar ficha` | Vuelve a consultar la API y actualiza los datos oficiales |
+| `Eliminar` | Borra la licitacion y su historial (accion irreversible) |
+
+### 5.2 Ficha Resumen
+
+Fechas, numero de personas, espacio requerido, alimentacion y un puntaje
+ponderado con los criterios principales. Se genera por reglas deterministas; si
+hay proveedor de IA configurado se enriquece, pero la plataforma funciona igual
+sin IA. Si la IA falla, se muestra la version por reglas.
+
+### 5.3 Control presupuestario
+
+Compara el presupuesto mandante contra el costo base del hotel y muestra el
+margen o el deficit. Si el costo base supera el presupuesto, la oportunidad no se
+puede marcar como `Participamos` y se descarta por precio.
+
+### 5.4 Evaluacion
+
+| Campo | Detalle |
+|---|---|
+| Propiedad | Plaza San Francisco o Hotel Ismael |
+| Asistentes / Personas | Base para el dimensionamiento y el costeo |
+| Tipo de jornada y horario | Texto libre para el evento |
+| Salon propuesto | Lista de salones con su aforo |
+| Costo base minimo | Si se deja vacio, se calcula con la tarifa del salon y el consumo por persona |
+| Sellos | Sello Mujer, Jornada de 40 horas, Sello Sernatur, Inclusion laboral |
+
+Hotel Ismael solo admite alojamiento: si se elige esa propiedad, el selector de
+salon se desactiva y no se permiten eventos.
+
+### 5.5 Capacidad y salones
+
+Muestra los salones compatibles con el aforo y advierte si el salon asignado no
+tiene capacidad suficiente. El match es por capacidad; la disponibilidad real se
+confirma en la agenda de salones y en el PMS del hotel.
+
+### 5.6 Documentos y admisibilidad
+
+- **Validacion de consistencia documental:** cruza el ID de la licitacion con el
+  correlativo de las bases adjuntas y avisa si no coinciden.
+- **Checklist de admisibilidad:** verifica Anexo 4, escrituras, poderes y
+  vigencias. El estado puede ser `Valida`, `Error ID / Discrepancia` o `Sin
+  verificar`.
+
+### 5.7 Notas compartidas
+
+Historial de notas con autor y fecha. Es el canal para dejar contexto entre
+turnos o entre personas del equipo.
+
+### 5.8 Historial de Actividad
+
+Lista cronologica de todo lo que paso con la licitacion, con fecha, usuario,
+tipo y detalle:
+
+- cambios de estado
+- decisiones (`Revisada`, `Participamos`, `No participamos`)
+- evaluaciones de salon y costo
+- notas
+- validacion de documentos
+- datos de adjudicacion
+- refrescos desde Mercado Publico
+
+Es la forma de saber **quien hizo que y cuando**, ademas del badge de revision.
+
+### 5.9 Sintesis de Terminos de Referencia (TDR)
+
+Resumen de lo que pide el documento.
+
+### 5.10 Decisiones
+
+| Boton | Efecto |
+|---|---|
+| `Marcar como Revisada` | Marca la oportunidad como vista y registra quien la reviso |
+| `Participamos` | Pasa a estado Participada. Se bloquea si el costo base supera el presupuesto |
+| `No participamos` | Pasa a Descartada y exige un motivo |
+
+Al elegir `No participamos` se puede agregar una **descripcion del motivo**
+(opcional, hasta 500 caracteres). Esa descripcion aparece en la ficha y en el
+informe.
+
+Debajo del boton de revision se muestra `Ultima revision: <nombre> - <fecha y
+hora>` cuando ya existe una revision.
+
+Motivos de descarte disponibles: `Precio`, `Disponibilidad`, `Fuera de alcance`
+y `Otro`.
+
+---
+
+## 6. Salones y agenda
+
+### 6.1 Catalogo de salones
+
+Muestra los 17 salones del hotel con:
+
+- direccion: `Av. Libertador Bernardo O'Higgins 816, Santiago`
+- ubicacion interna: piso y superficie
+- capacidad maxima
+- aforos por montaje (auditorio, escuela, imperial, U, mesas redondas y coctel)
+- equipamiento
+- fechas ocupadas
+
+Cada tarjeta tiene un boton `Ficha Tecnica` que abre el detalle en una ventana
+emergente, sin salir de la pagina. El enlace `Ver Agenda de Fechas` lleva a la
+agenda filtrada por ese salon.
+
+La agenda se puede filtrar por salon y buscar por cliente u organismo. El
+desplegable de clientes se alimenta de las reservas existentes.
+
+### 6.2 Reservas
+
+Estados disponibles: `Confirmada`, `Tentativa` y `Bloqueo Interno`.
+
+Al crear o editar una reserva la plataforma valida:
+
+- que el salon exista
+- que las fechas tengan formato valido y la fecha de inicio no sea posterior a
+  la de termino
+- que la cantidad de asistentes no supere el aforo, cuando la reserva esta
+  `Confirmada`
+- que no exista otra reserva `Confirmada` en el mismo rango de fechas
+
+Las reservas `Tentativa` y `Bloqueo Interno` no bloquean el salon, pero quedan
+visibles en la agenda. Usar `Confirmada` solo cuando el evento este cerrado.
+
+Una reserva se puede vincular a una licitacion para mantener la trazabilidad.
+
+---
+
+## 7. Historial de Adjudicacion y Ordenes de Compra
+
+Se accede desde el menu `Historial de Adjudicacion` (pantalla Analitica).
+
+### 7.1 Historial de Adjudicacion
+
+Consolidado de los procesos con precio final cargado. Muestra adjudicatario,
+precio final, desviacion respecto del presupuesto y puntaje.
+
+Cada fila tiene un boton `Editar` para actualizar en linea:
+
+- adjudicatario (hasta 200 caracteres)
+- puntaje de adjudicacion (0 a 100)
+- precio final en CLP
+
+Tambien se puede cargar el adjudicatario, puntaje y precio desde la ficha de una
+licitacion. Los datos quedan disponibles para comparar procesos futuros.
+
+### 7.2 Historial de Ordenes de Compra
+
+Importa el archivo que entrega el hotel en formato `.xlsx`, `.xlsm` o `.csv`.
+Los encabezados son tolerantes a variantes de nombre (organismo/cliente,
+objeto/descripcion, fecha, monto). Si el archivo no tiene columnas reconocibles,
+la plataforma avisa y no importa nada.
+
+Los registros importados permiten que la ficha de una licitacion muestre la
+experiencia previa con ese organismo.
+
+---
+
+## 8. Informes
+
+Se accede desde el menu `Informes`.
+
+### 8.1 Periodo
+
+- **Semanal:** ultimos 7 dias.
+- **Mensual:** ultimos 30 dias.
+- **Personalizado:** rango de fechas elegido con el calendario.
+
+Si la fecha de inicio es posterior a la de termino, la plataforma las invierte.
+Si el rango no es valido, vuelve al periodo semanal.
+
+El informe considera las licitaciones **publicadas** dentro del periodo.
+
+### 8.2 Contenido
+
+- Oportunidades, presupuesto total, costo base y margen proyectado.
+- Embudo por estado.
+- Tasa de cierre: adjudicadas / (participadas + adjudicadas).
+- Demanda por categoria.
+- **Todos los organismos** del periodo, ordenados por presupuesto. Cada organismo
+  enlaza al listado filtrado.
+- Motivos de descarte, incluidos los descartes **sin motivo**.
+- Tabla de licitaciones descartadas con motivo, descripcion y enlace
+  `Ver licitacion`.
+
+### 8.3 Exportar
+
+`Exportar CSV` descarga el informe completo con el periodo seleccionado. El
+archivo se abre directamente en Excel.
+
+---
+
+## 9. Reglas de negocio
 
 1. **Alcance intramuros.** Solo salones, alojamiento y A&B del hotel. No se
    ofrecen servicios fuera del hotel.
 2. **El presupuesto manda.** Si el costo base supera el presupuesto del
    mandante, la oportunidad se descarta por precio y no se puede marcar como
-   Participamos.
-3. **La comuna no descarta.** Las Condes, Vitacura o cualquier otra comuna no
-   son motivo de descarte. La region es solo informativa.
-4. **Disponibilidad es manual.** El match de salones es por capacidad; la
-   disponibilidad real la confirma una persona en el PMS.
+   `Participamos`.
+3. **La comuna no descarta.** La region es solo informativa.
+4. **Disponibilidad manual.** El match de salones es por capacidad; la
+   disponibilidad real se confirma en la agenda y en el PMS.
 5. **Hotel Ismael solo hospedaje.** Nunca salones ni eventos.
-6. **Tolerancia a errores de tipeo.** La busqueda reconoce variantes como
-   "catring" o "hospedagh" cuando la coincidencia exacta no encuentra nada. Si
-   el texto no se parece a nada del vocabulario, no se fuerza una clasificacion.
+6. **Tolerancia a errores de tipeo.** La busqueda reconoce variantes cuando la
+   coincidencia exacta no encuentra nada. Si el texto no se parece a nada del
+   vocabulario, no se fuerza una clasificacion.
 7. **Costeo provisional.** Mientras no se carguen las tarifas reales, el costo
    se estima y no se descarta automaticamente por presupuesto hasta que una
    persona valide el costo.
+8. **Tope Compra Agil.** Superar el tope genera una advertencia, no un descarte
+   automatico.
+9. **Ultima escritura gana.** Si dos personas editan la misma licitacion al
+   mismo tiempo, se guarda el ultimo cambio. El historial de actividad deja
+   registro de ambos.
 
 ---
 
-## 7. Estados del embudo
+## 10. Estados del embudo
 
 | Estado | Significa |
 |---|---|
-| `Identificada` | Recien sincronizada, sin revisar. |
-| `Calificada` | Revisada y con posibilidad real de participar. |
-| `Participada` | El equipo decidio ofertar. |
-| `Adjudicada` | Ganada. |
-| `Descartada` | No se participa, siempre con motivo registrado. |
+| `Identificada` | Recien sincronizada, sin revisar |
+| `Calificada` | Revisada y con posibilidad real de participar |
+| `Participada` | El equipo decidio ofertar |
+| `Adjudicada` | Ganada |
+| `Descartada` | No se participa, con motivo registrado |
 
 ---
 
-## 8. Problemas frecuentes
+## 11. Revision y trabajo en equipo
+
+- Todos los usuarios comparten la misma base de datos.
+- Cada accion queda registrada en el **Historial de Actividad** con fecha,
+  usuario, tipo y detalle.
+- El listado muestra `Revisada por <nombre>` con la fecha y hora de la ultima
+  revision.
+- El filtro `Revision` permite ver `Pendientes sin revisar` o lo revisado por
+  una persona especifica.
+- La ficha muestra `Ultima revision: <nombre> - <fecha y hora>` debajo del boton
+  de revision.
+- No hay asignacion formal de responsables: la coordinacion se hace con el
+  filtro de revision y las notas compartidas.
+
+---
+
+## 12. Sincronizacion con Mercado Publico
+
+- Sin fecha, sincroniza los **ultimos 7 dias**. Con fecha, solo ese dia.
+- La fecha se escribe en formato `DDMMAAAA`.
+- La demora es normal: la API limita las consultas y la plataforma consulta una
+  ficha de detalle por cada licitacion pertinente. Puede tomar entre 3 y 6
+  minutos.
+- El boton se deshabilita mientras la sincronizacion esta en curso. No abrir dos
+  sincronizaciones a la vez.
+- Si la API responde con limite de consultas (HTTP 429), la plataforma espera y
+  reintenta. Si el bloqueo persiste, algunas fichas quedan sin detalle y el
+  resumen lo informa.
+
+**Recomendacion en produccion:** si la sincronizacion de 7 dias supera el tiempo
+maximo del servidor, sincronizar dia por dia usando el campo de fecha.
+
+---
+
+## 13. Problemas frecuentes
 
 **La sincronizacion se demora varios minutos.**
-Es normal. Sin fecha sincroniza 7 dias y puede tomar entre 5 y 7 minutos; con una
-fecha especifica toma alrededor de 1 minuto. La demora es intencional: la API
-limita la cantidad de consultas por minuto.
+Es normal. Sin fecha recorre 7 dias y consulta el detalle de cada licitacion
+pertinente. Con una fecha especifica es mucho mas rapida.
 
 **Aparece el aviso "La API bloqueo N consulta(s)".**
-La plataforma espacia las consultas y reintenta, pero si el bloqueo persiste
-algunas fichas quedan sin datos de detalle. Solucion: subir
-`MERCADO_PUBLICO_INTERVALO_MS` a 1000 en `.env` y repetir la sincronizacion, o
-sincronizar dia por dia usando el campo de fecha.
+Subir `MERCADO_PUBLICO_INTERVALO_MS` a 1000 en `.env` y repetir la
+sincronizacion, o sincronizar dia por dia.
 
 **No aparecen licitaciones nuevas.**
 Revisar que los filtros esten limpios y que la sincronizacion haya terminado sin
@@ -328,37 +431,46 @@ errores. Si el ticket de la API no esta configurado, la sincronizacion se omite 
 lo informa.
 
 **Una licitacion aparece con "Salon por asignar".**
-No hay ningun salon con aforo suficiente, o nadie ha completado la evaluacion
-operativa. Abrir la ficha y revisar el bloque de dimensionamiento.
+No hay ningun salon con aforo suficiente, o nadie ha completado la evaluacion.
+Abrir la ficha y revisar el bloque de capacidad y salones.
 
 **La tarifa del salon aparece en $0.**
 Es correcto por ahora: el catalogo oficial del hotel no publica tarifas. Mientras
 no se carguen, el costo minimo solo considera el consumo por persona.
 
 **El historial de ordenes de compra esta vacio.**
-Nunca se ha importado. Cargarlo desde Analitica con el Excel del hotel.
+Nunca se ha importado. Cargarlo desde `Historial de Adjudicacion` con el Excel
+del hotel.
 
 **No puedo marcar Participamos.**
 El costo base supera el presupuesto mandante. Ajustar el costeo o registrar el
 descarte con su motivo.
 
+**No recuerdo quien reviso una licitacion.**
+Usar el filtro `Revision` en el listado o abrir la ficha y revisar el badge y el
+`Historial de Actividad`.
+
+**Una metrica no me lleva al listado.**
+Las tarjetas del embudo bajan a la seccion de resultados con el filtro aplicado.
+Si no ves el listado, revisa que el navegador no este bloqueando el desplazamiento
+por anclas.
+
 ---
 
-## 9. Datos que aun faltan cargar
+## 14. Datos que aun faltan cargar
 
 Estos datos los tiene el hotel, no la plataforma:
 
-1. **Tarifas por salon.** El documento oficial trae aforos y superficies, pero no
-   precios.
-2. **Equipamiento por salon.** Hoy figura como "Por confirmar con el hotel".
-3. **Aforos del Salon Tam.** Deducidos de las combinaciones; confirmar.
-4. **Historico de ordenes de compra** en Excel o CSV.
-5. **Claves definitivas** de los cuatro perfiles.
-6. **Proveedor de IA** para la ficha resumen, si se decide usarlo.
+1. Tarifas por salon.
+2. Equipamiento por salon (hoy figura como "Por confirmar con el hotel").
+3. Aforos del Salon Tam (deducidos de las combinaciones; confirmar).
+4. Historico de ordenes de compra en Excel o CSV.
+5. Claves definitivas de los cuatro perfiles.
+6. Proveedor de IA para la ficha resumen, si se decide usarlo.
 
 ---
 
-## 10. Para el equipo tecnico
+## 15. Para el equipo tecnico
 
 - Verificacion obligatoria antes de integrar cambios:
 
@@ -366,7 +478,16 @@ Estos datos los tiene el hotel, no la plataforma:
 python verify.py
 ```
 
-- La base de datos es SQLite (`licitaciones.db`) y se inicializa sola al arrancar.
+- Suite de pruebas:
+
+```bash
+python -m pytest --ignore=tests/test_emoji_compliance.py
+```
+
+- La base de datos es SQLite (`licitaciones.db`) y se inicializa sola al
+  arrancar.
+- En produccion conviene definir `LICITACIONES_DB_PATH` en un disco persistente
+  para no perder datos en cada despliegue.
 - Toda la plataforma es web: no se instala nada en los puestos de trabajo del
   hotel, solo se abre el navegador.
 - Convenciones de ramas, commits e integracion en `docs/WORKFLOW.md`.
