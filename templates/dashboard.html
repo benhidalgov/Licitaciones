@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Panel de Control - Gestion de Licitaciones{% endblock %}
+{% block title %}Panel de Control - Gestión de Licitaciones{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
@@ -15,7 +15,7 @@
                 Tablero Principal de Oportunidades
             </h1>
             <p class="text-sm text-[#6E6D6A] max-w-2xl leading-relaxed">
-                Monitoreo del embudo comercial, control preventivo de costos y cruce documental en Mercado Publico.
+                Monitoreo del embudo comercial, control preventivo de costos y cruce documental en Mercado Público.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -32,7 +32,7 @@
             <form action="{{ url_for('sincronizar_licitaciones_route') }}" method="POST" class="inline" id="form-sincronizar">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn-secondary text-xs px-3 py-2 inline-flex items-center space-x-1" title="Consultar e importar oportunidades desde Mercado Publico">
-                    <span>Sincronizar Mercado Publico</span>
+                    <span>Sincronizar Mercado Público</span>
                 </button>
             </form>
 
@@ -46,7 +46,7 @@
                 Margen de tolerancia
             </div>
             <div class="text-[11px] text-[#6E6D6A]">
-                Margen minimo exigido para priorizar. No relaja el descarte cuando el costo supera el presupuesto.
+                Margen mínimo exigido para priorizar. No relaja el descarte cuando el costo supera el presupuesto.
             </div>
         </div>
         <form method="POST" action="{{ url_for('guardar_margen_tolerancia') }}" class="flex flex-wrap items-center gap-2">
@@ -97,7 +97,7 @@
                             <span class="badge-spot badge-spot-green">Revisada</span>
                             {% endif %}
                             {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
-                            <span class="badge-spot badge-spot-yellow">Sobre tope Compra Agil</span>
+                            <span class="badge-spot badge-spot-yellow">Sobre tope Compra Ágil</span>
                             {% endif %}
                         </div>
                         <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="text-sm font-medium text-[#111111] hover:underline line-clamp-2 block">
@@ -134,7 +134,7 @@
                     {% if lic.nombre_salon %}
                     <span class="badge-spot badge-spot-blue">{{ lic.nombre_salon }}</span>
                     {% else %}
-                    <span class="badge-spot badge-spot-yellow">Salon por asignar</span>
+                    <span class="badge-spot badge-spot-yellow">Salón por asignar</span>
                     {% endif %}
                 </div>
             </div>
@@ -143,7 +143,7 @@
         {% else %}
         <div class="card-editorial p-4 bg-[#FBFBFA] text-xs text-[#6E6D6A]">
             {% if not hay_abiertas %}
-            Todas las licitaciones registradas ya cerraron. Sincronice Mercado Publico para traer oportunidades nuevas.
+            Todas las licitaciones registradas ya cerraron. Sincronice Mercado Público para traer oportunidades nuevas.
             {% else %}
             Hay oportunidades abiertas, pero ninguna cumple el margen, el presupuesto, la capacidad o los filtros actuales.
             {% endif %}
@@ -182,7 +182,7 @@
                     <span class="text-[10px] font-mono text-[#6E6D6A]">Ley 19.886</span>
                 </div>
                 <div class="my-4">
-                    <div class="text-xs font-medium text-[#6E6D6A] uppercase tracking-wide">Compra Agil</div>
+                    <div class="text-xs font-medium text-[#6E6D6A] uppercase tracking-wide">Compra Ágil</div>
                     <div class="text-3xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Compra_Agil | miles }}</div>
                     <div class="text-[11px] text-[#346538] font-mono mt-1">
                         Monto viable: {{ metrics.Compra_Agil_Monto | clp }}
@@ -192,21 +192,21 @@
                 <div class="text-[11px] text-[#6E6D6A] pt-2 border-t border-[#EAEAEA] space-y-2">
                     <form id="tope-compra-agil" method="POST" action="{{ url_for('guardar_tope_compra_agil') }}" class="flex items-center gap-2" onclick="event.stopPropagation()">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <label for="tope_compra_agil" class="text-[10px] uppercase tracking-wide">Tope CLP:</label>
+                        <label for="tope_compra_agil" class="text-[10px] uppercase tracking-wide">UTM del mes:</label>
                         <input
                             type="text"
                             inputmode="numeric"
                             pattern="[0-9.]+"
                             id="tope_compra_agil"
-                            name="tope_compra_agil"
-                            value="{{ tope_compra_agil | miles }}"
-                            placeholder="7.244.000"
+                            name="utm_valor"
+                            value="{{ utm_valor | miles }}"
+                            placeholder="72.440"
                             class="w-32 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
                         >
                         <button type="submit" class="btn-secondary text-xs px-3 py-1">Guardar</button>
                     </form>
-                    <p class="text-[10px] text-[#6E6D6A]">100 UTM del mes; el valor cambia mensualmente.</p>
-                    <a href="{{ url_for('dashboard', modalidad='Compra Agil', _anchor='oportunidades') }}" class="inline-block font-medium text-[#111111] hover:underline">Ver oportunidades de Compra Agil</a>
+                    <p class="text-[10px] text-[#6E6D6A]">Tope 100 UTM: {{ tope_compra_agil | clp }}. Actualice la UTM cada mes.</p>
+                    <a href="{{ url_for('dashboard', modalidad='Compra Agil', _anchor='oportunidades') }}" class="inline-block font-medium text-[#111111] hover:underline">Ver oportunidades de Compra Ágil</a>
                 </div>
             </div>
 
@@ -220,7 +220,7 @@
                     <div class="text-xs font-medium text-[#6E6D6A]">Total Identificadas</div>
                     <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Identificada | miles }}</div>
                 </div>
-                <div class="text-[10px] text-[#6E6D6A]">Deteccion inicial</div>
+                <div class="text-[10px] text-[#6E6D6A]">Detección inicial</div>
             </a>
 
             <!-- Calificadas -->
@@ -313,7 +313,7 @@
 
                 <div>
                     <label for="filter-categoria" class="block text-xs font-medium text-[#111111] mb-1.5">
-                        Categoria Comercial
+                        Categoría Comercial
                     </label>
                     <select
                         id="filter-categoria"
@@ -336,8 +336,8 @@
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
                     >
                         <option value="">Todas las Modalidades</option>
-                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope referencial {{ tope_compra_agil | clp }})</option>
-                        <option value="Licitacion Publica" {% if modalidad == 'Licitacion Publica' %}selected{% endif %}>Licitacion Publica</option>
+                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Ágil (Tope referencial {{ tope_compra_agil | clp }})</option>
+                        <option value="Licitacion Publica" {% if modalidad == 'Licitacion Publica' %}selected{% endif %}>Licitación Pública</option>
                     </select>
                 </div>
 
@@ -377,7 +377,7 @@
 
                 <div>
                     <label for="filter-revision" class="block text-xs font-medium text-[#111111] mb-1.5">
-                        Revision
+                        Revisión
                     </label>
                     <select
                         id="filter-revision"
@@ -391,15 +391,30 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div>
+                    <label for="filter-vencida" class="block text-xs font-medium text-[#111111] mb-1.5">
+                        Vencimiento
+                    </label>
+                    <select
+                        id="filter-vencida"
+                        name="vencida"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
+                    >
+                        <option value="">Todas</option>
+                        <option value="0" {% if vencida == '0' %}selected{% endif %}>Vigentes</option>
+                        <option value="1" {% if vencida == '1' %}selected{% endif %}>Vencidas</option>
+                    </select>
+                </div>
             </div>
 
             <div class="flex items-center justify-between pt-3 border-t border-[#EAEAEA]">
                 <div class="text-xs text-[#6E6D6A]">
                     Resultados encontrados: <strong class="font-mono text-[#111111]">{{ total | miles }}</strong>
-                    <span class="ml-2">Hasta 8 por pagina</span>
+                    <span class="ml-2">Hasta 8 por página</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    {% if categoria or modalidad or estado or q or cliente_clave or motivo or revisada_por %}
+                    {% if categoria or modalidad or estado or q or cliente_clave or motivo or revisada_por or vencida %}
                     <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5">
                         Limpiar Filtros
                     </a>
@@ -430,7 +445,7 @@
                 <thead class="bg-[#FBFBFA] text-[#6E6D6A] font-medium text-xs tracking-wide">
                     <tr>
                         <th scope="col" class="px-3 py-2">ID / Cierre</th>
-                        <th scope="col" class="px-3 py-2">Licitacion</th>
+                        <th scope="col" class="px-3 py-2">Licitación</th>
                         <th scope="col" class="px-3 py-2 text-right">Monto y viabilidad</th>
                         <th scope="col" class="px-3 py-2 text-center">Estado</th>
                         <th scope="col" class="px-3 py-2 text-center">Acciones</th>
@@ -485,7 +500,7 @@
                             <div class="text-xs text-[#6E6D6A]">Costo: {{ lic.costo_base_hotel | clp }}</div>
                             <div class="mt-1">
                                 {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
-                                <span class="badge-spot badge-spot-yellow">Sobre tope Compra Agil</span>
+                                <span class="badge-spot badge-spot-yellow">Sobre tope Compra Ágil</span>
                                 <div class="text-xs text-[#956400] mt-0.5">Tope: {{ tope_compra_agil | clp }}</div>
                                 {% elif lic.presupuesto_mandante <= 0 %}
                                 <span class="badge-spot badge-spot-neutral">Monto no informado</span>
@@ -493,7 +508,7 @@
                                 <span class="badge-spot badge-spot-red">Inviable / Costo Excede</span>
                                 <div class="text-xs text-[#9F2F2D] mt-0.5">Deficit: {{ (lic.costo_base_hotel - lic.presupuesto_mandante) | clp }}</div>
                                 {% elif (lic.presupuesto_mandante - lic.costo_base_hotel) < minimo %}
-                                <span class="badge-spot badge-spot-yellow">Margen bajo el minimo</span>
+                                <span class="badge-spot badge-spot-yellow">Margen bajo el mínimo</span>
                                 <div class="text-xs text-[#956400] mt-0.5">Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}</div>
                                 {% else %}
                                 <span class="badge-spot badge-spot-green">Viable / Margen Positivo</span>
@@ -537,7 +552,7 @@
         {% if paginas > 1 %}
         <div class="px-4 py-3 border-t border-[#EAEAEA] flex flex-wrap items-center justify-between gap-3 bg-[#FBFBFA]">
             <span class="text-[11px] font-mono text-[#6E6D6A]">
-                Pagina {{ pagina }} de {{ paginas }}
+                Página {{ pagina }} de {{ paginas }}
             </span>
             <div class="flex items-center gap-2">
                 {% if pagina > 1 %}

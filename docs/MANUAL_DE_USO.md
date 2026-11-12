@@ -120,6 +120,7 @@ Filtros disponibles:
 | Estado en Embudo | Identificada, Calificada, Participada, Adjudicada o Descartada |
 | Motivo de Descarte | Precio, Disponibilidad, Fuera de alcance, Otro o Sin motivo |
 | Revision | Todas, Pendientes sin revisar o Revisadas por una persona |
+| Vencimiento | Todas, Vigentes o Vencidas |
 
 Los filtros tambien se aplican a la vista priorizada y a la exportacion.
 

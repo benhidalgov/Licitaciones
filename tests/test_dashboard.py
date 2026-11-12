@@ -206,7 +206,7 @@ class TestDashboard(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("Sincronizar Mercado Publico", html)
+        self.assertIn("Sincronizar Mercado Público", html)
         self.assertTrue("API activa" in html or "Ticket pendiente" in html)
 
     def test_sincronizar_route_unauthenticated(self):
@@ -221,7 +221,7 @@ class TestDashboard(unittest.TestCase):
         res = self.client.post("/licitaciones/sincronizar", follow_redirects=True)
         self.assertEqual(res.status_code, 200)
         html = res.data.decode("utf-8")
-        self.assertIn("Sincronizar Mercado Publico", html)
+        self.assertIn("Sincronizar Mercado Público", html)
         # Sin fecha explicita sincroniza la ultima semana
         mock_sync.assert_called_with(fecha=None, dias=7)
 
@@ -280,6 +280,22 @@ class TestDashboard(unittest.TestCase):
         hoja = libro.active
         encabezados = [celda.value for celda in hoja[1]]
         self.assertIn("Ficha Mercado Publico", encabezados)
+
+    def test_filtro_vencidas(self):
+        vencidas = self.client.get("/licitaciones?vencida=1").get_data(as_text=True)
+        self.assertIn("1058-12-COT24", vencidas)
+        vigentes = self.client.get("/licitaciones?vencida=0").get_data(as_text=True)
+        self.assertNotIn("1058-12-COT24", vigentes)
+
+    def test_utm_actualiza_tope(self):
+        response = self.client.post(
+            "/ajustes/tope_compra_agil",
+            data={"utm_valor": "73.000"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(database.get_utm_valor(), 73000)
+        self.assertEqual(database.get_tope_compra_agil(), 7300000)
 
     def test_priorizadas_avisa_cuando_todo_cerro(self):
         html = self.client.get("/").get_data(as_text=True)

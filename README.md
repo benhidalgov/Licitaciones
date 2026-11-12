@@ -181,8 +181,16 @@ Al iniciarse, el servidor verifica automaticamente la base de datos `licitacione
 ========================================================================
 ```
 
-### 4. Despliegue en Render
+### 3.1 Tailwind local
 
+El CSS se genera en `static/tailwind.css` y no depende del CDN. Si cambias clases
+en `templates/`, regenera el archivo:
+
+```bash
+npx tailwindcss@3.4.17 -c tailwind.config.js -i static/tailwind_input.css -o static/tailwind.css --minify
+```
+
+### 4. Despliegue en Render
 El punto de entrada WSGI es `wsgi.py`. En Render configure el **Start Command**:
 
 ```bash

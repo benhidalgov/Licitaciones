@@ -59,8 +59,8 @@ class TestInformes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("Informe Semanal", html)
-        self.assertIn("Gerencia General y Direccion de Finanzas", html)
-        self.assertIn("Demanda por categoria", html)
+        self.assertIn("Gerencia General y Dirección de Finanzas", html)
+        self.assertIn("Demanda por categoría", html)
 
     def test_informe_mensual_renderiza(self):
         response = self.client.get("/informes?periodo=mensual")

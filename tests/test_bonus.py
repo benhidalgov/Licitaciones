@@ -169,8 +169,8 @@ class TestBonus(unittest.TestCase):
         resp = self.client.get("/analitica")
         html = resp.get_data(as_text=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Historial de Adjudicacion", html)
-        self.assertIn("Historial de Ordenes de Compra", html)
+        self.assertIn("Historial de Adjudicación", html)
+        self.assertIn("Historial de Órdenes de Compra", html)
         self.assertIn("Todavia no hay adjudicaciones registradas", html)
 
     # -- Bonus 3: historial de OC --------------------------------------------

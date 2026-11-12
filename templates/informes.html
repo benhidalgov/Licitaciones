@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Informes Ejecutivos - Gestion de Licitaciones{% endblock %}
+{% block title %}Informes Ejecutivos - Gestión de Licitaciones{% endblock %}
 
 {% block content %}
 {% set etiqueta_periodo = {'semanal': 'Semanal', 'mensual': 'Mensual'}.get(periodo, 'Personalizado') %}
@@ -11,14 +11,14 @@
         <div class="space-y-1">
             <div class="flex items-center space-x-2">
                 <span class="badge-spot badge-spot-neutral">Reportabilidad Ejecutiva</span>
-                <span class="text-xs text-[#6E6D6A] font-mono">Gerencia General y Direccion de Finanzas</span>
+                <span class="text-xs text-[#6E6D6A] font-mono">Gerencia General y Dirección de Finanzas</span>
             </div>
             <h1 class="text-3xl font-serif font-normal tracking-tight text-[#111111]">
                 Informe {{ etiqueta_periodo }}
             </h1>
             <p class="text-xs text-[#6E6D6A]">
                 Periodo: {{ desde.strftime('%d-%m-%Y') }} al {{ hasta.strftime('%d-%m-%Y') }}.
-                Consolidado de demanda estatal, conversion comercial y margen proyectado.
+                Consolidado de demanda estatal, conversión comercial y margen proyectado.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -33,10 +33,10 @@
 
     <div class="flex flex-wrap items-center gap-1 border-b border-[#EAEAEA] pb-2">
         <a href="{{ url_for('informes', periodo='semanal') }}" class="px-3 py-1.5 text-xs font-medium rounded {% if periodo == 'semanal' %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111]{% endif %}">
-            Semanal (7 dias)
+            Semanal (7 días)
         </a>
         <a href="{{ url_for('informes', periodo='mensual') }}" class="px-3 py-1.5 text-xs font-medium rounded {% if periodo == 'mensual' %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111]{% endif %}">
-            Mensual (30 dias)
+            Mensual (30 días)
         </a>
         <form method="GET" action="{{ url_for('informes') }}" class="flex flex-wrap items-center gap-1 ml-1">
             <input type="hidden" name="periodo" value="personalizado">
@@ -52,7 +52,7 @@
 
     {% if reporte.total == 0 %}
     <div class="card-editorial p-6 bg-[#FBFBFA] text-xs text-[#6E6D6A]">
-        No hay oportunidades publicadas en este periodo. Sincronice Mercado Publico o seleccione otro periodo.
+        No hay oportunidades publicadas en este periodo. Sincronice Mercado Público o seleccione otro periodo.
     </div>
     {% else %}
 
@@ -108,14 +108,14 @@
 
     <div class="card-editorial overflow-hidden bg-white">
         <div class="px-4 py-3 border-b border-[#EAEAEA]">
-            <h2 class="text-sm font-semibold text-[#111111]">Demanda por categoria</h2>
-            <p class="text-[11px] text-[#6E6D6A]">Volumen y presupuesto identificado por linea de servicio.</p>
+            <h2 class="text-sm font-semibold text-[#111111]">Demanda por categoría</h2>
+            <p class="text-[11px] text-[#6E6D6A]">Volumen y presupuesto identificado por línea de servicio.</p>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
                 <thead class="bg-[#FBFBFA] text-[#6E6D6A] uppercase text-[10px] tracking-wider">
                     <tr>
-                        <th class="px-4 py-3">Categoria</th>
+                        <th class="px-4 py-3">Categoría</th>
                         <th class="px-4 py-3 text-right">Oportunidades</th>
                         <th class="px-4 py-3 text-right">Presupuesto</th>
                         <th class="px-4 py-3 text-right">Costo base</th>
@@ -200,7 +200,7 @@
     <div class="card-editorial overflow-hidden bg-white">
         <div class="px-4 py-3 border-b border-[#EAEAEA]">
             <h2 class="text-sm font-semibold text-[#111111]">Licitaciones descartadas</h2>
-            <p class="text-[11px] text-[#6E6D6A]">Cada registro abre la ficha completa de la licitacion.</p>
+            <p class="text-[11px] text-[#6E6D6A]">Cada registro abre la ficha completa de la licitación.</p>
         </div>
         {% if reporte.descartes %}
         <div class="overflow-x-auto">
@@ -210,7 +210,7 @@
                         <th class="px-4 py-3">ID</th>
                         <th class="px-4 py-3">Titulo y Organismo</th>
                         <th class="px-4 py-3">Motivo</th>
-                        <th class="px-4 py-3">Descripcion</th>
+                        <th class="px-4 py-3">Descripción</th>
                         <th class="px-4 py-3 text-right">Accion</th>
                     </tr>
                 </thead>
@@ -225,7 +225,7 @@
                         <td class="px-4 py-3">{{ d.motivo_descarte }}</td>
                         <td class="px-4 py-3 text-[#6E6D6A]">{{ d.descripcion_descarte or 'Sin descripcion' }}</td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
-                            <a href="{{ url_for('licitacion_detalle', id_licitacion=d.id_licitacion) }}" class="text-[#111111] font-medium hover:underline">Ver licitacion</a>
+                            <a href="{{ url_for('licitacion_detalle', id_licitacion=d.id_licitacion) }}" class="text-[#111111] font-medium hover:underline">Ver licitación</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -238,7 +238,7 @@
     </div>
 
     <p class="text-[11px] text-[#6E6D6A]">
-        Informe generado el {{ generado_en.strftime('%d-%m-%Y %H:%M') }}. Los montos son referenciales y el costo base debe validarse con el area operativa.
+        Informe generado el {{ generado_en.strftime('%d-%m-%Y %H:%M') }}. Los montos son referenciales y el costo base debe validarse con el área operativa.
     </p>
     {% endif %}
 </div>

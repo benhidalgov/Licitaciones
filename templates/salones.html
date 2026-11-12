@@ -16,7 +16,7 @@
                 Catalogo de Salones y Agenda de Ocupacion
             </h1>
             <p class="text-xs text-[#6E6D6A] max-w-2xl leading-relaxed">
-                Gestion centralizada de aforos, equipamiento tecnico y cronograma de fechas contratadas (booked) para optimizar la formulacion de propuestas en Mercado Publico y eventos corporativos.
+                Gestión centralizada de aforos, equipamiento técnico y cronograma de fechas contratadas (booked) para optimizar la formulacion de propuestas en Mercado Público y eventos corporativos.
             </p>
         </div>
         <div class="flex items-center space-x-2">
@@ -41,7 +41,7 @@
         <div class="card-editorial p-5 bg-white flex flex-col justify-between">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">Reservas Activas</div>
             <div class="text-2xl font-bold font-mono text-[#111111] my-2">{{ reservas_activas }}</div>
-            <div class="text-[10px] text-[#6E6D6A]">Con fecha de termino desde hoy</div>
+            <div class="text-[10px] text-[#6E6D6A]">Con fecha de término desde hoy</div>
         </div>
     </div>
 
@@ -66,7 +66,7 @@
         <form method="GET" action="{{ url_for('salones_catalogo') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#FBFBFA] p-4 rounded-[6px] border border-[#EAEAEA]">
             <div>
                 <label for="salon" class="block text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider mb-1">
-                    Filtrar por Salon:
+                    Filtrar por Salón:
                 </label>
                 <select
                     id="salon"
@@ -126,7 +126,7 @@
                 <li>
                     {{ aviso.texto }}
                     {% if aviso.id_licitacion %}
-                    <a href="{{ url_for('licitacion_detalle', id_licitacion=aviso.id_licitacion) }}" class="underline">Ver licitacion</a>
+                    <a href="{{ url_for('licitacion_detalle', id_licitacion=aviso.id_licitacion) }}" class="underline">Ver licitación</a>
                     {% endif %}
                     {% if aviso.id_reserva %}
                     <a href="{{ url_for('editar_reserva', id_reserva=aviso.id_reserva) }}" class="underline">Editar reserva</a>
@@ -141,7 +141,7 @@
             <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
                 <thead class="bg-[#FBFBFA] text-[#6E6D6A] font-medium uppercase text-[10px] tracking-wider">
                     <tr>
-                        <th scope="col" class="px-4 py-3">Salon</th>
+                        <th scope="col" class="px-4 py-3">Salón</th>
                         <th scope="col" class="px-4 py-3">Cliente / Organismo (Booked Por)</th>
                         <th scope="col" class="px-4 py-3">Tipo de Evento</th>
                         <th scope="col" class="px-4 py-3">Fechas de Ocupacion</th>
@@ -178,7 +178,7 @@
                         <!-- Tipo de Evento -->
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="badge-spot badge-spot-neutral">
-                                {{ r.tipo_evento }}
+                                {{ r.tipo_evento }}{% if r.montaje %} · {{ r.montaje }}{% endif %}
                             </span>
                         </td>
 
@@ -225,7 +225,7 @@
                             {% if r.id_licitacion %}
                             <div class="mt-1">
                                 <a href="{{ url_for('licitacion_detalle', id_licitacion=r.id_licitacion) }}" class="inline-flex items-center font-mono font-semibold text-[#111111] hover:underline">
-                                    Licitacion: {{ r.id_licitacion }}
+                                    Licitación: {{ r.id_licitacion }}
                                 </a>
                             </div>
                             {% endif %}
@@ -253,7 +253,7 @@
         {% if paginas > 1 %}
         <div class="px-4 py-3 border-t border-[#EAEAEA] flex flex-wrap items-center justify-between gap-3 bg-[#FBFBFA] rounded-[6px]">
             <span class="text-[11px] font-mono text-[#6E6D6A]">
-                Pagina {{ pagina }} de {{ paginas }}
+                Página {{ pagina }} de {{ paginas }}
             </span>
             <div class="flex items-center gap-2">
                 {% if pagina > 1 %}
@@ -272,7 +272,7 @@
         {% else %}
         <div class="p-8 text-center bg-[#FBFBFA] rounded-[6px] border border-[#EAEAEA]">
             <p class="text-sm font-medium text-[#111111]">No se registran eventos contratados con los criterios de busqueda seleccionados.</p>
-            <p class="text-xs text-[#6E6D6A] mt-1">El salon consultado se encuentra disponible para nuevas fechas o reservas de licitacion.</p>
+            <p class="text-xs text-[#6E6D6A] mt-1">El salón consultado se encuentra disponible para nuevas fechas o reservas de licitación.</p>
             <div class="mt-3">
                 <a href="{{ url_for('salones_catalogo') }}" class="btn-secondary text-xs px-3 py-1.5 inline-block">
                     Mostrar Todos los Salones
@@ -287,7 +287,7 @@
         <div class="flex items-center justify-between border-b border-[#EAEAEA] pb-2">
             <div>
                 <h2 class="text-sm font-semibold text-[#111111]">Catalogo de Infraestructura de Salones</h2>
-                <p class="text-xs text-[#6E6D6A]">Caracteristicas tecnicas, formatos de montaje, aforos maximos y tarifas de referencia.</p>
+                <p class="text-xs text-[#6E6D6A]">Caracteristicas técnicas, formatos de montaje, aforos maximos y tarifas de referencia.</p>
             </div>
             <span class="text-xs font-mono text-[#6E6D6A]">{{ salones|length }} salones disponibles</span>
         </div>
@@ -314,7 +314,7 @@
 
                     <div class="text-xs text-[#6E6D6A] space-y-1 pt-1">
                         <div>
-                            <span class="font-medium text-[#111111]">Direccion:</span>
+                            <span class="font-medium text-[#111111]">Dirección:</span>
                             <span>{{ direccion_hotel }}</span>
                         </div>
                         <div>
@@ -359,7 +359,7 @@
                         Ver Agenda de Fechas
                     </a>
                     <button type="button" onclick="document.getElementById('ficha-{{ s.id_salon }}').showModal()" class="btn-secondary text-xs px-2.5 py-1">
-                        Ficha Tecnica
+                        Ficha Técnica
                     </button>
                 </div>
 
@@ -380,6 +380,7 @@
                             <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Horario operativo</dt><dd class="font-mono">{{ s.horario_disponible }}</dd></div>
                             <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Tarifa referencial</dt><dd class="font-mono font-semibold">{{ s.tarifa_referencial | clp }} / jornada</dd></div>
                             <div><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Montajes</dt><dd>{{ s.montajes or 'Formatos estandar' }}</dd></div>
+                            <div class="col-span-2"><dt class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Aforo por montaje</dt><dd>{% for m, cap in aforos_salon(s.id_salon).items() %}{{ m }}: {{ cap }}{% if not loop.last %} · {% endif %}{% endfor %}</dd></div>
                         </dl>
                         <div>
                             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A] mb-1">Equipamiento</div>
@@ -402,7 +403,7 @@
                         </div>
                         <div class="flex items-center justify-between pt-3 border-t border-[#EAEAEA]">
                             <a href="{{ url_for('salon_detalle', id_salon=s.id_salon) }}" class="text-xs font-medium hover:underline">Abrir ficha completa</a>
-                            <a href="{{ url_for('crear_reserva', salon=s.id_salon) }}" class="btn-primary text-xs px-3 py-1.5">Reservar salon</a>
+                            <a href="{{ url_for('crear_reserva', salon=s.id_salon) }}" class="btn-primary text-xs px-3 py-1.5">Reservar salón</a>
                         </div>
                     </div>
                 </dialog>

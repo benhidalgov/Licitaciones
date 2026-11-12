@@ -128,6 +128,29 @@ _MONTAJES_TITULARES = (
     ("Coctel de pie", 9),
 )
 
+MONTAJES_RESERVA = tuple(titulo for titulo, _ in _MONTAJES_TITULARES)
+
+
+def _id_salon_desde_nombre(nombre: str) -> str:
+    return f"SALON-{_sin_acentos(nombre).upper()}"
+
+
+AFOROS_POR_SALON = {}
+for _fila in list(CATALOGO_SALONES_HPSF) + [SALON_TAM_DEDUCIDO]:
+    AFOROS_POR_SALON[_id_salon_desde_nombre(_fila[0])] = {
+        titulo: _fila[indice]
+        for titulo, indice in _MONTAJES_TITULARES
+        if _fila[indice]
+    }
+
+
+def aforos_por_montaje(id_salon: str) -> Dict[str, int]:
+    return dict(AFOROS_POR_SALON.get(id_salon or "", {}))
+
+
+def capacidad_por_montaje(id_salon: str, montaje: str) -> Optional[int]:
+    return AFOROS_POR_SALON.get(id_salon or "", {}).get(montaje)
+
 
 def _tipo_por_aforo(capacidad: int) -> str:
     """Clasifica el salon por su aforo maximo documentado."""
@@ -245,6 +268,7 @@ def init_db() -> None:
                 cliente_evento TEXT NOT NULL,
                 organismo_o_empresa TEXT NOT NULL,
                 tipo_evento TEXT NOT NULL,
+                montaje TEXT NOT NULL DEFAULT '',
                 fecha_inicio TEXT NOT NULL,
                 fecha_fin TEXT NOT NULL,
                 horario TEXT NOT NULL,
@@ -257,6 +281,14 @@ def init_db() -> None:
             )
         """)
         conn.commit()
+
+        cursor.execute("PRAGMA table_info(reservas_salones)")
+        reserva_cols = {row[1] for row in cursor.fetchall()}
+        if "montaje" not in reserva_cols:
+            cursor.execute(
+                "ALTER TABLE reservas_salones ADD COLUMN montaje TEXT NOT NULL DEFAULT ''"
+            )
+            conn.commit()
 
         cursor.execute("SELECT COUNT(*) FROM reservas_salones")
         count_reservas = cursor.fetchone()[0]
@@ -678,6 +710,10 @@ def init_db() -> None:
         cursor.execute(
             "INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('seed_demo', 1)"
         )
+        cursor.execute(
+            "INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('utm_valor', ?)",
+            (UTM_DEFECTO,),
+        )
         # Los descartes historicos sin motivo quedan con un motivo explicito;
         # desde ahora el cambio de estado exige usar "No participamos".
         cursor.execute(
@@ -911,7 +947,7 @@ def get_salon_detalle(id_salon: str) -> Optional[Dict[str, Any]]:
 
 
 ALLOWED_COLUMNS_RESERVAS = {
-    "id_salon", "cliente_evento", "organismo_o_empresa", "tipo_evento",
+    "id_salon", "cliente_evento", "organismo_o_empresa", "tipo_evento", "montaje",
     "fecha_inicio", "fecha_fin", "horario", "asistentes_estimados",
     "estado_reserva", "id_licitacion", "contacto_responsable", "observaciones"
 }
@@ -963,6 +999,7 @@ def create_reserva(data: Dict[str, Any]) -> Optional[int]:
         payload = {
             "asistentes_estimados": 0, "estado_reserva": "Confirmada",
             "id_licitacion": "", "contacto_responsable": "", "observaciones": "",
+            "montaje": "",
             **data
         }
         # BEGIN IMMEDIATE serializa el chequeo y el INSERT: dos usuarios no
@@ -980,11 +1017,11 @@ def create_reserva(data: Dict[str, Any]) -> Optional[int]:
                 return None
         cursor = conn.execute("""
             INSERT INTO reservas_salones (
-                id_salon, cliente_evento, organismo_o_empresa, tipo_evento,
+                id_salon, cliente_evento, organismo_o_empresa, tipo_evento, montaje,
                 fecha_inicio, fecha_fin, horario, asistentes_estimados,
                 estado_reserva, id_licitacion, contacto_responsable, observaciones
             ) VALUES (
-                :id_salon, :cliente_evento, :organismo_o_empresa, :tipo_evento,
+                :id_salon, :cliente_evento, :organismo_o_empresa, :tipo_evento, :montaje,
                 :fecha_inicio, :fecha_fin, :horario, :asistentes_estimados,
                 :estado_reserva, :id_licitacion, :contacto_responsable, :observaciones
             )
@@ -1004,11 +1041,18 @@ def _filtros_licitaciones(
     propiedad: Optional[str] = None,
     cliente_clave: Optional[str] = None,
     motivo: Optional[str] = None,
-    revisada_por: Optional[str] = None
+    revisada_por: Optional[str] = None,
+    vencida: Optional[str] = None
 ) -> Tuple[str, List[Any]]:
     """Construye el WHERE compartido entre listado y conteo (evita divergencia)."""
     where = " WHERE 1=1"
     params: List[Any] = []
+    if vencida == "1":
+        where += " AND l.fecha_cierre < ?"
+        params.append(hoy_chile().isoformat())
+    elif vencida == "0":
+        where += " AND l.fecha_cierre >= ?"
+        params.append(hoy_chile().isoformat())
     if categoria:
         where += " AND l.categoria = ?"
         params.append(categoria)
@@ -1065,10 +1109,11 @@ def count_licitaciones(
     propiedad: Optional[str] = None,
     cliente_clave: Optional[str] = None,
     motivo: Optional[str] = None,
-    revisada_por: Optional[str] = None
+    revisada_por: Optional[str] = None,
+    vencida: Optional[str] = None
 ) -> int:
     where, params = _filtros_licitaciones(
-        categoria, modalidad, estado, q, propiedad, cliente_clave, motivo, revisada_por
+        categoria, modalidad, estado, q, propiedad, cliente_clave, motivo, revisada_por, vencida
     )
     conn = get_db_connection()
     try:
@@ -1089,13 +1134,14 @@ def get_all_licitaciones(
     cliente_clave: Optional[str] = None,
     motivo: Optional[str] = None,
     revisada_por: Optional[str] = None,
+    vencida: Optional[str] = None,
     limit: Optional[int] = None,
     offset: int = 0
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
         where, params = _filtros_licitaciones(
-            categoria, modalidad, estado, q, propiedad, cliente_clave, motivo, revisada_por
+            categoria, modalidad, estado, q, propiedad, cliente_clave, motivo, revisada_por, vencida
         )
         query = """
             SELECT l.*,
@@ -1487,6 +1533,30 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
 
 
 TOPE_COMPRA_AGIL_DEFECTO = 7244000  # 100 UTM de noviembre 2026; actualizar cada mes.
+UTM_DEFECTO = 72440
+
+
+def get_utm_valor() -> int:
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT valor FROM ajustes WHERE clave = 'utm_valor'"
+        ).fetchone()
+        return int(row["valor"]) if row else UTM_DEFECTO
+    finally:
+        conn.close()
+
+
+def set_utm_valor(valor: int) -> None:
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('utm_valor', ?)",
+            (int(valor),)
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def get_tope_compra_agil() -> int:
@@ -1495,7 +1565,7 @@ def get_tope_compra_agil() -> int:
         row = conn.execute(
             "SELECT valor FROM ajustes WHERE clave = 'tope_compra_agil'"
         ).fetchone()
-        return int(row["valor"]) if row else TOPE_COMPRA_AGIL_DEFECTO
+        return int(row["valor"]) if row else 100 * get_utm_valor()
     finally:
         conn.close()
 

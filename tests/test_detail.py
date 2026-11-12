@@ -78,7 +78,7 @@ class TestDetail(unittest.TestCase):
         )
         html = self.client.get("/licitaciones/1058-12-COT24").data.decode("utf-8")
         self.assertIn("Revisada por Mari", html)
-        self.assertIn("Ultima revision: Mari", html)
+        self.assertIn("Última revisión: Mari", html)
 
     def test_view_detail_not_found(self):
         response = self.client.get("/licitaciones/NO-EXISTE-999")
@@ -286,7 +286,7 @@ class TestDetail(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
-        self.assertIn("Salon Pendiente de Asignacion", html)
+        self.assertIn("Salón Pendiente de Asignación", html)
 
     def test_detail_no_emojis(self):
         emoji_pattern = re.compile(

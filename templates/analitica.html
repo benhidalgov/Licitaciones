@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Historial de Adjudicacion e Historial de OC - Hotel Plaza San Francisco{% endblock %}
+{% block title %}Historial de Adjudicación e Historial de OC - Hotel Plaza San Francisco{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
@@ -10,14 +10,14 @@
             <nav class="flex items-center space-x-2 text-xs text-[#6E6D6A]">
                 <a href="{{ url_for('dashboard') }}" class="hover:text-[#111111] transition-colors">Tablero Principal</a>
                 <span>/</span>
-                <span class="text-[#111111] font-medium">Analitica</span>
+                <span class="text-[#111111] font-medium">Analítica</span>
             </nav>
             <h1 class="text-3xl font-serif font-normal tracking-tight text-[#111111] pt-1">
-                Historial de Adjudicacion y Ordenes de Compra
+                Historial de Adjudicación y Órdenes de Compra
             </h1>
             <p class="text-xs text-[#6E6D6A] max-w-2xl leading-relaxed">
-                Historial de adjudicacion con precios observados en el mercado y experiencia previa del
-                hotel a partir del historial de ordenes de compra que entrega la entidad.
+                Historial de adjudicación con precios observados en el mercado y experiencia previa del
+                hotel a partir del historial de órdenes de compra que entrega la entidad.
             </p>
         </div>
         <div class="flex items-center space-x-2">
@@ -47,7 +47,7 @@
             <div class="text-[10px] text-[#6E6D6A]">Filas importadas desde el Excel del hotel</div>
         </div>
         <div class="card-editorial p-5 bg-white flex flex-col justify-between">
-            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">Monto total historico</div>
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">Monto total histórico</div>
             <div class="text-2xl font-bold font-mono text-[#111111] my-2">{{ resumen_oc.monto_total | clp }}</div>
             <div class="text-[10px] text-[#6E6D6A]">Suma de OC importadas</div>
         </div>
@@ -55,14 +55,14 @@
 
     {% if benchmark.adjudicadas_sin_precio %}
     <div class="card-editorial p-4 bg-[#FBF3DB] border border-[#F3E0A9] text-xs text-[#956400]">
-        Hay {{ benchmark.adjudicadas_sin_precio }} adjudicacion(es) sin precio final. Complete el precio en la fila correspondiente para conciliar el historial con el tablero.
+        Hay {{ benchmark.adjudicadas_sin_precio }} adjudicación(es) sin precio final. Complete el precio en la fila correspondiente para conciliar el historial con el tablero.
     </div>
     {% endif %}
 
     <!-- Benchmarking -->
     <div class="card-editorial overflow-hidden bg-white">
         <div class="px-6 py-4 border-b border-[#EAEAEA] bg-[#FBFBFA]">
-            <h2 class="text-sm font-semibold text-[#111111]">Historial de Adjudicacion</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Historial de Adjudicación</h2>
             <p class="text-[11px] text-[#6E6D6A] mt-0.5">
                 Ordenado por precio final descendente. El precio y el puntaje se editan en la misma fila.
             </p>
@@ -136,7 +136,7 @@
         <div class="px-6 py-10 text-center">
             <p class="text-xs text-[#6E6D6A] max-w-md mx-auto">
                 Todavia no hay adjudicaciones registradas. Edite una fila del listado o abra una
-                licitacion para cargar adjudicatario, puntaje y precio final.
+                licitación para cargar adjudicatario, puntaje y precio final.
             </p>
         </div>
         {% endif %}
@@ -145,10 +145,10 @@
     <!-- Historial de OC -->
     <div class="card-editorial p-6 bg-white space-y-5">
         <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Historial de Ordenes de Compra</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Historial de Órdenes de Compra</h2>
             <p class="text-[11px] text-[#6E6D6A] mt-0.5">
                 Cargue el Excel que entrega el hotel (.xlsx o .csv). Se reconocen encabezados
-                como Organismo/Cliente, Objeto/Descripcion, Fecha y Monto; las columnas que
+                como Organismo/Cliente, Objeto/Descripción, Fecha y Monto; las columnas que
                 falten quedan vacias.
             </p>
         </div>
@@ -200,7 +200,7 @@
         {% else %}
         <p class="text-[11px] text-[#6E6D6A]">
             Sin historial cargado. El cruce de experiencia por organismo aparece en la ficha
-            de cada licitacion una vez que existan registros.
+            de cada licitación una vez que existan registros.
         </p>
         {% endif %}
     </div>

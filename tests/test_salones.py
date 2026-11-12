@@ -239,6 +239,26 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Solo se puede confirmar", response.data.decode("utf-8"))
 
+    def test_crear_reserva_valida_aforo_por_montaje(self):
+        payload = {
+            "id_salon": "SALON-PERGOLA",
+            "cliente_evento": "Cena con Mesas Redondas",
+            "organismo_o_empresa": "Organismo Test",
+            "tipo_evento": "Banquete",
+            "montaje": "Mesa redonda 1,50 m (10 pax)",
+            "fecha_inicio": "2027-02-01",
+            "fecha_fin": "2027-02-01",
+            "horario": "19:00 a 23:00 hrs",
+            "asistentes_estimados": "300",
+            "estado_reserva": "Confirmada",
+            "id_licitacion": "",
+            "contacto_responsable": "",
+            "observaciones": "",
+        }
+        response = self.client.post("/reservas/nueva", data=payload, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("admite 280 personas", response.data.decode("utf-8"))
+
     def test_crear_reserva_post_invalid_dates(self):
         payload = {
             "id_salon": "SALON-PERGOLA",

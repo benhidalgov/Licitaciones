@@ -33,7 +33,7 @@ class TestAuth(unittest.TestCase):
     def test_login_page_renders_form_without_leaking_credentials(self):
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Iniciar Sesion", response.data)
+        self.assertIn("Iniciar Sesión".encode("utf-8"), response.data)
         self.assertNotIn(b"admin123", response.data)
         self.assertNotIn(b"daniela123", response.data)
 
@@ -79,7 +79,7 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(get_response.status_code, 405)
         response = self.client.post("/logout", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Iniciar Sesion", response.data)
+        self.assertIn("Iniciar Sesión".encode("utf-8"), response.data)
 
 
 if __name__ == "__main__":

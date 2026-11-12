@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Ficha Tecnica {{ salon.nombre }} - Hotel Plaza San Francisco{% endblock %}
+{% block title %}Ficha Técnica {{ salon.nombre }} - Hotel Plaza San Francisco{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
@@ -23,7 +23,7 @@
         </div>
         <div class="flex items-center space-x-2">
             <a href="{{ url_for('crear_reserva', salon=salon.id_salon) }}" class="btn-primary text-xs px-3 py-1.5">
-                + Reservar este Salon
+                + Reservar este Salón
             </a>
             <a href="{{ url_for('salones_catalogo') }}" class="btn-secondary text-xs px-3 py-1.5">
                 Volver al Catalogo
@@ -48,7 +48,7 @@
                 </div>
                 <div class="text-xs text-[#6E6D6A] space-y-1 pt-1">
                     <div>
-                        <span class="font-medium text-[#111111]">Direccion:</span>
+                        <span class="font-medium text-[#111111]">Dirección:</span>
                         <span class="text-[#111111]">{{ direccion_hotel }}</span>
                     </div>
                     <div>
@@ -64,7 +64,7 @@
 
             <!-- Resumen Operativo Bento -->
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 min-w-[260px] text-left sm:text-right space-y-1.5">
-                <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">Aforo Maximo Autorizado</div>
+                <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">Aforo Máximo Autorizado</div>
                 <div class="text-3xl font-bold font-mono text-[#111111]">{{ salon.capacidad_maxima }}</div>
                 <div class="text-xs text-[#6E6D6A] pt-1">
                     Tarifa Referencial: <strong class="text-[#111111] font-mono">{{ salon.tarifa_referencial | clp }}</strong>
@@ -100,7 +100,7 @@
                         <strong class="text-[#111111] font-mono text-sm">{{ (salon.capacidad_maxima * 0.7)|round|int }} pers.</strong>
                     </div>
                     <div class="bg-white p-2.5 rounded-[4px] border border-[#EAEAEA]">
-                        <span class="text-[#6E6D6A] text-[10px] block uppercase">Escuela / Capacitacion:</span>
+                        <span class="text-[#6E6D6A] text-[10px] block uppercase">Escuela / Capacitación:</span>
                         <strong class="text-[#111111] font-mono text-sm">{{ (salon.capacidad_maxima * 0.6)|round|int }} pers.</strong>
                     </div>
                     <div class="bg-white p-2.5 rounded-[4px] border border-[#EAEAEA]">
@@ -159,7 +159,7 @@
                         </td>
                         <td class="px-4 py-3.5 whitespace-nowrap">
                             <span class="badge-spot badge-spot-neutral">
-                                {{ r.tipo_evento }}
+                                {{ r.tipo_evento }}{% if r.montaje %} · {{ r.montaje }}{% endif %}
                             </span>
                         </td>
                         <td class="px-4 py-3.5 whitespace-nowrap font-mono text-[11px] text-[#6E6D6A]">
@@ -188,7 +188,7 @@
                             {% if r.id_licitacion %}
                             <div class="mt-1">
                                 <a href="{{ url_for('licitacion_detalle', id_licitacion=r.id_licitacion) }}" class="inline-flex items-center font-mono font-medium text-[#111111] hover:underline">
-                                    Ver Licitacion: {{ r.id_licitacion }}
+                                    Ver Licitación: {{ r.id_licitacion }}
                                 </a>
                             </div>
                             {% endif %}
@@ -213,7 +213,7 @@
         </div>
         {% else %}
         <div class="text-center py-8 text-[#6E6D6A] bg-[#FBFBFA] rounded-[6px] border border-[#EAEAEA]">
-            <p class="text-xs font-medium">Este salon no registra eventos programados para las proximas fechas.</p>
+            <p class="text-xs font-medium">Este salón no registra eventos programados para las proximas fechas.</p>
         </div>
         {% endif %}
     </div>

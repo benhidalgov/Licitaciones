@@ -33,11 +33,11 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
     <!-- Titulo Principal -->
     <div class="card-editorial p-6">
         <span class="text-[10px] font-mono uppercase tracking-widest text-[#6E6D6A] block mb-1">
-            {% if mode == 'create' %}Agenda y Control de Bloqueos / Nuevo Registro{% else %}Modificacion de Reserva / Auditoria{% endif %}
+            {% if mode == 'create' %}Agenda y Control de Bloqueos / Nuevo Registro{% else %}Modificación de Reserva / Auditoria{% endif %}
         </span>
         <h1 class="text-xl sm:text-2xl font-serif text-neutral-900 tracking-tight">
             {% if mode == 'create' %}
-            Registrar Nueva Reserva de Salon
+            Registrar Nueva Reserva de Salón
             {% else %}
             Editar Reserva <span class="font-mono text-neutral-900 font-normal">#{{ reserva.id_reserva }}</span>
             {% endif %}
@@ -58,14 +58,14 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
         <!-- 1. Espacio y Evento -->
         <div class="card-editorial p-6 space-y-4">
             <div class="border-b border-[#EAEAEA] pb-3">
-                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">1. Espacio y Descripcion del Evento</h2>
-                <p class="text-[11px] text-neutral-500 mt-0.5">Asignacion del espacio en el Hotel Plaza San Francisco y titularidad de la reserva.</p>
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">1. Espacio y Descripción del Evento</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Asignación del espacio en el Hotel Plaza San Francisco y titularidad de la reserva.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="id_salon" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
-                        Salon Requerido <span class="text-neutral-900">*</span>
+                        Salón Requerido <span class="text-neutral-900">*</span>
                     </label>
                     <select
                         id="id_salon"
@@ -73,7 +73,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                        <option value="">Seleccionar salon</option>
+                        <option value="">Seleccionar salón</option>
                         {% for salon in salones %}
                         <option value="{{ salon.id_salon }}" {% if reserva.id_salon == salon.id_salon %}selected{% endif %}>
                             {{ salon.nombre }} (Aforo: {{ salon.capacidad_maxima }} pers. - {{ salon.tipo }})
@@ -114,7 +114,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-[#6E6D6A] mt-1">Denominacion descriptiva del evento corporativo o licitacion.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Denominacion descriptiva del evento corporativo o licitación.</p>
                 </div>
 
                 <div>
@@ -129,7 +129,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-[#6E6D6A] mt-1">Institucion mandante o cliente contratante.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Institución mandante o cliente contratante.</p>
                 </div>
 
                 <div>
@@ -144,6 +144,23 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
                     <p class="text-[11px] text-[#6E6D6A] mt-1">Modalidad de uso y distribucion del montaje.</p>
+                </div>
+
+                <div>
+                    <label for="montaje" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                        Montaje
+                    </label>
+                    <select
+                        id="montaje"
+                        name="montaje"
+                        class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
+                    >
+                        <option value="">Sin especificar (aforo máximo)</option>
+                        {% for m in montajes %}
+                        <option value="{{ m }}" {% if reserva.montaje == m %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">El aforo se valida con el montaje seleccionado.</p>
                 </div>
             </div>
         </div>
@@ -168,7 +185,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-[#6E6D6A] mt-1">Dia de inicio de la ocupacion o montaje.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Día de inicio de la ocupacion o montaje.</p>
                 </div>
 
                 <div>
@@ -183,7 +200,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         required
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-[#6E6D6A] mt-1">Dia final de uso del espacio.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Día final de uso del espacio.</p>
                 </div>
 
                 <div>
@@ -213,27 +230,27 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         step="1"
                         class="w-full text-xs font-mono px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-[#6E6D6A] mt-1">La validacion de aforo usa la capacidad maxima (auditorio). Para mesas redondas u otros montajes, confirme el aforo en la ficha tecnica del salon.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">La validación de aforo usa la capacidad maxima (auditorio). Para mesas redondas u otros montajes, confirme el aforo en la ficha tecnica del salón.</p>
                 </div>
             </div>
 
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded p-3 text-xs text-neutral-600">
                 <span class="font-semibold text-neutral-900 font-mono text-[11px] uppercase tracking-wider block mb-0.5">Control Preventivo de Colisiones:</span>
-                El sistema verifica automaticamente que el salon seleccionado no tenga otros eventos confirmados en el mismo rango de fechas. Si existe conflicto, se notificara en pantalla.
+                El sistema verifica automaticamente que el salón seleccionado no tenga otros eventos confirmados en el mismo rango de fechas. Si existe conflicto, se notificara en pantalla.
             </div>
         </div>
 
         <!-- 3. Vinculacion y Datos de Contacto -->
         <div class="card-editorial p-6 space-y-4">
             <div class="border-b border-[#EAEAEA] pb-3">
-                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">3. Vinculacion con Licitacion y Contacto</h2>
-                <p class="text-[11px] text-neutral-500 mt-0.5">Asociacion opcional con procesos de Mercado Publico y datos de coordinacion operativa.</p>
+                <h2 class="text-xs font-mono uppercase tracking-wider text-neutral-900 font-semibold">3. Vinculacion con Licitación y Contacto</h2>
+                <p class="text-[11px] text-neutral-500 mt-0.5">Asociacion opcional con procesos de Mercado Público y datos de coordinacion operativa.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="id_licitacion" class="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
-                        ID Licitacion Vinculada (Opcional)
+                        ID Licitación Vinculada (Opcional)
                     </label>
                     <select
                         id="id_licitacion"
@@ -261,7 +278,7 @@ Editar Reserva #{{ reserva.id_reserva }} - Agenda de Salones
                         value="{{ reserva.contacto_responsable or '' }}"
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white transition-colors"
                     >
-                    <p class="text-[11px] text-[#6E6D6A] mt-1">Persona de enlace tecnico u organizador del evento.</p>
+                    <p class="text-[11px] text-[#6E6D6A] mt-1">Persona de enlace técnico u organizador del evento.</p>
                 </div>
 
                 <div class="sm:col-span-2">

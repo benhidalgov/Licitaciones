@@ -3,35 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Hotel Plaza San Francisco | DUOC UC - Gestion de Licitaciones{% endblock %}</title>
+    <title>{% block title %}Hotel Plaza San Francisco | DUOC UC - Gestión de Licitaciones{% endblock %}</title>
 
     <!-- Tipografia Editorial Minimalista: Geist Sans, Newsreader Serif y Geist Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                        serif: ['Newsreader', 'Georgia', 'serif'],
-                        mono: ['Geist Mono', 'SF Mono', 'monospace'],
-                    },
-                    colors: {
-                        canvas: '#FBFBFA',
-                        surface: '#FFFFFF',
-                        borderSubtle: '#EAEAEA',
-                        ink: '#111111',
-                        muted: '#6E6D6A',
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind compilado localmente (sin CDN en produccion) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}">
 
     <!-- Sistema de Variables y Utilidades Utilitarias Minimalistas -->
     <style>
@@ -233,7 +213,7 @@
                                 Hotel Plaza San Francisco
                             </span>
                             <span class="text-[11px] text-[#6E6D6A] font-medium leading-none -mt-0.5">
-                                Mercado Publico | DUOC UC VcM
+                                Mercado Público | DUOC UC VcM
                             </span>
                         </div>
                     </a>
@@ -250,7 +230,7 @@
                             Salones y Agenda
                         </a>
                         <a href="{{ url_for('analitica') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['analitica', 'cargar_historial_oc'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
-                            Historial de Adjudicacion
+                            Historial de Adjudicación
                         </a>
                         <a href="{{ url_for('informes') }}" class="px-3 py-1 text-xs font-medium rounded transition-colors {% if request.endpoint in ['informes', 'exportar_informe'] %}bg-[#F3F3F1] text-[#111111]{% else %}text-[#6E6D6A] hover:text-[#111111] hover:bg-[#F9F9F8]{% endif %}">
                             Informes
@@ -264,7 +244,7 @@
                         <form method="POST" action="{{ url_for('logout') }}" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="btn-secondary text-[11px] px-2.5 py-1">
-                                Cerrar Sesion
+                                Cerrar Sesión
                             </button>
                         </form>
                     </div>
@@ -312,7 +292,7 @@
     <footer class="border-t border-[#EAEAEA] bg-transparent py-5 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6E6D6A] gap-2">
             <span>Hotel Plaza San Francisco y DUOC UC - Vinculacion con el Medio (VcM)</span>
-            <span class="font-mono text-[11px]">Plataforma de Gestion Comercial de Licitaciones</span>
+            <span class="font-mono text-[11px]">Plataforma de Gestión Comercial de Licitaciones</span>
         </div>
     </footer>
 

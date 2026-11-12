@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Ficha de Licitacion {{ lic.id_licitacion }} - Gestion Comercial{% endblock %}
+{% block title %}Ficha de Licitación {{ lic.id_licitacion }} - Gestión Comercial{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
@@ -18,7 +18,7 @@
                 Volver al Tablero
             </a>
             <a href="{{ url_ficha_publica(lic.id_licitacion, lic.modalidad) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
-                Ver ficha en Mercado Publico
+                Ver ficha en Mercado Público
             </a>
             <a href="{{ url_for('ficha_md', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
                 Ver ficha MD
@@ -70,11 +70,11 @@
                     {% endif %}
                     {% if lic.modalidad == 'Compra Agil' %}
                     <span class="badge-spot badge-spot-blue">
-                        Compra Agil
+                        Compra Ágil
                     </span>
                     {% else %}
                     <span class="badge-spot badge-spot-neutral">
-                        Licitacion Publica
+                        Licitación Pública
                     </span>
                     {% endif %}
                 </div>
@@ -94,7 +94,7 @@
                         en el historial cargado.
                     </div>
                     {% endif %}
-                    <div>Region de Ejecucion: <span class="text-[#111111] font-medium">{{ lic.region }}</span></div>
+                    <div>Región de Ejecución: <span class="text-[#111111] font-medium">{{ lic.region }}</span></div>
                     {% if lic.descripcion_descarte %}
                     <div class="text-[#9F2F2D]">
                         Motivo de descarte: <strong>{{ lic.motivo_descarte }}</strong>.
@@ -135,7 +135,7 @@
                     {% endif %}
                 </div>
                 <div class="text-[11px] font-mono text-[#6E6D6A] pt-2 border-t border-[#EAEAEA] space-y-0.5">
-                    <div>Publicacion: <span class="text-[#111111]">{{ lic.fecha_publicacion }}</span></div>
+                    <div>Publicación: <span class="text-[#111111]">{{ lic.fecha_publicacion }}</span></div>
                     <div>Cierre Ofertas: <span class="text-[#111111] font-semibold">{{ lic.fecha_cierre }}</span></div>
                     <div>Actualizado: <span class="text-[#111111]">{{ lic.actualizado_en or 'Sin registro' }}</span></div>
                 </div>
@@ -184,7 +184,7 @@
                     </button>
                     <p class="text-[10px] text-[#6E6D6A] mt-1.5">
                         {% if revisada_por %}
-                        Ultima revision: {{ revisada_por }} - {{ revisada_en }}
+                        Última revisión: {{ revisada_por }} - {{ revisada_en }}
                         {% else %}
                         Estado compartido para el equipo.
                         {% endif %}
@@ -276,7 +276,7 @@
         <div class="border-b border-[#EAEAEA] pb-3">
             <h2 class="text-sm font-semibold text-[#111111]">Control Presupuestario Preventivo y Viabilidad Financiera</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Cotejo preventivo entre el presupuesto maximo asignado por el mandante y la estructura de costo base hotel para cautelar la rentabilidad comercial.
+                Cotejo preventivo entre el presupuesto máximo asignado por el mandante y la estructura de costo base hotel para cautelar la rentabilidad comercial.
             </p>
         </div>
 
@@ -298,7 +298,7 @@
                 </div>
                 <div class="text-[11px] text-[#6E6D6A] mt-1">
                     {% if lic.costeo_validado %}
-                    Costo minimo validado por el hotel
+                    Costo mínimo validado por el hotel
                     {% else %}
                     Costo provisional: requiere costeo operativo
                     {% endif %}
@@ -322,7 +322,7 @@
                     {% elif es_inviable %}
                     Deficit operacional directo
                     {% elif margen_bajo %}
-                    Margen bajo el minimo exigido: {{ margen_minimo | clp }}
+                    Margen bajo el mínimo exigido: {{ margen_minimo | clp }}
                     {% else %}
                     Margen de contribucion: {{ margen_porcentaje }}%
                     {% endif %}
@@ -372,7 +372,7 @@
                     Presupuesto No Informado
                 </span>
                 <p class="leading-relaxed">
-                    La ficha oficial no publica el monto estimado de esta licitacion. El equipo debe obtener el presupuesto desde las bases o los anexos y registrar el costeo antes de decidir la postulacion.
+                    La ficha oficial no publica el monto estimado de esta licitación. El equipo debe obtener el presupuesto desde las bases o los anexos y registrar el costeo antes de decidir la postulacion.
                 </p>
             </div>
         </div>
@@ -380,10 +380,10 @@
         <div class="p-4 rounded-[6px] border text-xs" style="background: var(--pastel-red-bg); border-color: #F8D1D3; color: var(--pastel-red-text);">
             <div class="flex flex-col space-y-1">
                 <span class="font-semibold uppercase tracking-wider">
-                    Alerta Financiera Preventiva: Riesgo de Postulacion a Perdida
+                    Alerta Financiera Preventiva: Riesgo de Postulación a Perdida
                 </span>
                 <p class="leading-relaxed">
-                    El costo base hotel ({{ lic.costo_base_hotel | clp }}) sobrepasa en {{ deficit | clp }} el presupuesto maximo autorizado por la institucion mandante ({{ lic.presupuesto_mandante | clp }}). Conforme a la directriz corporativa del Hotel Plaza San Francisco, esta oportunidad se clasifica como financieramente inviable y no debe postularse en los terminos actuales.
+                    El costo base hotel ({{ lic.costo_base_hotel | clp }}) sobrepasa en {{ deficit | clp }} el presupuesto máximo autorizado por la institución mandante ({{ lic.presupuesto_mandante | clp }}). Conforme a la directriz corporativa del Hotel Plaza San Francisco, esta oportunidad se clasifica como financieramente inviable y no debe postularse en los terminos actuales.
                 </p>
             </div>
         </div>
@@ -413,16 +413,16 @@
         {% if lic.modalidad == 'Compra Agil' %}
         <div class="p-4 rounded-[6px] border text-xs space-y-1.5" style="background: var(--pastel-blue-bg); border-color: #CBE8FC; color: var(--pastel-blue-text);">
             <div class="font-semibold uppercase tracking-wide">
-                Marco Normativo: Modalidad Compra Agil (Mercado Publico)
+                Marco Normativo: Modalidad Compra Ágil (Mercado Público)
             </div>
             <p class="leading-relaxed">
-                Esta oportunidad se canaliza mediante Compra Agil, mecanismo de contratacion simplificada con un limite normativo maximo de <strong>{{ tope_compra_agil | clp }}</strong> (referencial a 100 UTM segun la Ley 19.886 y sus decretos reglamentarios).
+                Esta oportunidad se canaliza mediante Compra Ágil, mecanismo de contratacion simplificada con un limite normativo máximo de <strong>{{ tope_compra_agil | clp }}</strong> (referencial a 100 UTM según la Ley 19.886 y sus decretos reglamentarios).
             </p>
             <div class="pt-1 font-semibold">
                 {% if lic.presupuesto_mandante <= tope_compra_agil %}
-                Cumplimiento normativo validado: El presupuesto de {{ lic.presupuesto_mandante | clp }} se ajusta plenamente al rango legal para compras agiles sin comision evaluadora extensa.
+                Cumplimiento normativo validado: El presupuesto de {{ lic.presupuesto_mandante | clp }} se ajusta plenamente al rango legal para compras agiles sin comisión evaluadora extensa.
                 {% else %}
-                Advertencia legal: El presupuesto asignado ({{ lic.presupuesto_mandante | clp }}) supera el tope normativo de {{ tope_compra_agil | clp }} establecido para la modalidad Compra Agil.
+                Advertencia legal: El presupuesto asignado ({{ lic.presupuesto_mandante | clp }}) supera el tope normativo de {{ tope_compra_agil | clp }} establecido para la modalidad Compra Ágil.
                 {% endif %}
             </div>
         </div>
@@ -432,9 +432,9 @@
     <!-- Panel de Evaluacion Operativa y Costeo Minimo -->
     <div class="card-editorial p-6 bg-white space-y-4">
         <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Asignacion de Salon y Costo</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Asignación de Salón y Costo</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Complete aforo y salon. Si deja el costo vacio, se suma la tarifa del salon (si esta cargada) y el consumo por persona. Si la tarifa esta pendiente, el margen puede estar sobreestimado. Un costo validado superior al presupuesto descarta la oportunidad por precio.
+                Complete aforo y salón. Si deja el costo vacio, se suma la tarifa del salón (si esta cargada) y el consumo por persona. Si la tarifa esta pendiente, el margen puede estar sobreestimado. Un costo validado superior al presupuesto descarta la oportunidad por precio.
             </p>
         </div>
 
@@ -462,7 +462,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="id_salon_asignado" class="block text-xs font-medium text-[#111111] mb-1.5">Salon Propuesto</label>
+                    <label for="id_salon_asignado" class="block text-xs font-medium text-[#111111] mb-1.5">Salón Propuesto</label>
                     <select id="id_salon_asignado" name="id_salon_asignado" class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111]">
                         <option value="">Sin asignar / solo hospedaje</option>
                         {% for s in salones %}
@@ -475,13 +475,13 @@
                 </div>
 
                 <div>
-                    <label for="costo_base_hotel" class="block text-xs font-medium text-[#111111] mb-1.5">Costo Base Minimo (CLP)</label>
+                    <label for="costo_base_hotel" class="block text-xs font-medium text-[#111111] mb-1.5">Costo Base Mínimo (CLP)</label>
                     <input type="text" inputmode="numeric" id="costo_base_hotel" name="costo_base_hotel" value="{{ lic.costo_base_hotel if lic.costeo_validado else '' }}" placeholder="Automatico: salon + consumo por persona" class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] font-mono">
                     <p class="text-[10px] text-[#6E6D6A] mt-1">
                         {% if lic.costeo_validado %}Costo validado actualmente.{% else %}Costo provisional; completelo para aplicar la regla de presupuesto.{% endif %}
                     </p>
                     {% if salon_asignado and not salon_asignado.tarifa_referencial %}
-                    <p class="text-[10px] text-[#956400] mt-1">La tarifa de este salon esta por confirmar: el costo y el margen son estimaciones.</p>
+                    <p class="text-[10px] text-[#956400] mt-1">La tarifa de este salón esta por confirmar: el costo y el margen son estimaciones.</p>
                     {% endif %}
                 </div>
             </div>
@@ -497,7 +497,7 @@
             </div>
 
             <div class="flex justify-end pt-2 border-t border-[#EAEAEA]">
-                <button type="submit" class="btn-primary text-xs px-4 py-1.5">Guardar asignacion</button>
+                <button type="submit" class="btn-primary text-xs px-4 py-1.5">Guardar asignación</button>
             </div>
         </form>
     </div>
@@ -514,13 +514,13 @@
             {% if salon_asignado %}
             <div>
                 <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion, salon=salon_asignado.id_salon) }}" class="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
-                    Bloquear Salon para esta Licitacion
+                    Bloquear Salón para esta Licitación
                 </a>
             </div>
             {% else %}
             <div>
                 <a href="{{ url_for('crear_reserva', licitacion=lic.id_licitacion) }}" class="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap">
-                    Registrar Reserva de Salon
+                    Registrar Reserva de Salón
                 </a>
             </div>
             {% endif %}
@@ -540,7 +540,7 @@
             </div>
 
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
-                <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Salon Asignado / Propuesto</div>
+                <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Salón Asignado / Propuesto</div>
                 <div class="text-sm font-semibold text-[#111111] mt-1">
                     {% if salon_asignado %}
                     <a href="{{ url_for('salon_detalle', id_salon=salon_asignado.id_salon) }}" class="hover:underline">
@@ -554,13 +554,13 @@
                     {% if salon_asignado %}
                     {{ salon_asignado.tipo }}
                     {% else %}
-                    Requiere asignacion comercial
+                    Requiere asignación comercial
                     {% endif %}
                 </div>
             </div>
 
             <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
-                <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Capacidad Maxima del Salon</div>
+                <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider">Capacidad Maxima del Salón</div>
                 <div class="text-2xl font-bold mt-1 font-mono {% if excede_aforo %}text-[#9F2F2D]{% else %}text-[#111111]{% endif %}">
                     {% if salon_asignado %}
                     {{ salon_asignado.capacidad_maxima }} personas
@@ -598,7 +598,7 @@
                     Alerta de Inviabilidad Operativa: Aforo Excedido
                 </span>
                 <p class="leading-relaxed">
-                    La cantidad de asistentes requerida (<strong>{{ lic.cantidad_asistentes }} personas</strong>) sobrepasa la capacidad maxima autorizada para el salon asignado <strong>{{ salon_asignado.nombre }}</strong> (capacidad maxima: <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>). Se genera un sobrecupo de <strong>{{ sobrecupo }} personas</strong>.
+                    La cantidad de asistentes requerida (<strong>{{ lic.cantidad_asistentes }} personas</strong>) sobrepasa la capacidad maxima autorizada para el salón asignado <strong>{{ salon_asignado.nombre }}</strong> (capacidad maxima: <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>). Se genera un sobrecupo de <strong>{{ sobrecupo }} personas</strong>.
                 </p>
             </div>
             {% if salones_compatibles %}
@@ -623,7 +623,7 @@
                     Dimensionamiento Operativo Conforme: Capacidad Adecuada
                 </span>
                 <p class="leading-relaxed">
-                    El salon <strong>{{ salon_asignado.nombre }}</strong> dispone de una capacidad maxima de <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>, cubriendo con holgura los <strong>{{ lic.cantidad_asistentes }} asistentes</strong> solicitados por el mandante (margen disponible: {{ salon_asignado.capacidad_maxima - lic.cantidad_asistentes }} plazas). Franja horaria disponible: {{ salon_asignado.horario_disponible }}.
+                    El salón <strong>{{ salon_asignado.nombre }}</strong> dispone de una capacidad maxima de <strong>{{ salon_asignado.capacidad_maxima }} personas</strong>, cubriendo con holgura los <strong>{{ lic.cantidad_asistentes }} asistentes</strong> solicitados por el mandante (margen disponible: {{ salon_asignado.capacidad_maxima - lic.cantidad_asistentes }} plazas). Franja horaria disponible: {{ salon_asignado.horario_disponible }}.
                 </p>
             </div>
         </div>
@@ -631,10 +631,10 @@
         <div class="p-4 rounded-[6px] border text-xs space-y-2 bg-[#FBFBFA] border-[#EAEAEA] text-[#6E6D6A]">
             <div class="flex flex-col space-y-1">
                 <span class="font-semibold uppercase tracking-wider text-[#111111]">
-                    Salon Pendiente de Asignacion
+                    Salón Pendiente de Asignación
                 </span>
                 <p class="leading-relaxed text-[#111111]">
-                    La oportunidad requiere capacidad estimada para <strong>{{ lic.cantidad_asistentes or 0 }} personas</strong> bajo modalidad <strong>{{ lic.tipo_jornada or 'Jornada Completa' }}</strong>. Asigne un salon para verificar la viabilidad definitiva y confirmar disponibilidad en la agenda.
+                    La oportunidad requiere capacidad estimada para <strong>{{ lic.cantidad_asistentes or 0 }} personas</strong> bajo modalidad <strong>{{ lic.tipo_jornada or 'Jornada Completa' }}</strong>. Asigne un salón para verificar la viabilidad definitiva y confirmar disponibilidad en la agenda.
                 </p>
             </div>
             {% if salones_compatibles %}
@@ -681,9 +681,9 @@
     <!-- Panel de Validacion Robusta (Cruce de ID con Adjuntos / Efecto ID) -->
     <div class="card-editorial p-6 bg-white space-y-4">
         <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Validacion de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Validación de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Cotejo de integridad entre el identificador del portal de compras y los archivos de bases tecnicas o administrativas adjuntas (prevencion del Efecto ID).
+                Cotejo de integridad entre el identificador del portal de compras y los archivos de bases técnicas o administrativas adjuntas (prevencion del Efecto ID).
             </p>
         </div>
 
@@ -696,7 +696,7 @@
                 <span class="text-xs font-medium text-[#111111]">Consistencia Documental Acreditada</span>
             </div>
             <p class="text-xs text-[#6E6D6A] leading-relaxed">
-                El identificador de la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) fue marcado como verificado por el equipo. Esta marca es manual y no reemplaza la revision de los archivos adjuntos.
+                El identificador de la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) fue marcado como verificado por el equipo. Esta marca es manual y no reemplaza la revisión de los archivos adjuntos.
             </p>
         </div>
         {% elif lic.validacion_adjuntos == 'Error ID / Discrepancia' %}
@@ -710,7 +710,7 @@
                 </span>
             </div>
             <p class="leading-relaxed">
-                Se ha constatado una discordancia entre el identificador de la ficha maestra (<strong>{{ lic.id_licitacion }}</strong>) y los rotulos en los documentos adjuntos de bases. Esta desalineacion genera riesgo de subsanacion o eventual inadmisibilidad administrativa. Es obligatorio emitir una consulta formal a traves del foro de Mercado Publico previo al envio de la propuesta.
+                Se ha constatado una discordancia entre el identificador de la ficha maestra (<strong>{{ lic.id_licitacion }}</strong>) y los rotulos en los documentos adjuntos de bases. Esta desalineacion genera riesgo de subsanacion o eventual inadmisibilidad administrativa. Es obligatorio emitir una consulta formal a traves del foro de Mercado Público previo al envio de la propuesta.
             </p>
         </div>
         {% else %}
@@ -729,7 +729,7 @@
             <div>
                 <h2 class="text-sm font-semibold text-[#111111]">Checklist de Admisibilidad Administrativa Formal</h2>
                 <p class="text-xs text-[#6E6D6A] mt-0.5">
-                    Verificacion de antecedentes legales obligatorios para personas juridicas segun la Ley N 19.886 de Bases sobre Contratos Administrativos.
+                    Verificación de antecedentes legales obligatorios para personas jurídicas según la Ley N 19.886 de Bases sobre Contratos Administrativos.
                 </p>
             </div>
             <div>
@@ -763,10 +763,10 @@
                     <!-- Item 1: Anexo 4 -->
                     <tr class="hover:bg-[#FBFBFA] transition-colors">
                         <td class="px-4 py-3 font-medium text-[#111111] whitespace-nowrap">
-                            Anexo 4 - Declaracion Jurada y Pacto de Integridad
+                            Anexo 4 - Declaración Jurada y Pacto de Integridad
                         </td>
                         <td class="px-4 py-3 text-[#6E6D6A]">
-                            Declaracion jurada de no haber incurrido en conductas sancionadas por el articulo 4 de la Ley 19.886 y aceptacion expresa del pacto de integridad.
+                            Declaración jurada de no haber incurrido en conductas sancionadas por el articulo 4 de la Ley 19.886 y aceptacion expresa del pacto de integridad.
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_anexo4 %}
@@ -805,10 +805,10 @@
                     <!-- Item 3: Poderes -->
                     <tr class="hover:bg-[#FBFBFA] transition-colors">
                         <td class="px-4 py-3 font-medium text-[#111111] whitespace-nowrap">
-                            Poderes de Representacion Legal
+                            Poderes de Representación Legal
                         </td>
                         <td class="px-4 py-3 text-[#6E6D6A]">
-                            Personeria y facultades notariales vigentes que habilitan al apoderado para suscribir ofertas y contratos en nombre de la sociedad.
+                            Personería y facultades notariales vigentes que habilitan al apoderado para suscribir ofertas y contratos en nombre de la sociedad.
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_poderes %}
@@ -829,7 +829,7 @@
                             Certificados de Vigencia de la Sociedad
                         </td>
                         <td class="px-4 py-3 text-[#6E6D6A]">
-                            Certificado de vigencia de la sociedad y del poder otorgado por el Conservador de Bienes Raices (antiguedad no mayor a 60 dias corridos).
+                            Certificado de vigencia de la sociedad y del poder otorgado por el Conservador de Bienes Raíces (antiguedad no mayor a 60 días corridos).
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if lic.tiene_vigencias %}
@@ -872,7 +872,7 @@
                 </div>
             </div>
             <div class="flex justify-end">
-                <button type="submit" class="btn-secondary text-xs px-3 py-1.5">Guardar verificacion documental</button>
+                <button type="submit" class="btn-secondary text-xs px-3 py-1.5">Guardar verificación documental</button>
             </div>
         </form>
     </div>
@@ -897,7 +897,7 @@
             {% endfor %}
         </ol>
         {% else %}
-        <p class="text-xs text-[#6E6D6A]">Sin actividad registrada para esta licitacion.</p>
+        <p class="text-xs text-[#6E6D6A]">Sin actividad registrada para esta licitación.</p>
         {% endif %}
     </div>
 
@@ -906,7 +906,7 @@
         <div class="border-b border-[#EAEAEA] pb-3">
             <h2 class="text-sm font-semibold text-[#111111]">Notas Compartidas del Equipo</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Observaciones de Daniela, Francisca y Mari. Cada nota conserva autor y fecha.
+                Observaciones del equipo. Cada nota conserva autor y fecha.
             </p>
         </div>
 
@@ -927,15 +927,15 @@
     <!-- Sintesis de Terminos de Referencia (TDR) -->
     <div class="card-editorial p-6 bg-white space-y-4">
         <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Sintesis de Terminos de Referencia (TDR)</h2>
+            <h2 class="text-sm font-semibold text-[#111111]">Síntesis de Términos de Referencia (TDR)</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Especificaciones tecnicas, alcance operativo y requerimientos de servicio formalizados por el organismo licitante.
+                Especificaciones técnicas, alcance operativo y requerimientos de servicio formalizados por el organismo licitante.
             </p>
         </div>
 
         <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
             <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider mb-1">
-                Descripcion del Requerimiento Tecnico
+                Descripción del Requerimiento Técnico
             </div>
             <p class="text-xs text-[#111111] leading-relaxed whitespace-pre-line">
                 {{ lic.descripcion_tdr or 'No se registra descripcion detallada de TDR en las bases cargadas.' }}
@@ -944,7 +944,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
             <div class="border border-[#EAEAEA] rounded-[6px] p-3 bg-white">
-                <span class="text-[#6E6D6A] text-[11px] block">Categoria Operativa:</span>
+                <span class="text-[#6E6D6A] text-[11px] block">Categoría Operativa:</span>
                 <div class="font-medium text-[#111111] mt-0.5">{{ lic.categoria }}</div>
             </div>
             <div class="border border-[#EAEAEA] rounded-[6px] p-3 bg-white">
@@ -952,7 +952,7 @@
                 <div class="font-medium text-[#111111] mt-0.5">{{ lic.modalidad }}</div>
             </div>
             <div class="border border-[#EAEAEA] rounded-[6px] p-3 bg-white">
-                <span class="text-[#6E6D6A] text-[11px] block">Plaza / Region:</span>
+                <span class="text-[#6E6D6A] text-[11px] block">Plaza / Región:</span>
                 <div class="font-medium text-[#111111] mt-0.5">{{ lic.region }}</div>
             </div>
         </div>

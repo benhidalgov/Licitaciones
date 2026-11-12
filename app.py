@@ -33,11 +33,11 @@ def _cabeceras_seguridad(respuesta):
     respuesta.headers.setdefault(
         "Content-Security-Policy",
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; "
+        "script-src 'self' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' data: https://fonts.gstatic.com; "
         "img-src 'self' data:; "
-        "connect-src 'self' https://cdn.tailwindcss.com",
+        "connect-src 'self'",
     )
     return respuesta
 
@@ -186,6 +186,7 @@ app.jinja_env.globals["detectar_cliente_clave"] = database.detectar_cliente_clav
 app.jinja_env.globals["margen_minimo_clp"] = database.margen_minimo_clp
 app.jinja_env.globals["direccion_hotel"] = "Av. Libertador Bernardo O'Higgins 816, Santiago"
 app.jinja_env.globals["url_ficha_publica"] = mercado_publico.url_ficha_publica
+app.jinja_env.globals["aforos_salon"] = database.aforos_por_montaje
 
 
 @app.template_filter("miles")
@@ -218,13 +219,14 @@ def dashboard():
     cliente_clave = request.args.get("cliente_clave", "").strip() or None
     motivo = request.args.get("motivo", "").strip() or None
     revisada_por = request.args.get("revisada_por", "").strip() or None
+    vencida = request.args.get("vencida", "").strip() or None
 
     # Filtros no vacios, reutilizados para construir los enlaces del paginador
     filtros = {
         k: v for k, v in dict(
             categoria=categoria, modalidad=modalidad, estado=estado,
             q=q, propiedad=propiedad, cliente_clave=cliente_clave, motivo=motivo,
-            revisada_por=revisada_por
+            revisada_por=revisada_por, vencida=vencida
         ).items()
         if v
     }
@@ -257,6 +259,7 @@ def dashboard():
         cliente_clave=cliente_clave or "",
         motivo=motivo or "",
         revisada_por=revisada_por or "",
+        vencida=vencida or "",
         revisores=[c["nombre"] for c in USERS.values()],
         total=total,
         pagina=pagina,
@@ -264,6 +267,7 @@ def dashboard():
         filtros=filtros,
         ticket_configurado=ticket_configurado,
         tope_compra_agil=tope_compra_agil,
+        utm_valor=database.get_utm_valor(),
         margen_tolerancia=margen_tolerancia,
         priorizadas=priorizadas,
         hay_abiertas=hay_abiertas,
@@ -384,6 +388,7 @@ def _filtros_exportacion():
         "cliente_clave": request.args.get("cliente_clave", "").strip() or None,
         "motivo": request.args.get("motivo", "").strip() or None,
         "revisada_por": request.args.get("revisada_por", "").strip() or None,
+        "vencida": request.args.get("vencida", "").strip() or None,
     }
     return {k: v for k, v in filtros.items() if v}
 
@@ -941,7 +946,26 @@ def ficha_md(id_licitacion):
 @app.route("/ajustes/tope_compra_agil", methods=["POST"])
 @login_required
 def guardar_tope_compra_agil():
-    # Acepta formato chileno ("7.244.000") y numerico plano ("7244000")
+    utm_bruto = request.form.get("utm_valor", "").strip()
+    if utm_bruto:
+        digitos = utm_bruto.replace(".", "").replace("$", "").replace(" ", "")
+        try:
+            utm = int(digitos)
+        except ValueError:
+            utm = 0
+        if utm <= 0:
+            flash("La UTM del mes debe ser un numero entero mayor a cero.", "error")
+        else:
+            database.set_utm_valor(utm)
+            database.set_tope_compra_agil(utm * 100)
+            flash(
+                f"UTM actualizada a {format_clp(utm)}; tope de Compra Agil (100 UTM) "
+                f"= {format_clp(utm * 100)}.",
+                "success",
+            )
+        return redirect(url_for("dashboard"))
+
+    # Compatibilidad con el campo antiguo de tope directo.
     bruto = request.form.get("tope_compra_agil", "")
     digitos = bruto.replace(".", "").replace("$", "").replace(" ", "")
     try:
@@ -949,7 +973,7 @@ def guardar_tope_compra_agil():
     except ValueError:
         valor = 0
     if valor <= 0:
-        flash("El tope de Compra Agil debe ser un numero entero mayor a cero.", "error")
+        flash("La UTM del mes debe ser un numero entero mayor a cero.", "error")
     else:
         database.set_tope_compra_agil(valor)
         flash(f"Tope de Compra Agil actualizado a {format_clp(valor)}.", "success")
@@ -1156,6 +1180,7 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
     cliente_evento = form.get("cliente_evento", "").strip()
     organismo_o_empresa = form.get("organismo_o_empresa", "").strip()
     tipo_evento = form.get("tipo_evento", "").strip()
+    montaje = form.get("montaje", "").strip()
     fecha_inicio = form.get("fecha_inicio", "").strip()
     fecha_fin = form.get("fecha_fin", "").strip()
     horario = form.get("horario", "").strip()
@@ -1221,11 +1246,20 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
             "de la licitacion vinculada."
         )
 
-    if salon and estado_reserva == "Confirmada" and asistentes > salon["capacidad_maxima"]:
-        errors.append(
-            f"El salon {salon['nombre']} admite {salon['capacidad_maxima']} personas; "
-            f"la reserva indica {asistentes}. Elija un salon con mayor aforo."
+    if salon:
+        capacidad = (
+            database.capacidad_por_montaje(salon["id_salon"], montaje)
+            if montaje else salon["capacidad_maxima"]
         )
+        if montaje and capacidad is None:
+            errors.append(
+                f"El montaje '{montaje}' no esta disponible en el salon {salon['nombre']}."
+            )
+        elif estado_reserva == "Confirmada" and asistentes > capacidad:
+            errors.append(
+                f"El salon {salon['nombre']} admite {capacidad} personas en el montaje "
+                f"seleccionado; la reserva indica {asistentes}. Elija otro montaje o salon."
+            )
 
     if not errors:
         conflictos = database.get_conflictos_reserva(
@@ -1240,6 +1274,7 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
         "cliente_evento": cliente_evento,
         "organismo_o_empresa": organismo_o_empresa,
         "tipo_evento": tipo_evento,
+        "montaje": montaje,
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
         "horario": horario,
@@ -1290,6 +1325,7 @@ def crear_reserva():
                 salones=salones,
                 licitaciones=licitaciones,
                 valid_estados_reserva=VALID_ESTADOS_RESERVA,
+                montajes=database.MONTAJES_RESERVA,
                 user=session.get("user")
             )
 
@@ -1332,6 +1368,7 @@ def crear_reserva():
         salones=salones,
         licitaciones=licitaciones,
         valid_estados_reserva=VALID_ESTADOS_RESERVA,
+        montajes=database.MONTAJES_RESERVA,
         user=session.get("user")
     )
 
@@ -1360,6 +1397,7 @@ def editar_reserva(id_reserva):
                 salones=salones,
                 licitaciones=_opciones_licitacion(form_data.get("id_licitacion")),
                 valid_estados_reserva=VALID_ESTADOS_RESERVA,
+                montajes=database.MONTAJES_RESERVA,
                 user=session.get("user")
             )
 
@@ -1374,6 +1412,7 @@ def editar_reserva(id_reserva):
         salones=salones,
         licitaciones=licitaciones,
         valid_estados_reserva=VALID_ESTADOS_RESERVA,
+        montajes=database.MONTAJES_RESERVA,
         user=session.get("user")
     )
 
