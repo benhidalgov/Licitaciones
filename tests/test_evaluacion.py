@@ -64,7 +64,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
 
     def test_evaluacion_descarta_por_presupuesto(self):
         response = self.client.post(
-            "/licitaciones/1058-12-COT24/evaluacion",
+            "/licitaciones/1058-12-COT26/evaluacion",
             data={
                 "propiedad": "Plaza San Francisco",
                 "cantidad_asistentes": "1000",
@@ -76,46 +76,46 @@ class TestEvaluacionOperativa(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        lic = database.get_licitacion_by_id("1058-12-COT24")
+        lic = database.get_licitacion_by_id("1058-12-COT26")
         self.assertEqual(lic["costeo_validado"], 1)
         self.assertGreater(lic["costo_base_hotel"], lic["presupuesto_mandante"])
         self.assertEqual(lic["estado_embudo"], "Descartada")
         self.assertEqual(lic["motivo_descarte"], "Precio")
 
     def test_evaluacion_no_descarta_una_adjudicada(self):
-        lic = database.get_licitacion_by_id("930-15-LP23")
+        lic = database.get_licitacion_by_id("930-15-LP26")
         self.assertEqual(lic["estado_embudo"], "Adjudicada")
         actualizada = database.registrar_evaluacion(
-            "930-15-LP23", {"costeo_validado": 1, "costo_base_hotel": 99999999}
+            "930-15-LP26", {"costeo_validado": 1, "costo_base_hotel": 99999999}
         )
         self.assertEqual(actualizada["estado_embudo"], "Adjudicada")
         self.assertEqual(actualizada["costo_base_hotel"], 99999999)
 
     def test_ismael_solo_acepta_alojamiento(self):
         response = self.client.post(
-            "/licitaciones/1058-12-COT24/evaluacion",
+            "/licitaciones/1058-12-COT26/evaluacion",
             data={"propiedad": "Hotel Ismael", "cantidad_asistentes": "10"},
             follow_redirects=True,
         )
         self.assertIn("Hotel Ismael solo puede postular a servicios de alojamiento".encode("utf-8"), response.data)
-        lic = database.get_licitacion_by_id("1058-12-COT24")
+        lic = database.get_licitacion_by_id("1058-12-COT26")
         self.assertEqual(lic["propiedad"], "Plaza San Francisco")
 
     def test_no_participar_guarda_motivo_y_nota_compartida(self):
         self.client.post(
-            "/licitaciones/1058-12-COT24/decision",
+            "/licitaciones/1058-12-COT26/decision",
             data={"decision": "no_participar", "motivo": "Disponibilidad"},
         )
         self.client.post(
-            "/licitaciones/1058-12-COT24/notas",
+            "/licitaciones/1058-12-COT26/notas",
             data={"nota": "PMS sin disponibilidad para la fecha."},
         )
         self.client.post(
-            "/licitaciones/1058-12-COT24/notas",
+            "/licitaciones/1058-12-COT26/notas",
             data={"nota": "Se solicito alternativa de fecha."},
         )
 
-        lic = database.get_licitacion_by_id("1058-12-COT24")
+        lic = database.get_licitacion_by_id("1058-12-COT26")
         self.assertEqual(lic["estado_embudo"], "Descartada")
         self.assertEqual(lic["motivo_descarte"], "Disponibilidad")
         self.assertIn("PMS sin disponibilidad", lic["notas"])

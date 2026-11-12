@@ -75,7 +75,25 @@ class TestDatabase(unittest.TestCase):
         self.assertTrue(all(item["modalidad"] == "Compra Agil" for item in compra_agil))
         self.assertGreater(len(compra_agil), 0)
 
-        # Filtro por estado del embudo
+        # Filtro por estado del embudo (una vigente creada aqui; las del
+        # ejemplo ya vencieron y quedaron en 'Cerrada')
+        database.create_licitacion({
+            "id_licitacion": "0001-01-CAL26",
+            "titulo": "Vigente para probar filtro Calificada",
+            "organismo": "Organismo Filtro",
+            "categoria": "Alojamiento",
+            "modalidad": "Licitacion Publica",
+            "region": "Región Metropolitana (Santiago)",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 800000,
+            "estado_embudo": "Calificada",
+            "validacion_adjuntos": "Pendiente",
+            "tiene_anexo4": 0, "tiene_escrituras": 0,
+            "tiene_poderes": 0, "tiene_vigencias": 0,
+            "fecha_publicacion": database.hoy_chile().isoformat(),
+            "fecha_cierre": "2027-01-31",
+            "descripcion_tdr": "",
+        })
         calificadas = database.get_all_licitaciones(estado="Calificada")
         self.assertTrue(all(item["estado_embudo"] == "Calificada" for item in calificadas))
         self.assertGreater(len(calificadas), 0)
@@ -86,9 +104,9 @@ class TestDatabase(unittest.TestCase):
         self.assertIn("Turismo", busqueda_organismo[0]["organismo"])
 
         # Busqueda por texto (q) en id_licitacion
-        busqueda_id = database.get_all_licitaciones(q="1058-12-COT24")
+        busqueda_id = database.get_all_licitaciones(q="1058-12-COT26")
         self.assertEqual(len(busqueda_id), 1)
-        self.assertEqual(busqueda_id[0]["id_licitacion"], "1058-12-COT24")
+        self.assertEqual(busqueda_id[0]["id_licitacion"], "1058-12-COT26")
 
         # Busqueda sin resultados
         busqueda_vacia = database.get_all_licitaciones(q="TerminoInexistenteXYZ")
@@ -129,26 +147,26 @@ class TestDatabase(unittest.TestCase):
         self.assertIsNone(item)
 
     def test_update_and_delete_licitacion(self):
-        item = database.get_licitacion_by_id("1058-12-COT24")
+        item = database.get_licitacion_by_id("1058-12-COT26")
         self.assertIsNotNone(item)
 
         # Actualizar estado
-        resultado_update = database.update_licitacion("1058-12-COT24", {"estado_embudo": "Calificada"})
+        resultado_update = database.update_licitacion("1058-12-COT26", {"estado_embudo": "Calificada"})
         self.assertTrue(resultado_update)
-        updated = database.get_licitacion_by_id("1058-12-COT24")
+        updated = database.get_licitacion_by_id("1058-12-COT26")
         self.assertEqual(updated["estado_embudo"], "Calificada")
 
         # Actualizar registro inexistente retorna False
         self.assertFalse(database.update_licitacion("NO-EXISTE", {"estado_embudo": "Calificada"}))
 
         # Eliminar licitacion
-        resultado_delete = database.delete_licitacion("1058-12-COT24")
+        resultado_delete = database.delete_licitacion("1058-12-COT26")
         self.assertTrue(resultado_delete)
-        deleted = database.get_licitacion_by_id("1058-12-COT24")
+        deleted = database.get_licitacion_by_id("1058-12-COT26")
         self.assertIsNone(deleted)
 
         # Eliminar licitacion inexistente retorna False
-        self.assertFalse(database.delete_licitacion("1058-12-COT24"))
+        self.assertFalse(database.delete_licitacion("1058-12-COT26"))
 
     def test_get_funnel_metrics(self):
         metrics = database.get_funnel_metrics()
@@ -165,12 +183,146 @@ class TestDatabase(unittest.TestCase):
             metrics["Identificada"]
             + metrics["Calificada"]
             + metrics["Participada"]
+            + metrics["Cerrada"]
             + metrics["Adjudicada"]
             + metrics["Descartada"]
         )
         self.assertEqual(metrics["Total"], total_estados)
+        # El ejemplo completo vencio: todas las fases abiertas quedan cerradas.
+        self.assertGreater(metrics["Cerrada"], 0)
         self.assertGreaterEqual(metrics["Total"], 8)
         self.assertGreaterEqual(metrics["Compra_Agil"], 1)
+
+    def test_normalizar_texto_agrega_tildes_conocidas(self):
+        self.assertEqual(database.normalizar_texto("Licitacion Publica"), "Licitación Pública")
+        self.assertEqual(database.normalizar_texto("salon plenario"), "salón plenario")
+        self.assertEqual(database.normalizar_texto("Region Metropolitana"), "Región Metropolitana")
+        # No toca palabras que solo se parecen ni los plurales.
+        self.assertEqual(database.normalizar_texto("Licitaciones"), "Licitaciones")
+        self.assertEqual(database.normalizar_texto("Salones"), "Salones")
+        self.assertEqual(database.normalizar_texto(""), "")
+        self.assertIsNone(database.normalizar_texto(None))
+
+    def test_marcar_cerradas_cierra_solo_fases_abiertas(self):
+        # Vigente y abierta: no debe tocarse.
+        database.create_licitacion({
+            "id_licitacion": "0002-01-ABI26",
+            "titulo": "Vigente abierta",
+            "organismo": "Organismo Test",
+            "categoria": "Alojamiento",
+            "modalidad": "Compra Agil",
+            "region": "Región Metropolitana (Santiago)",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 800000,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Pendiente",
+            "fecha_publicacion": database.hoy_chile().isoformat(),
+            "fecha_cierre": "2027-02-01",
+            "descripcion_tdr": "",
+        })
+        # Vencida pero ya resuelta: estado final no se toca.
+        database.create_licitacion({
+            "id_licitacion": "0003-01-ADJ26",
+            "titulo": "Vencida adjudicada",
+            "organismo": "Organismo Test",
+            "categoria": "Alojamiento",
+            "modalidad": "Compra Agil",
+            "region": "Región Metropolitana (Santiago)",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 800000,
+            "estado_embudo": "Adjudicada",
+            "validacion_adjuntos": "Pendiente",
+            "fecha_publicacion": "2026-01-01",
+            "fecha_cierre": "2026-01-15",
+            "descripcion_tdr": "",
+        })
+
+        # Vencida y todavia abierta: es la que debe cerrarse.
+        database.create_licitacion({
+            "id_licitacion": "0004-01-VEN26",
+            "titulo": "Vencida sin decidir",
+            "organismo": "Organismo Test",
+            "categoria": "Alojamiento",
+            "modalidad": "Compra Agil",
+            "region": "Región Metropolitana (Santiago)",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 800000,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Pendiente",
+            "fecha_publicacion": "2026-01-01",
+            "fecha_cierre": "2026-01-15",
+            "descripcion_tdr": "",
+        })
+
+        self.assertGreater(database.marcar_cerradas(), 0)
+
+        self.assertEqual(
+            database.get_licitacion_by_id("0002-01-ABI26")["estado_embudo"], "Identificada"
+        )
+        self.assertEqual(
+            database.get_licitacion_by_id("0003-01-ADJ26")["estado_embudo"], "Adjudicada"
+        )
+        self.assertEqual(
+            database.get_licitacion_by_id("0004-01-VEN26")["estado_embudo"], "Cerrada"
+        )
+        # El ejemplo completo esta vencido: sus fases abiertas quedaron cerradas.
+        self.assertEqual(
+            database.get_licitacion_by_id("1058-12-COT26")["estado_embudo"], "Cerrada"
+        )
+
+    def test_init_db_renombr_ids_demo_al_anio_2026(self):
+        viejo, nuevo = "1058-12-COT24", "1058-12-COT26"
+        conn = database.get_db_connection()
+        try:
+            # Deja la base como estaba antes: solo IDs viejos (sin la fila nueva).
+            conn.execute("DELETE FROM licitaciones WHERE id_licitacion = ?", (nuevo,))
+            conn.execute("DELETE FROM reservas_salones WHERE id_licitacion = ?", (nuevo,))
+            conn.execute("""
+                INSERT INTO licitaciones (
+                    id_licitacion, titulo, organismo, categoria, modalidad, region,
+                    presupuesto_mandante, costo_base_hotel, estado_embudo,
+                    validacion_adjuntos, fecha_publicacion, fecha_cierre
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                viejo, "Servicio de prueba", "Organismo de prueba", "Alojamiento",
+                "Compra Agil", "Region Metropolitana (Santiago)",
+                1000000, 800000, "Cerrada", "Sin verificar",
+                "2026-01-01", "2026-01-31",
+            ))
+            conn.execute("""
+                INSERT INTO reservas_salones (
+                    id_salon, cliente_evento, organismo_o_empresa, tipo_evento,
+                    fecha_inicio, fecha_fin, horario, asistentes_estimados,
+                    estado_reserva, id_licitacion
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                "SALON-DANUBIO", "Evento de prueba", "Organismo de prueba",
+                "Seminario", "2027-01-05", "2027-01-05", "09:00 a 18:00",
+                10, "Tentativa", viejo,
+            ))
+            conn.execute("""
+                INSERT INTO historial_licitacion (id_licitacion, fecha, usuario, tipo, detalle)
+                VALUES (?, ?, ?, ?, ?)
+            """, (viejo, "2026-01-01 10:00", "admin", "Decision", "Registro previo"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        database.init_db()
+
+        self.assertIsNone(database.get_licitacion_by_id(viejo))
+        self.assertIsNotNone(database.get_licitacion_by_id(nuevo))
+        reservas = [r for r in database.get_all_reservas() if r["id_licitacion"] == nuevo]
+        self.assertEqual(len(reservas), 1)
+        conn = database.get_db_connection()
+        try:
+            historial = conn.execute(
+                "SELECT COUNT(*) AS n FROM historial_licitacion WHERE id_licitacion = ?",
+                (nuevo,),
+            ).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(historial["n"], 1)
 
     def test_init_db_does_not_duplicate_when_called_twice(self):
         total_antes = len(database.get_all_licitaciones())
@@ -217,7 +369,7 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(fechas, sorted(fechas))
 
     def test_update_empty_data_returns_false(self):
-        self.assertFalse(database.update_licitacion("1058-12-COT24", {}))
+        self.assertFalse(database.update_licitacion("1058-12-COT26", {}))
 
     def test_salones_catalog_loaded(self):
         salones = database.get_all_salones()
@@ -260,8 +412,8 @@ class TestDatabase(unittest.TestCase):
 
     def test_opciones_reserva_excluye_descartadas(self):
         ids = {lic["id_licitacion"] for lic in database.get_licitaciones_para_reserva()}
-        self.assertNotIn("310-7-COT24", ids)
-        self.assertIn("1058-12-COT24", ids)
+        self.assertNotIn("310-7-COT26", ids)
+        self.assertIn("1058-12-COT26", ids)
 
     def test_create_and_update_licitacion_with_capacity_and_salon(self):
         data = {

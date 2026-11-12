@@ -60,6 +60,7 @@ VALID_ESTADOS = [
     "Identificada",
     "Calificada",
     "Participada",
+    "Cerrada",
     "Adjudicada",
     "Descartada"
 ]
@@ -211,6 +212,10 @@ MAX_PAGINA = 8
 @app.route("/licitaciones")
 @login_required
 def dashboard():
+    # Cierra lo vencido al entrar al tablero: una licitacion que vence con la
+    # app arriba quedaria abierta hasta el proximo reinicio o sincronizacion.
+    database.marcar_cerradas()
+
     categoria = request.args.get("categoria", "").strip() or None
     modalidad = request.args.get("modalidad", "").strip() or None
     estado = request.args.get("estado", "").strip() or None
@@ -789,7 +794,7 @@ def exportar_informe():
     etiqueta = {"semanal": "Semanal", "mensual": "Mensual"}.get(periodo, "Personalizado")
     writer.writerow(["Informe consolidado", etiqueta])
     writer.writerow(["Desde", desde.isoformat(), "Hasta", hasta.isoformat()])
-    writer.writerow(["Preparado para", "Gerencia General y Direccion de Finanzas"])
+    writer.writerow(["Preparado para", "Gerencia General y Dirección de Finanzas"])
     writer.writerow(["Generado", database.ahora_chile().strftime("%Y-%m-%d %H:%M")])
     writer.writerow([])
     writer.writerow(["Resumen"])
@@ -800,6 +805,7 @@ def exportar_informe():
     writer.writerow(["Identificadas", reporte["identificadas"]])
     writer.writerow(["Calificadas", reporte["calificadas"]])
     writer.writerow(["Participadas", reporte["participadas"]])
+    writer.writerow(["Cerradas", reporte["cerradas"]])
     writer.writerow(["Adjudicadas", reporte["adjudicadas"]])
     writer.writerow(["Descartadas", reporte["descartadas"]])
     writer.writerow(["Tasa de cierre %", reporte["tasa_cierre"]])

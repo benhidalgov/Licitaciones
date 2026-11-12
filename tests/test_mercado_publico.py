@@ -322,7 +322,7 @@ INVALID_LINE_WITHOUT_EQUALS
             "Version": "v1",
             "Listado": [
                 {
-                    "CodigoExterno": "1058-12-COT24",
+                    "CodigoExterno": "1058-12-COT26",
                     "Nombre": "Servicio de Banquetería y Salones",
                     "CodigoEstado": 5,
                     "FechaCierre": "2026-10-15T18:00:00",
@@ -340,34 +340,34 @@ INVALID_LINE_WITHOUT_EQUALS
         mock_response.read.return_value = json.dumps(fake_api_response).encode("utf-8")
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
-        resultado = mercado_publico.consultar_licitacion("1058-12-COT24", ticket="MOCK_TICKET_123")
+        resultado = mercado_publico.consultar_licitacion("1058-12-COT26", ticket="MOCK_TICKET_123")
         self.assertIsNotNone(resultado)
-        self.assertEqual(resultado["CodigoExterno"], "1058-12-COT24")
+        self.assertEqual(resultado["CodigoExterno"], "1058-12-COT26")
         self.assertEqual(resultado["Nombre"], "Servicio de Banquetería y Salones")
 
     def test_consultar_sin_ticket_retorna_error(self):
         # Empty or placeholder ticket should raise ValueError or return None gracefully
-        res = mercado_publico.consultar_licitacion("1058-12-COT24", ticket="")
+        res = mercado_publico.consultar_licitacion("1058-12-COT26", ticket="")
         self.assertIsNone(res)
 
-        res_ph = mercado_publico.consultar_licitacion("1058-12-COT24", ticket="TU_TICKET_AQUI")
+        res_ph = mercado_publico.consultar_licitacion("1058-12-COT26", ticket="TU_TICKET_AQUI")
         self.assertIsNone(res_ph)
 
     @patch("mercado_publico._fetch_url")
     def test_consultar_url_adjuntos_extrae_token(self, mock_fetch):
         # El HTML real usa rutas relativas y entidades; el regex busca ViewAttachment.aspx?enc=
         mock_fetch.return_value = b"<img onclick=\"open(&#39;../Attachment/ViewAttachment.aspx?enc=AbC123%2Fz-x&#39;,'x')\"/>"
-        url = mercado_publico.consultar_url_adjuntos("1058-12-COT24")
+        url = mercado_publico.consultar_url_adjuntos("1058-12-COT26")
         self.assertEqual(
             url,
             "https://www.mercadopublico.cl/Procurement/Modules/Attachment/ViewAttachment.aspx?enc=AbC123%2Fz-x"
         )
-        self.assertIn("idlicitacion=1058-12-COT24", mock_fetch.call_args[0][0])
+        self.assertIn("idlicitacion=1058-12-COT26", mock_fetch.call_args[0][0])
 
     @patch("mercado_publico._fetch_url")
     def test_consultar_url_adjuntos_sin_token(self, mock_fetch):
         mock_fetch.return_value = b"<html><body>Sin anexos</body></html>"
-        self.assertIsNone(mercado_publico.consultar_url_adjuntos("1058-12-COT24"))
+        self.assertIsNone(mercado_publico.consultar_url_adjuntos("1058-12-COT26"))
 
     @patch("urllib.request.urlopen")
     def test_sincronizar_licitaciones_mock(self, mock_urlopen):
@@ -521,7 +521,7 @@ INVALID_LINE_WITHOUT_EQUALS
         self.assertEqual(lic["presupuesto_mandante"], 4800000)
         self.assertEqual(lic["costo_base_hotel"], 3600000)
         self.assertEqual(lic["organismo"], "SERVICIO NACIONAL DE TURISMO")
-        self.assertEqual(lic["region"], "Region de Valparaiso")
+        self.assertEqual(lic["region"], "Región de Valparaíso")
         self.assertEqual(lic["fecha_publicacion"], "2026-10-01")
         self.assertEqual(lic["fecha_cierre"], "2027-10-20")
 

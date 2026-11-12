@@ -90,7 +90,7 @@ class TestValidation(unittest.TestCase):
         response = self.client.post("/reservas/nueva", data=data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         reservas = database.get_all_reservas(id_salon="SALON-PARRA")
-        nueva = [r for r in reservas if r["cliente_evento"] == "Evento de Validacion"]
+        nueva = [r for r in reservas if r["cliente_evento"] == "Evento de Validación"]
         self.assertEqual(len(nueva), 1)
         self.assertEqual(nueva[0]["asistentes_estimados"], 0)
 
@@ -123,11 +123,11 @@ class TestDatabaseIntegrity(unittest.TestCase):
 
     def test_delete_licitacion_clears_reservation_links(self):
         reserva = database.get_reserva_by_id(1)
-        self.assertEqual(reserva["id_licitacion"], "1058-12-COT24")
+        self.assertEqual(reserva["id_licitacion"], "1058-12-COT26")
 
-        database.delete_licitacion("1058-12-COT24")
+        database.delete_licitacion("1058-12-COT26")
 
-        self.assertIsNone(database.get_licitacion_by_id("1058-12-COT24"))
+        self.assertIsNone(database.get_licitacion_by_id("1058-12-COT26"))
         reserva_after = database.get_reserva_by_id(1)
         self.assertEqual(reserva_after["id_licitacion"], "")
 

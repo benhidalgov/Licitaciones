@@ -596,6 +596,7 @@ def sincronizar_licitaciones(
             total_guardadas += 1
 
     total_descartadas += database.marcar_inviables()
+    database.marcar_cerradas()
 
     mensaje = (
         f"Sincronizacion finalizada ({dias} dia(s) desde {fecha}): "

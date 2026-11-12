@@ -49,9 +49,9 @@ Al entrar veras la pantalla `Licitaciones`. De arriba hacia abajo:
 3. **Oportunidades Priorizadas de Hoy:** las licitaciones abiertas que tienen
    presupuesto y capacidad viables.
 4. **Metricas del Embudo Comercial:** Total, Compra Agil, Identificadas,
-   Calificadas, Participadas, Adjudicadas y Descartadas.
+   Calificadas, Participadas, Adjudicadas, Descartadas y Cerradas.
 5. **Filtros:** busqueda, cliente clave, categoria, modalidad, estado, motivo de
-   descarte y revision.
+   descarte, revision y vencimiento.
 6. **Listado de licitaciones:** hasta 8 por pagina.
 7. **Paginacion:** al final del listado.
 
@@ -119,7 +119,7 @@ Filtros disponibles:
 | Cliente Clave | Filtra clientes prioritarios como Mineduc, Minsal o universidades |
 | Categoria Comercial | Alojamiento o Eventos / Catering |
 | Modalidad de Compra | Compra Agil o Licitacion Publica |
-| Estado en Embudo | Identificada, Calificada, Participada, Adjudicada o Descartada |
+| Estado en Embudo | Identificada, Calificada, Participada, Cerrada, Adjudicada o Descartada |
 | Motivo de Descarte | Precio, Disponibilidad, Fuera de alcance, Otro o Sin motivo |
 | Revision | Todas, Pendientes sin revisar o Revisadas por una persona |
 | Vencimiento | Todas, Vigentes o Vencidas |
@@ -167,6 +167,10 @@ Dentro de la ficha encontraras, en este orden:
 9. **Historial de Actividad:** todo lo que paso con la licitacion.
 10. **Sintesis de TDR:** resumen de lo que pide el documento.
 11. **Decisiones:** revisar, participar o no participar.
+
+Los bloques 7, 9 y 10 (validacion documental, checklist, historial y TDR) vienen
+plegados para que la ficha no sea larga. Haz clic en el titulo del bloque para
+abrirlo o cerrarlo; los demas bloques estan siempre visibles.
 
 ---
 
@@ -419,6 +423,7 @@ revisa que el navegador no este bloqueando el desplazamiento por anclas.
 | `Identificada` | Recien sincronizada, sin revisar |
 | `Calificada` | Revisada y con posibilidad real de participar |
 | `Participada` | El equipo decidio ofertar |
+| `Cerrada` | Cerraron las ofertas sin decision registrada; se marca sola al vencer |
 | `Adjudicada` | Proceso ganado |
 | `Descartada` | No se participa, con motivo registrado |
 | `Priorizada` | Oportunidad abierta con presupuesto y capacidad viables |

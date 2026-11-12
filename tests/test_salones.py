@@ -192,12 +192,12 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(len(conflictos_self), 0)
 
     def test_crear_reserva_get_view(self):
-        response = self.client.get("/reservas/nueva?salon=SALON-DANUBIO&licitacion=1058-12-COT24")
+        response = self.client.get("/reservas/nueva?salon=SALON-DANUBIO&licitacion=1058-12-COT26")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("Registrar Nueva Reserva", html)
         self.assertIn("SALON-DANUBIO", html)
-        self.assertIn("1058-12-COT24", html)
+        self.assertIn("1058-12-COT26", html)
 
     def test_crear_reserva_post_success(self):
         payload = {
@@ -231,7 +231,7 @@ class TestSalones(unittest.TestCase):
             "horario": "10:00 a 12:00 hrs",
             "asistentes_estimados": "2",
             "estado_reserva": "Confirmada",
-            "id_licitacion": "1058-12-COT24",
+            "id_licitacion": "1058-12-COT26",
             "contacto_responsable": "",
             "observaciones": "",
         }
@@ -313,7 +313,7 @@ class TestSalones(unittest.TestCase):
             "horario": "08:30 a 19:00 hrs",
             "asistentes_estimados": "80",
             "estado_reserva": "Confirmada",
-            "id_licitacion": "1058-12-COT24",
+            "id_licitacion": "1058-12-COT26",
             "contacto_responsable": "Claudia Morales",
             "observaciones": "Actualizado para jornada extendida"
         }
@@ -338,8 +338,8 @@ class TestSalones(unittest.TestCase):
         self.assertIsNone(database.get_reserva_by_id(temp_id))
 
     def test_reservar_desde_licitacion_button_rendered(self):
-        # In detail view of 1058-12-COT24 (which has SALON-DANUBIO assigned)
-        resp = self.client.get("/licitaciones/1058-12-COT24")
+        # In detail view of 1058-12-COT26 (which has SALON-DANUBIO assigned)
+        resp = self.client.get("/licitaciones/1058-12-COT26")
         self.assertEqual(resp.status_code, 200)
         html = resp.data.decode("utf-8")
         self.assertIn("/reservas/nueva", html)

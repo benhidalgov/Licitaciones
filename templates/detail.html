@@ -56,7 +56,7 @@
                     {% if cc %}
                     <span class="badge-spot badge-spot-blue">Cliente clave: {{ cc }}</span>
                     {% endif %}
-                    {% if lic.fecha_cierre and lic.fecha_cierre < hoy %}
+                    {% if lic.fecha_cierre and lic.fecha_cierre < hoy and lic.estado_embudo != 'Cerrada' %}
                     <span class="badge-spot badge-spot-neutral">Vencida</span>
                     {% endif %}
                     {% if revisada_por %}
@@ -119,6 +119,10 @@
                     {% elif lic.estado_embudo == 'Participada' %}
                     <span class="badge-spot badge-spot-yellow">
                         Participada
+                    </span>
+                    {% elif lic.estado_embudo == 'Cerrada' %}
+                    <span class="badge-spot badge-spot-neutral">
+                        Cerrada
                     </span>
                     {% elif lic.estado_embudo == 'Adjudicada' %}
                     <span class="badge-spot badge-spot-green">
@@ -679,13 +683,19 @@
         {% endif %}
 
     <!-- Panel de Validacion Robusta (Cruce de ID con Adjuntos / Efecto ID) -->
-    <div class="card-editorial p-6 bg-white space-y-4">
-        <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Validación de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
-            <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Cotejo de integridad entre el identificador del portal de compras y los archivos de bases técnicas o administrativas adjuntas (prevencion del Efecto ID).
-            </p>
-        </div>
+    <details class="card-editorial bg-white">
+        <summary class="px-6 py-4 border-b border-[#EAEAEA] cursor-pointer list-none">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-[#111111]">Validación de Consistencia Documental (Cruce de ID con Adjuntos)</h2>
+                    <p class="text-xs text-[#6E6D6A] mt-0.5">
+                        Cotejo de integridad entre el identificador del portal de compras y los archivos de bases técnicas o administrativas adjuntas (prevencion del Efecto ID).
+                    </p>
+                </div>
+                <span class="text-[10px] font-mono text-[#6E6D6A] whitespace-nowrap">Abrir / cerrar</span>
+            </div>
+        </summary>
+        <div class="px-6 pt-4 pb-6 space-y-4">
 
         {% if lic.validacion_adjuntos == 'Valida' %}
         <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4 space-y-2">
@@ -721,18 +731,21 @@
             </p>
         </div>
         {% endif %}
-    </div>
+        </div>
+    </details>
 
     <!-- Panel de Checklist de Admisibilidad Administrativa Formal -->
-    <div class="card-editorial p-6 bg-white space-y-4">
-        <div class="border-b border-[#EAEAEA] pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-                <h2 class="text-sm font-semibold text-[#111111]">Checklist de Admisibilidad Administrativa Formal</h2>
-                <p class="text-xs text-[#6E6D6A] mt-0.5">
-                    Verificación de antecedentes legales obligatorios para personas jurídicas según la Ley N 19.886 de Bases sobre Contratos Administrativos.
-                </p>
-            </div>
-            <div>
+    <details class="card-editorial bg-white">
+        <summary class="px-6 py-4 border-b border-[#EAEAEA] cursor-pointer list-none">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h2 class="text-sm font-semibold text-[#111111]">Checklist de Admisibilidad Administrativa Formal</h2>
+                    <p class="text-xs text-[#6E6D6A] mt-0.5">
+                        Verificación de antecedentes legales obligatorios para personas jurídicas según la Ley N 19.886 de Bases sobre Contratos Administrativos.
+                    </p>
+                    <p class="text-[10px] font-mono text-[#6E6D6A] mt-1">Abrir / cerrar</p>
+                </div>
+                <div>
                 {% if lic.tiene_anexo4 and lic.tiene_escrituras and lic.tiene_poderes and lic.tiene_vigencias %}
                 <span class="badge-spot badge-spot-green">
                     Admisibilidad Administrativa Completa
@@ -746,8 +759,10 @@
                     Antecedentes Pendientes
                 </span>
                 {% endif %}
+                </div>
             </div>
-        </div>
+        </summary>
+        <div class="px-6 pt-4 pb-6 space-y-4">
 
         <!-- Tabla Formal de Verificacion Documental -->
         <div class="overflow-x-auto border border-[#EAEAEA] rounded-[6px]">
@@ -875,16 +890,23 @@
                 <button type="submit" class="btn-secondary text-xs px-3 py-1.5">Guardar verificación documental</button>
             </div>
         </form>
-    </div>
+        </div>
+    </details>
 
     <!-- Historial de Actividad del Sistema -->
-    <div class="card-editorial p-6 bg-white space-y-4">
-        <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Historial de Actividad</h2>
-            <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Cambios de estado, decisiones, notas y actualizaciones registradas por el equipo.
-            </p>
-        </div>
+    <details class="card-editorial bg-white">
+        <summary class="px-6 py-4 border-b border-[#EAEAEA] cursor-pointer list-none">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-[#111111]">Historial de Actividad</h2>
+                    <p class="text-xs text-[#6E6D6A] mt-0.5">
+                        Cambios de estado, decisiones, notas y actualizaciones registradas por el equipo.
+                    </p>
+                </div>
+                <span class="text-[10px] font-mono text-[#6E6D6A] whitespace-nowrap">Abrir / cerrar</span>
+            </div>
+        </summary>
+        <div class="px-6 pt-4 pb-6 space-y-4">
         {% if historial %}
         <ol class="space-y-2 text-xs">
             {% for h in historial %}
@@ -899,7 +921,8 @@
         {% else %}
         <p class="text-xs text-[#6E6D6A]">Sin actividad registrada para esta licitación.</p>
         {% endif %}
-    </div>
+        </div>
+    </details>
 
     <!-- Historial de Notas Compartidas -->
     <div class="card-editorial p-6 bg-white space-y-4">
@@ -925,13 +948,19 @@
     </div>
 
     <!-- Sintesis de Terminos de Referencia (TDR) -->
-    <div class="card-editorial p-6 bg-white space-y-4">
-        <div class="border-b border-[#EAEAEA] pb-3">
-            <h2 class="text-sm font-semibold text-[#111111]">Síntesis de Términos de Referencia (TDR)</h2>
-            <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Especificaciones técnicas, alcance operativo y requerimientos de servicio formalizados por el organismo licitante.
-            </p>
-        </div>
+    <details class="card-editorial bg-white">
+        <summary class="px-6 py-4 border-b border-[#EAEAEA] cursor-pointer list-none">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-[#111111]">Síntesis de Términos de Referencia (TDR)</h2>
+                    <p class="text-xs text-[#6E6D6A] mt-0.5">
+                        Especificaciones técnicas, alcance operativo y requerimientos de servicio formalizados por el organismo licitante.
+                    </p>
+                </div>
+                <span class="text-[10px] font-mono text-[#6E6D6A] whitespace-nowrap">Abrir / cerrar</span>
+            </div>
+        </summary>
+        <div class="px-6 pt-4 pb-6 space-y-4">
 
         <div class="bg-[#FBFBFA] border border-[#EAEAEA] rounded-[6px] p-4">
             <div class="text-[10px] font-semibold text-[#6E6D6A] uppercase tracking-wider mb-1">
@@ -956,7 +985,8 @@
                 <div class="font-medium text-[#111111] mt-0.5">{{ lic.region }}</div>
             </div>
         </div>
-    </div>
+        </div>
+    </details>
 
     <!-- Barra de Navegacion Inferior -->
     <div class="flex items-center justify-between border-t border-[#EAEAEA] pt-4 text-xs">

@@ -59,9 +59,9 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         # Should include Alojamiento tender
-        self.assertIn("723-4-LP24", html)
+        self.assertIn("723-4-LP26", html)
         # Should NOT include Banquetería / Eventos tender
-        self.assertNotIn("1058-12-COT24", html)
+        self.assertNotIn("1058-12-COT26", html)
 
     def test_filtro_miles(self):
         env = flask_app.app.jinja_env
@@ -120,39 +120,39 @@ class TestDashboard(unittest.TestCase):
         response = self.client.get("/?modalidad=Compra+Agil")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("1058-12-COT24", html)
-        self.assertNotIn("723-4-LP24", html)
+        self.assertIn("1058-12-COT26", html)
+        self.assertNotIn("723-4-LP26", html)
 
     def test_dashboard_filter_estado(self):
         response = self.client.get("/?estado=Adjudicada")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("930-15-LP23", html)
-        self.assertNotIn("1058-12-COT24", html)
+        self.assertIn("930-15-LP26", html)
+        self.assertNotIn("1058-12-COT26", html)
 
     def test_dashboard_search_term(self):
         response = self.client.get("/?q=Turismo")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("Subsecretaría de Turismo", html)
-        self.assertIn("1058-12-COT24", html)
-        self.assertNotIn("723-4-LP24", html)
+        self.assertIn("1058-12-COT26", html)
+        self.assertNotIn("723-4-LP26", html)
 
     def test_dashboard_search_by_id(self):
-        response = self.client.get("/?q=805-19-LP24")
+        response = self.client.get("/?q=805-19-LP26")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("805-19-LP24", html)
+        self.assertIn("805-19-LP26", html)
         self.assertIn("Gobierno Regional Metropolitano", html)
-        self.assertNotIn("1058-12-COT24", html)
+        self.assertNotIn("1058-12-COT26", html)
 
     def test_dashboard_combined_filters(self):
         response = self.client.get("/?categoria=Alojamiento&modalidad=Compra+Agil")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("440-8-COT24", html)
-        self.assertNotIn("723-4-LP24", html)
-        self.assertNotIn("1058-12-COT24", html)
+        self.assertIn("440-8-COT26", html)
+        self.assertNotIn("723-4-LP26", html)
+        self.assertNotIn("1058-12-COT26", html)
 
     def test_dashboard_clp_formatting(self):
         response = self.client.get("/")
@@ -166,7 +166,7 @@ class TestDashboard(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        # 1840-22-COT24: Presupuesto 6.400.000 < Costo 6.700.000 -> Inviable / Costo Excede
+        # 1840-22-COT26: Presupuesto 6.400.000 < Costo 6.700.000 -> Inviable / Costo Excede
         self.assertIn("Inviable / Costo Excede", html)
         # Viable indicator
         self.assertIn("Viable / Margen Positivo", html)
@@ -175,7 +175,7 @@ class TestDashboard(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        # 805-19-LP24 has validacion_adjuntos = 'Error ID / Discrepancia'
+        # 805-19-LP26 has validacion_adjuntos = 'Error ID / Discrepancia'
         self.assertIn("Discrepancia ID", html)
         # Normal tenders have validacion_adjuntos = 'Valida'
         self.assertIn("ID verificado", html)
@@ -184,7 +184,7 @@ class TestDashboard(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("/licitaciones/1058-12-COT24", html)
+        self.assertIn("/licitaciones/1058-12-COT26", html)
         self.assertIn(">Ver</a>", html)
         self.assertIn("Eliminar", html)
 
@@ -251,13 +251,13 @@ class TestDashboard(unittest.TestCase):
 
     def test_busqueda_ignora_tildes(self):
         html = self.client.get("/licitaciones?q=Región").get_data(as_text=True)
-        self.assertIn("1058-12-COT24", html)
+        self.assertIn("1058-12-COT26", html)
         html = self.client.get("/licitaciones?q=Minería").get_data(as_text=True)
-        self.assertIn("723-4-LP24", html)
+        self.assertIn("723-4-LP26", html)
 
     def test_filtro_cliente_clave_minsal(self):
         html = self.client.get("/licitaciones?cliente_clave=Minsal").get_data(as_text=True)
-        self.assertIn("440-8-COT24", html)
+        self.assertIn("440-8-COT26", html)
 
     def test_margen_tolerancia_decimal(self):
         response = self.client.post(
@@ -283,9 +283,28 @@ class TestDashboard(unittest.TestCase):
 
     def test_filtro_vencidas(self):
         vencidas = self.client.get("/licitaciones?vencida=1").get_data(as_text=True)
-        self.assertIn("1058-12-COT24", vencidas)
+        self.assertIn("1058-12-COT26", vencidas)
         vigentes = self.client.get("/licitaciones?vencida=0").get_data(as_text=True)
-        self.assertNotIn("1058-12-COT24", vigentes)
+        self.assertNotIn("1058-12-COT26", vigentes)
+
+    def test_dashboard_cierra_vencidas_al_abrir(self):
+        database.create_licitacion({
+            "id_licitacion": "9999-99-VEN26",
+            "titulo": "Vencida que debe cerrarse al abrir el tablero",
+            "organismo": "Organismo Test",
+            "categoria": "Alojamiento",
+            "modalidad": "Compra Agil",
+            "region": "Región Metropolitana (Santiago)",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 800000,
+            "estado_embudo": "Identificada",
+            "fecha_publicacion": "2026-01-01",
+            "fecha_cierre": "2026-01-31",
+        })
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        lic = database.get_licitacion_by_id("9999-99-VEN26")
+        self.assertEqual(lic["estado_embudo"], "Cerrada")
 
     def test_utm_actualiza_tope(self):
         response = self.client.post(
@@ -318,17 +337,17 @@ class TestDashboard(unittest.TestCase):
             sess["user"] = "daniela"
             sess["nombre"] = "Daniela"
         self.client.post(
-            "/licitaciones/723-4-LP24/decision", data={"decision": "revisar"}
+            "/licitaciones/723-4-LP26/decision", data={"decision": "revisar"}
         )
 
         html = self.client.get("/licitaciones?revisada_por=Daniela").get_data(as_text=True)
-        self.assertIn("723-4-LP24", html)
+        self.assertIn("723-4-LP26", html)
         self.assertIn("Revisada por Daniela", html)
-        self.assertNotIn("1058-12-COT24", html)
+        self.assertNotIn("1058-12-COT26", html)
 
         pendientes = self.client.get("/licitaciones?revisada_por=pendientes").get_data(as_text=True)
-        self.assertIn("1058-12-COT24", pendientes)
-        self.assertNotIn("723-4-LP24", pendientes)
+        self.assertIn("1058-12-COT26", pendientes)
+        self.assertNotIn("723-4-LP26", pendientes)
 
         # Si Mari vuelve a revisar, el filtro debe coincidir con el badge:
         # Daniela deja de ser la revisora vigente.
@@ -336,12 +355,12 @@ class TestDashboard(unittest.TestCase):
             sess["user"] = "mari"
             sess["nombre"] = "Mari"
         self.client.post(
-            "/licitaciones/723-4-LP24/decision", data={"decision": "revisar"}
+            "/licitaciones/723-4-LP26/decision", data={"decision": "revisar"}
         )
         por_daniela = self.client.get("/licitaciones?revisada_por=Daniela").get_data(as_text=True)
-        self.assertNotIn("723-4-LP24", por_daniela)
+        self.assertNotIn("723-4-LP26", por_daniela)
         por_mari = self.client.get("/licitaciones?revisada_por=Mari").get_data(as_text=True)
-        self.assertIn("723-4-LP24", por_mari)
+        self.assertIn("723-4-LP26", por_mari)
         self.assertIn("Revisada por Mari", por_mari)
 
 

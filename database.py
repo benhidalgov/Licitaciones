@@ -64,6 +64,83 @@ def _sin_acentos(texto: str) -> str:
     return unicodedata.normalize("NFKD", texto or "").encode("ASCII", "ignore").decode("ascii")
 
 
+# Tildes conocidas que se aplican a textos de entrada (API, formularios, CSV).
+_ACENTOS_ENTRADA: Tuple[Tuple[str, str], ...] = (
+    ("licitacion", "licitación"), ("gestion", "gestión"), ("sesion", "sesión"),
+    ("contrasena", "contraseña"), ("manana", "mañana"), ("direccion", "dirección"),
+    ("region", "región"), ("mineria", "minería"), ("educacion", "educación"),
+    ("revision", "revisión"), ("adjudicacion", "adjudicación"),
+    ("informacion", "información"), ("publicacion", "publicación"),
+    ("categoria", "categoría"), ("pagina", "página"), ("ultima", "última"),
+    ("numero", "número"), ("telefono", "teléfono"), ("codigo", "código"),
+    ("dia", "día"), ("dias", "días"), ("salon", "salón"),
+    ("alimentacion", "alimentación"), ("operacion", "operación"),
+    ("validacion", "validación"), ("verificacion", "verificación"),
+    ("deteccion", "detección"), ("planificacion", "planificación"),
+    ("eliminacion", "eliminación"), ("confirmacion", "confirmación"),
+    ("seleccion", "selección"), ("opcion", "opción"), ("compania", "compañía"),
+    ("tecnico", "técnico"), ("tecnicos", "técnicos"), ("tecnica", "técnica"),
+    ("tecnicas", "técnicas"), ("publico", "público"), ("publica", "pública"),
+    ("publicos", "públicos"), ("publicas", "públicas"), ("agil", "ágil"),
+    ("logistica", "logística"), ("metodologia", "metodología"),
+    ("proximo", "próximo"), ("proxima", "próxima"), ("maximo", "máximo"),
+    ("minimo", "mínimo"), ("descripcion", "descripción"),
+    ("observacion", "observación"), ("justificacion", "justificación"),
+    ("notificacion", "notificación"), ("sincronizacion", "sincronización"),
+    ("ejecucion", "ejecución"), ("administracion", "administración"),
+    ("institucion", "institución"), ("condicion", "condición"),
+    ("comision", "comisión"), ("analitica", "analítica"),
+    ("estadistica", "estadística"), ("historico", "histórico"),
+    ("automatico", "automático"), ("proposito", "propósito"),
+    ("acreditacion", "acreditación"), ("habilitacion", "habilitación"),
+    ("fiscalizacion", "fiscalización"), ("subsecretaria", "subsecretaría"),
+    ("asignacion", "asignación"), ("ordenes", "órdenes"),
+    ("conversion", "conversión"), ("linea", "línea"), ("lineas", "líneas"),
+    ("juridicas", "jurídicas"), ("segun", "según"), ("area", "área"),
+    ("areas", "áreas"), ("termino", "término"), ("sintesis", "síntesis"),
+    ("terminos", "términos"), ("cotizacion", "cotización"),
+    ("adquisicion", "adquisición"), ("contratacion", "contratación"),
+    ("postulacion", "postulación"), ("presentacion", "presentación"),
+    ("declaracion", "declaración"), ("aceptacion", "aceptación"),
+    ("inscripcion", "inscripción"), ("constitucion", "constitución"),
+    ("representacion", "representación"), ("personeria", "personería"),
+    ("antiguedad", "antigüedad"), ("raices", "raíces"), ("articulo", "artículo"),
+    ("practica", "práctica"), ("practicas", "prácticas"),
+    ("economica", "económica"), ("basica", "básica"),
+    ("recepcion", "recepción"), ("facturacion", "facturación"),
+    ("comercializacion", "comercialización"), ("distribucion", "distribución"),
+    ("produccion", "producción"), ("organizacion", "organización"),
+    ("capacitacion", "capacitación"), ("programacion", "programación"),
+    ("coordinacion", "coordinación"), ("supervision", "supervisión"),
+    ("mantencion", "mantención"), ("habitacion", "habitación"),
+    ("reservacion", "reservación"), ("cancelacion", "cancelación"),
+    ("modificacion", "modificación"), ("actualizacion", "actualización"),
+    ("todavia", "todavía"), ("reunion", "reunión"),
+    ("reuniones", "reuniones"), ("analisis", "análisis"),
+    ("valparaiso", "valparaíso"), ("biobio", "biobío"),
+    ("araucania", "araucanía"), ("aysen", "aysén"), ("nuble", "ñuble"),
+)
+
+
+def normalizar_texto(valor: Optional[str]) -> Optional[str]:
+    """Agrega las tildes conocidas a un texto de entrada de usuario o de la API."""
+    if not valor:
+        return valor
+    texto = str(valor)
+    for viejo, nuevo in _ACENTOS_ENTRADA:
+        texto = re.sub(rf"\b{viejo}\b", nuevo, texto)
+        texto = re.sub(rf"\b{viejo.capitalize()}\b", nuevo.capitalize(), texto)
+    return texto
+
+
+def normalizar_campos(datos: Dict[str, Any], campos: Tuple[str, ...]) -> Dict[str, Any]:
+    """Normaliza los campos de texto visibles de un diccionario, en el sitio."""
+    for campo in campos:
+        if campo in datos and isinstance(datos[campo], str):
+            datos[campo] = normalizar_texto(datos[campo])
+    return datos
+
+
 def _alias_cliente_clave(nombre: str) -> Tuple[str, ...]:
     for cliente, alias in CLIENTES_CLAVE:
         if cliente.lower() == str(nombre or "").strip().lower():
@@ -304,7 +381,7 @@ def init_db() -> None:
                     "08:30 a 18:30 hrs",
                     80,
                     "Confirmada",
-                    "1058-12-COT24",
+                    "1058-12-COT26",
                     "Camila Morales - Jefatura de Eventos",
                     "Bloqueo formal vinculado a orden de compra adjudicada. Servicio de coffee break continuo."
                 ),
@@ -318,7 +395,7 @@ def init_db() -> None:
                     "08:00 a 18:00 hrs",
                     250,
                     "Confirmada",
-                    "805-19-LP24",
+                    "805-19-LP26",
                     "Rodrigo Valenzuela - Direccion de Comunicaciones GORE",
                     "Uso de amplificacion total, cabinas de interpretacion y acreditacion de delegaciones."
                 ),
@@ -388,7 +465,7 @@ def init_db() -> None:
                     "08:30 a 13:00 hrs",
                     120,
                     "Tentativa",
-                    "1840-22-COT24",
+                    "1840-22-COT26",
                     "Marcelo Fuentes - Adquisiciones DIPRES",
                     "Pre-reserva en espera de adjudicacion final en portal Mercado Publico."
                 ),
@@ -402,7 +479,7 @@ def init_db() -> None:
                     "08:30 a 19:00 hrs",
                     60,
                     "Confirmada",
-                    "512-10-LE24",
+                    "512-10-LE26",
                     "Secretaria General CRUCH",
                     "Jornada doble con uso continuo de pantalla interactiva y servicio gastronomico."
                 )
@@ -517,7 +594,7 @@ def init_db() -> None:
         count = cursor.fetchone()[0]
         seed_data = [
                 (
-                    "1058-12-COT24",
+                    "1058-12-COT26",
                     "Servicio de Banqueteria y Salones Jornada de Planificacion Estrategica",
                     "Subsecretaria de Turismo",
                     "Eventos / Catering",
@@ -536,7 +613,7 @@ def init_db() -> None:
                     "SALON-DANUBIO"
                 ),
                 (
-                    "723-4-LP24",
+                    "723-4-LP26",
                     "Hospedaje y Alimentacion Delegacion Internacional Encuentro Minero",
                     "Ministerio de Mineria",
                     "Alojamiento",
@@ -555,7 +632,7 @@ def init_db() -> None:
                     "SALON-PARRA"
                 ),
                 (
-                    "1840-22-COT24",
+                    "1840-22-COT26",
                     "Catering y Coffee Break Seminario Innovacion Publica",
                     "Direccion de Presupuestos (DIPRES)",
                     "Eventos / Catering",
@@ -574,7 +651,7 @@ def init_db() -> None:
                     "SALON-PERGOLA"
                 ),
                 (
-                    "512-10-LE24",
+                    "512-10-LE26",
                     "Alojamiento y Salones para Conferencia Anual de Rectores",
                     "Consejo de Rectores de las Universidades Chilenas (CRUCH)",
                     "Alojamiento",
@@ -593,7 +670,7 @@ def init_db() -> None:
                     "SALON-DANUBIO"
                 ),
                 (
-                    "930-15-LP23",
+                    "930-15-LP26",
                     "Servicio Integral de Eventos de Cierre Ano Fiscal",
                     "Servicio de Impuestos Internos (SII)",
                     "Eventos / Catering",
@@ -612,7 +689,7 @@ def init_db() -> None:
                     "SALON-PERGOLA"
                 ),
                 (
-                    "440-8-COT24",
+                    "440-8-COT26",
                     "Alojamiento de Emergencia Personal Medico",
                     "Servicio de Salud Metropolitano Central",
                     "Alojamiento",
@@ -631,7 +708,7 @@ def init_db() -> None:
                     ""
                 ),
                 (
-                    "805-19-LP24",
+                    "805-19-LP26",
                     "Arriendo de Salones y Equipamiento Audiovisual para Foro Regional",
                     "Gobierno Regional Metropolitano de Santiago",
                     "Eventos / Catering",
@@ -650,7 +727,7 @@ def init_db() -> None:
                     "SALON-PERGOLA"
                 ),
                 (
-                    "310-7-COT24",
+                    "310-7-COT26",
                     "Servicio de Coctel Protocolar Visita Delegacion Extranjera",
                     "Ministerio de Relaciones Exteriores",
                     "Eventos / Catering",
@@ -669,7 +746,7 @@ def init_db() -> None:
                     "SALON-DANUBIO"
                 ),
                 (
-                    "620-14-LE24",
+                    "620-14-LE26",
                     "Hospedaje y Salones Seminario Internacional de Ciberseguridad",
                     "Agencia Nacional de Inteligencia",
                     "Alojamiento",
@@ -707,6 +784,19 @@ def init_db() -> None:
             """, lic_updates)
             conn.commit()
 
+        # Renombra los IDs de ejemplo al anio real (2026), si aun estan viejos.
+        for _viejo, _nuevo in IDS_DEMO_2026.items():
+            ya_migrado = cursor.execute(
+                "SELECT 1 FROM licitaciones WHERE id_licitacion = ?", (_nuevo,)
+            ).fetchone()
+            if ya_migrado:
+                continue
+            for _tabla in ("licitaciones", "reservas_salones", "historial_licitacion"):
+                cursor.execute(
+                    f"UPDATE {_tabla} SET id_licitacion = ? WHERE id_licitacion = ?",
+                    (_nuevo, _viejo),
+                )
+
         cursor.execute(
             "INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('seed_demo', 1)"
         )
@@ -718,7 +808,7 @@ def init_db() -> None:
         # desde ahora el cambio de estado exige usar "No participamos".
         cursor.execute(
             "UPDATE licitaciones SET motivo_descarte = 'Disponibilidad' "
-            "WHERE id_licitacion = '310-7-COT24' AND estado_embudo = 'Descartada' "
+            "WHERE id_licitacion = '310-7-COT26' AND estado_embudo = 'Descartada' "
             "AND motivo_descarte = ''"
         )
         cursor.execute(
@@ -765,6 +855,9 @@ def init_db() -> None:
         conn.commit()
     finally:
         conn.close()
+
+    # Cierra lo vencido antes de mostrar el embudo (arranque y arranque en frio).
+    marcar_cerradas()
 
 
 def get_all_salones() -> List[Dict[str, Any]]:
@@ -1003,6 +1096,7 @@ def update_reserva(id_reserva: int, data: Dict[str, Any]) -> bool:
     valid_data = {k: v for k, v in data.items() if k in ALLOWED_COLUMNS_RESERVAS}
     if not valid_data:
         return False
+    normalizar_campos(valid_data, CAMPOS_TEXTO_RESERVA)
     conn = get_db_connection()
     try:
         fields = [f"{k} = ?" for k in valid_data]
@@ -1033,6 +1127,7 @@ def create_reserva(data: Dict[str, Any]) -> Optional[int]:
             "montaje": "",
             **data
         }
+        normalizar_campos(payload, CAMPOS_TEXTO_RESERVA)
         # BEGIN IMMEDIATE serializa el chequeo y el INSERT: dos usuarios no
         # pueden pasar el control de colisiones a la vez.
         conn.execute("BEGIN IMMEDIATE")
@@ -1321,6 +1416,46 @@ def marcar_inviables() -> int:
         conn.close()
 
 
+# Campos de texto visibles que se normalizan (tildes) al guardar.
+CAMPOS_TEXTO_LICITACION = ("titulo", "organismo", "region", "descripcion_tdr")
+CAMPOS_TEXTO_RESERVA = ("cliente_evento", "organismo_o_empresa", "tipo_evento")
+
+
+# IDs de demostracion del prototipo: terminaban en 23/24 aunque las fechas
+# de publicacion y cierre son de 2026.
+IDS_DEMO_2026 = {
+    "930-15-LP23": "930-15-LP26",
+    "310-7-COT24": "310-7-COT26",
+    "512-10-LE24": "512-10-LE26",
+    "440-8-COT24": "440-8-COT26",
+    "1058-12-COT24": "1058-12-COT26",
+    "1840-22-COT24": "1840-22-COT26",
+    "805-19-LP24": "805-19-LP26",
+    "723-4-LP24": "723-4-LP26",
+    "620-14-LE24": "620-14-LE26",
+}
+
+
+def marcar_cerradas() -> int:
+    """Pasa a 'Cerrada' las oportunidades vencidas que seguian abiertas.
+
+    Solo cierra las fases abiertas (Identificada, Calificada, Participada);
+    Adjudicada y Descartada son estados finales y no se tocan.
+    """
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute("""
+            UPDATE licitaciones
+            SET estado_embudo = 'Cerrada'
+            WHERE fecha_cierre < ?
+              AND estado_embudo IN ('Identificada', 'Calificada', 'Participada')
+        """, (hoy_chile().isoformat(),))
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+
 def create_licitacion(data: Dict[str, Any]) -> str:
     conn = get_db_connection()
     try:
@@ -1330,11 +1465,16 @@ def create_licitacion(data: Dict[str, Any]) -> str:
             "propiedad": "Plaza San Francisco", "revisada": 0,
             "motivo_descarte": "", "descripcion_descarte": "", "notas": "",
             "costeo_validado": 0,
+            "validacion_adjuntos": "Pendiente",
+            "tiene_anexo4": 0, "tiene_escrituras": 0,
+            "tiene_poderes": 0, "tiene_vigencias": 0,
+            "descripcion_tdr": "",
             "sello_mujer": 0, "jornada_40h": 0,
             "sello_sernatur": 0, "inclusion_laboral": 0,
             "actualizado_en": datetime.now().strftime("%Y-%m-%d %H:%M"),
             **data
         }
+        normalizar_campos(payload, CAMPOS_TEXTO_LICITACION)
         conn.execute("""
             INSERT INTO licitaciones (
                 id_licitacion, titulo, organismo, categoria, modalidad, region,
@@ -1366,6 +1506,7 @@ def update_licitacion(id_licitacion: str, data: Dict[str, Any]) -> bool:
     valid_data = {k: v for k, v in data.items() if k in ALLOWED_COLUMNS}
     if not valid_data:
         return False
+    normalizar_campos(valid_data, CAMPOS_TEXTO_LICITACION)
     # La marca de actualizacion la pone el sistema, no el formulario.
     valid_data["actualizado_en"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     conn = get_db_connection()
@@ -1469,6 +1610,7 @@ def get_funnel_metrics() -> Dict[str, int]:
             "Identificada": 0,
             "Calificada": 0,
             "Participada": 0,
+            "Cerrada": 0,
             "Adjudicada": 0,
             "Descartada": 0,
             "Compra_Agil": ca_row["total"] if ca_row else 0,
@@ -1509,6 +1651,7 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Identificada' THEN 1 ELSE 0 END), 0) AS identificadas,
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Calificada' THEN 1 ELSE 0 END), 0) AS calificadas,
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Participada' THEN 1 ELSE 0 END), 0) AS participadas,
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Cerrada' THEN 1 ELSE 0 END), 0) AS cerradas,
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Adjudicada' THEN 1 ELSE 0 END), 0) AS adjudicadas,
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Descartada' THEN 1 ELSE 0 END), 0) AS descartadas,
                    COALESCE(SUM(CASE

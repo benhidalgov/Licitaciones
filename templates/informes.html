@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         <div class="card-editorial p-4 bg-white">
             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Identificadas</div>
             <div class="text-xl font-bold font-mono mt-1">{{ reporte.identificadas | miles }}</div>
@@ -93,6 +93,11 @@
         <div class="card-editorial p-4 bg-white">
             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Participadas</div>
             <div class="text-xl font-bold font-mono mt-1">{{ reporte.participadas | miles }}</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Cerradas</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.cerradas | miles }}</div>
+            <div class="text-[11px] text-[#6E6D6A]">Vencidas sin decisión</div>
         </div>
         <div class="card-editorial p-4 bg-white">
             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Adjudicadas</div>

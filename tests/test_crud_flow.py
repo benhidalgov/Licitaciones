@@ -32,19 +32,19 @@ class TestCrudFlow(unittest.TestCase):
     def test_unauthenticated_access_blocked(self):
         unauth = flask_app.app.test_client()
 
-        # POST /licitaciones/1058-12-COT24/eliminar
-        r5 = unauth.post("/licitaciones/1058-12-COT24/eliminar")
+        # POST /licitaciones/1058-12-COT26/eliminar
+        r5 = unauth.post("/licitaciones/1058-12-COT26/eliminar")
         self.assertEqual(r5.status_code, 302)
         self.assertIn("/login", r5.headers["Location"])
 
     def test_manual_form_routes_removed(self):
         # Las licitaciones llegan solo desde la API: no hay alta ni edicion manual.
         self.assertEqual(self.client.get("/licitaciones/nueva").status_code, 404)
-        self.assertEqual(self.client.get("/licitaciones/1058-12-COT24/editar").status_code, 404)
+        self.assertEqual(self.client.get("/licitaciones/1058-12-COT26/editar").status_code, 404)
 
     def test_delete_licitacion_post_success(self):
-        database.registrar_evento("1058-12-COT24", "Decision", "prueba", "Daniela")
-        response = self.client.post("/licitaciones/1058-12-COT24/eliminar", follow_redirects=True)
+        database.registrar_evento("1058-12-COT26", "Decision", "prueba", "Daniela")
+        response = self.client.post("/licitaciones/1058-12-COT26/eliminar", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
@@ -52,9 +52,9 @@ class TestCrudFlow(unittest.TestCase):
         self.assertIn("Tablero Principal", html)
 
         # Database verification
-        item = database.get_licitacion_by_id("1058-12-COT24")
+        item = database.get_licitacion_by_id("1058-12-COT26")
         self.assertIsNone(item)
-        self.assertEqual(database.get_historial_licitacion("1058-12-COT24"), [])
+        self.assertEqual(database.get_historial_licitacion("1058-12-COT26"), [])
 
     def test_delete_licitacion_post_not_found(self):
         response = self.client.post("/licitaciones/NO-EXISTE-999/eliminar")

@@ -274,6 +274,19 @@
                 </div>
                 <div class="text-[10px] text-[#6E6D6A]">Ver motivos de descarte</div>
             </a>
+
+            <!-- Cerradas -->
+            <a href="{{ url_for('dashboard', estado='Cerrada', _anchor='oportunidades') }}" class="card-editorial p-5 flex flex-col justify-between bg-white hover:border-[#111111] transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] uppercase tracking-wide font-medium text-[#6E6D6A]">Vencidas</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#6E6D6A]"></span>
+                </div>
+                <div class="my-3">
+                    <div class="text-xs font-medium text-[#6E6D6A]">Cerradas</div>
+                    <div class="text-2xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Cerrada | miles }}</div>
+                </div>
+                <div class="text-[10px] text-[#6E6D6A]">Cierre de ofertas pasado</div>
+            </a>
         </div>
     </div>
 
@@ -354,6 +367,7 @@
                         <option value="Identificada" {% if estado == 'Identificada' %}selected{% endif %}>Identificada</option>
                         <option value="Calificada" {% if estado == 'Calificada' %}selected{% endif %}>Calificada</option>
                         <option value="Participada" {% if estado == 'Participada' %}selected{% endif %}>Participada</option>
+                        <option value="Cerrada" {% if estado == 'Cerrada' %}selected{% endif %}>Cerrada (vencida)</option>
                         <option value="Adjudicada" {% if estado == 'Adjudicada' %}selected{% endif %}>Adjudicada</option>
                         <option value="Descartada" {% if estado == 'Descartada' %}selected{% endif %}>Descartada</option>
                     </select>
@@ -524,6 +538,8 @@
                             <span class="badge-spot badge-spot-blue">Calificada</span>
                             {% elif lic.estado_embudo == 'Participada' %}
                             <span class="badge-spot badge-spot-yellow">Participada</span>
+                            {% elif lic.estado_embudo == 'Cerrada' %}
+                            <span class="badge-spot badge-spot-neutral">Cerrada</span>
                             {% elif lic.estado_embudo == 'Adjudicada' %}
                             <span class="badge-spot badge-spot-green">Adjudicada</span>
                             {% elif lic.estado_embudo == 'Descartada' %}
@@ -531,7 +547,7 @@
                             {% else %}
                             <span class="badge-spot badge-spot-neutral">{{ lic.estado_embudo }}</span>
                             {% endif %}
-                            {% if lic.fecha_cierre and lic.fecha_cierre < hoy %}
+                            {% if lic.fecha_cierre and lic.fecha_cierre < hoy and lic.estado_embudo != 'Cerrada' %}
                             <div class="mt-1"><span class="badge-spot badge-spot-neutral">Vencida</span></div>
                             {% endif %}
                         </td>
