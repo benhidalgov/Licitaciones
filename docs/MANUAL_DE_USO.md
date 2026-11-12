@@ -67,8 +67,10 @@ listado con ese filtro aplicado.
 ### Cambiar el tope de Compra Agil
 
 1. Ubica la tarjeta `Compra Agil`.
-2. Escribe el monto en `Tope CLP`.
+2. Escribe el valor de la **UTM del mes**.
 3. Presiona `Guardar`.
+
+El tope se calcula automaticamente como 100 UTM. Actualiza la UTM cada mes.
 
 ---
 
@@ -272,6 +274,7 @@ Direccion del hotel: `Av. Libertador Bernardo O'Higgins 816, Santiago`.
    - fecha de inicio y fecha de termino
    - horario
    - cantidad de asistentes
+   - montaje (auditorio, escuela, mesas redondas, etc.)
    - estado de la reserva
    - licitacion vinculada, si corresponde
    - contacto responsable y observaciones

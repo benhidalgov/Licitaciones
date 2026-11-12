@@ -60,7 +60,7 @@ class TestDashboard(unittest.TestCase):
         html = response.data.decode("utf-8")
         # Should include Alojamiento tender
         self.assertIn("723-4-LP24", html)
-        # Should NOT include Banqueteria / Eventos tender
+        # Should NOT include Banquetería / Eventos tender
         self.assertNotIn("1058-12-COT24", html)
 
     def test_filtro_miles(self):
@@ -134,7 +134,7 @@ class TestDashboard(unittest.TestCase):
         response = self.client.get("/?q=Turismo")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
-        self.assertIn("Subsecretaria de Turismo", html)
+        self.assertIn("Subsecretaría de Turismo", html)
         self.assertIn("1058-12-COT24", html)
         self.assertNotIn("723-4-LP24", html)
 

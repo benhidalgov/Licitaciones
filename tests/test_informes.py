@@ -12,7 +12,7 @@ def _licitacion_informe(id_licitacion, estado="Identificada", presupuesto=1000):
         "organismo": "Ministerio de Prueba",
         "categoria": "Eventos / Catering",
         "modalidad": "Licitacion Publica",
-        "region": "Region Metropolitana",
+        "region": "Región Metropolitana",
         "presupuesto_mandante": presupuesto,
         "costo_base_hotel": 500,
         "estado_embudo": estado,

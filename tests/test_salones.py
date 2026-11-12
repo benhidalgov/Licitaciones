@@ -46,16 +46,16 @@ class TestSalones(unittest.TestCase):
         self.assertIn("Capacidad Total", html)
         self.assertIn("Reservas Activas", html)
 
-        # Salon names
-        self.assertIn("Salon Pergola", html)
-        self.assertIn("Salon Pergola", html)
-        self.assertIn("Salon Danubio", html)
-        self.assertIn("Salon Parra", html)
-        self.assertIn("Salon Sena", html)
+        # Salón names
+        self.assertIn("Salón Pergola", html)
+        self.assertIn("Salón Pergola", html)
+        self.assertIn("Salón Danubio", html)
+        self.assertIn("Salón Parra", html)
+        self.assertIn("Salón Sena", html)
         self.assertIn("Av. Libertador Bernardo O&#39;Higgins 816, Santiago", html)
 
         # Reservation agenda items
-        self.assertIn("Subsecretaria de Turismo", html)
+        self.assertIn("Subsecretaría de Turismo", html)
         self.assertIn("Gobierno Regional Metropolitano de Santiago (GORE)", html)
         self.assertIn("Banco Central de Chile", html)
 
@@ -64,8 +64,8 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
-        self.assertIn("Salon Pergola", html)
-        self.assertIn("Salon de gran capacidad", html)
+        self.assertIn("Salón Pergola", html)
+        self.assertIn("Salón de gran capacidad", html)
         self.assertIn("450", html)
         self.assertIn("Piso 1 - 362 m2", html)
         self.assertIn("Av. Libertador Bernardo O&#39;Higgins 816, Santiago", html)
@@ -83,9 +83,9 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
-        self.assertIn("Salon Danubio", html)
-        self.assertIn("Subsecretaria de Turismo", html)
-        # Should not show Banco Central de Chile which is in Salon Pergola
+        self.assertIn("Salón Danubio", html)
+        self.assertIn("Subsecretaría de Turismo", html)
+        # Should not show Banco Central de Chile which is in Salón Pergola
         self.assertNotIn("Banco Central de Chile", html)
 
     def test_reservas_search_query(self):
@@ -93,14 +93,14 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
 
-        self.assertIn("Subsecretaria de Turismo", html)
+        self.assertIn("Subsecretaría de Turismo", html)
         self.assertNotIn("SOFOFA", html)
 
     def test_conflictos_reserva_logic(self):
-        # 2026-09-20 has a reservation for Subsecretaria de Turismo in SALON-DANUBIO
+        # 2026-09-20 has a reservation for Subsecretaría de Turismo in SALON-DANUBIO
         conflictos = database.get_conflictos_reserva("SALON-DANUBIO", "2026-09-20", "2026-09-20")
         self.assertEqual(len(conflictos), 1)
-        self.assertEqual(conflictos[0]["organismo_o_empresa"], "Subsecretaria de Turismo")
+        self.assertEqual(conflictos[0]["organismo_o_empresa"], "Subsecretaría de Turismo")
 
         # Date without reservation
         sin_conflicto = database.get_conflictos_reserva("SALON-DANUBIO", "2026-11-01", "2026-11-01")
@@ -147,7 +147,7 @@ class TestSalones(unittest.TestCase):
         reserva = database.get_reserva_by_id(1)
         self.assertIsNotNone(reserva)
         self.assertEqual(reserva["id_salon"], "SALON-DANUBIO")
-        self.assertEqual(reserva["organismo_o_empresa"], "Subsecretaria de Turismo")
+        self.assertEqual(reserva["organismo_o_empresa"], "Subsecretaría de Turismo")
 
         # Non-existent
         res_null = database.get_reserva_by_id(99999)
@@ -277,7 +277,7 @@ class TestSalones(unittest.TestCase):
         self.assertIn("fecha de inicio no puede ser posterior", html)
 
     def test_crear_reserva_post_collision_warning(self):
-        # 2026-09-20 already has Subsecretaria de Turismo in SALON-DANUBIO
+        # 2026-09-20 already has Subsecretaría de Turismo in SALON-DANUBIO
         payload = {
             "id_salon": "SALON-DANUBIO",
             "cliente_evento": "Evento Colisionante",
@@ -300,14 +300,14 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(get_resp.status_code, 200)
         get_html = get_resp.data.decode("utf-8")
         self.assertIn("Editar Reserva", get_html)
-        self.assertIn("Subsecretaria de Turismo", get_html)
+        self.assertIn("Subsecretaría de Turismo", get_html)
 
         # POST edit
         edit_payload = {
             "id_salon": "SALON-DANUBIO",
             "cliente_evento": "Jornada Estrategica Modificada",
-            "organismo_o_empresa": "Subsecretaria de Turismo Actualizada",
-            "tipo_evento": "Planificacion",
+            "organismo_o_empresa": "Subsecretaría de Turismo Actualizada",
+            "tipo_evento": "Planificación",
             "fecha_inicio": "2026-09-20",
             "fecha_fin": "2026-09-20",
             "horario": "08:30 a 19:00 hrs",

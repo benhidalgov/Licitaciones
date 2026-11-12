@@ -44,9 +44,9 @@ class TestDetail(unittest.TestCase):
 
         # Identification and TDR
         self.assertIn("1058-12-COT24", html)
-        self.assertIn("Subsecretaria de Turismo", html)
-        self.assertIn("Servicio de Banqueteria y Salones Jornada de Planificacion Estrategica", html)
-        self.assertIn("Region Metropolitana (Santiago)", html)
+        self.assertIn("Subsecretaría de Turismo", html)
+        self.assertIn("Servicio de Banquetería y Salones Jornada de Planificación Estrategica", html)
+        self.assertIn("Región Metropolitana (Santiago)", html)
         self.assertIn("Arriendo de salon plenario para 80 asistentes", html)
 
         # Admissibility checklist items
@@ -152,7 +152,7 @@ class TestDetail(unittest.TestCase):
             "organismo": "Ministerio de Prueba",
             "categoria": "Eventos / Catering",
             "modalidad": "Licitacion Publica",
-            "region": "Region Metropolitana",
+            "region": "Región Metropolitana",
             "presupuesto_mandante": 1000,
             "costo_base_hotel": 950,
             "estado_embudo": "Identificada",
@@ -178,7 +178,7 @@ class TestDetail(unittest.TestCase):
             "organismo": "Ministerio de Prueba",
             "categoria": "Eventos / Catering",
             "modalidad": "Licitacion Publica",
-            "region": "Region Metropolitana",
+            "region": "Región Metropolitana",
             "presupuesto_mandante": 0,
             "costo_base_hotel": 0,
             "estado_embudo": "Identificada",
@@ -243,7 +243,7 @@ class TestDetail(unittest.TestCase):
 
         self.assertIn("Dimensionamiento Operativo, Aforo y Horarios de Salones", html)
         self.assertIn("80 personas", html)
-        self.assertIn("Salon Danubio", html)
+        self.assertIn("Salón Danubio", html)
         self.assertIn("Capacidad Adecuada", html)
 
     def test_detail_capacity_exceeded_alert(self):
@@ -254,7 +254,7 @@ class TestDetail(unittest.TestCase):
             "organismo": "Ministerio de Energia",
             "categoria": "Eventos / Catering",
             "modalidad": "Compra Agil",
-            "region": "Region Metropolitana (Santiago)",
+            "region": "Región Metropolitana (Santiago)",
             "presupuesto_mandante": 6000000,
             "costo_base_hotel": 4000000,
             "estado_embudo": "Identificada",
@@ -308,15 +308,15 @@ class TestDetail(unittest.TestCase):
         # La ficha real trae montos/fechas anidados en Fechas y Moneda en la raiz
         mock_consultar.return_value = {
             "CodigoExterno": "1058-12-COT24",
-            "Nombre": "Servicio de Banqueteria y Salones Jornada de Planificacion Estrategica",
+            "Nombre": "Servicio de Banquetería y Salones Jornada de Planificación Estrategica",
             "CodigoEstado": 6,
             "Estado": "Cerrada",
             "FechaCierre": "2026-10-30T15:00:00",
             "Descripcion": "Arriendo de salon plenario para 80 asistentes",
             "Moneda": "CLP",
             "Comprador": {
-                "NombreOrganismo": "Subsecretaria de Turismo",
-                "RegionUnidad": "Region Metropolitana"
+                "NombreOrganismo": "Subsecretaría de Turismo",
+                "RegionUnidad": "Región Metropolitana"
             },
             "Fechas": {"MontoEstimado": 6100000.0, "FechaCreacion": "2026-10-01T00:00:00"}
         }
@@ -346,8 +346,8 @@ class TestDetail(unittest.TestCase):
         res = self.client.post("/licitaciones/1058-12-COT24/refrescar", follow_redirects=True)
         self.assertEqual(res.status_code, 200)
         lic = database.get_licitacion_by_id("1058-12-COT24")
-        self.assertIn("Banqueteria", lic["titulo"])
-        self.assertEqual(lic["organismo"], "Subsecretaria de Turismo")
+        self.assertIn("Banquetería", lic["titulo"])
+        self.assertEqual(lic["organismo"], "Subsecretaría de Turismo")
 
     def test_actualizar_documentos(self):
         res = self.client.post(
@@ -382,7 +382,7 @@ class TestDetail(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("text/markdown", res.headers["Content-Type"])
         md = res.data.decode("utf-8")
-        self.assertIn("# Servicio de Banqueteria y Salones", md)
+        self.assertIn("# Servicio de Banquetería y Salones", md)
         self.assertIn("1058-12-COT24", md)
         self.assertIn("$5.800.000 CLP", md)
         self.assertIn("## Necesidad (Descripcion TDR)", md)

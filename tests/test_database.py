@@ -101,7 +101,7 @@ class TestDatabase(unittest.TestCase):
             "organismo": "Ministerio de Economia",
             "categoria": "Alojamiento",
             "modalidad": "Licitacion Publica",
-            "region": "Region Metropolitana (Santiago)",
+            "region": "Región Metropolitana (Santiago)",
             "presupuesto_mandante": 15000000,
             "costo_base_hotel": 12000000,
             "estado_embudo": "Identificada",
@@ -239,7 +239,7 @@ class TestDatabase(unittest.TestCase):
         pergola = database.get_salon_by_id("SALON-PERGOLA")
         self.assertIsNotNone(pergola)
         self.assertEqual(pergola["capacidad_maxima"], 450)
-        self.assertEqual(pergola["nombre"], "Salon Pergola")
+        self.assertEqual(pergola["nombre"], "Salón Pergola")
 
         inexistente = database.get_salon_by_id("SALON-INEXISTENTE")
         self.assertIsNone(inexistente)
@@ -270,7 +270,7 @@ class TestDatabase(unittest.TestCase):
             "organismo": "Ministerio de Economia",
             "categoria": "Eventos / Catering",
             "modalidad": "Compra Agil",
-            "region": "Region Metropolitana (Santiago)",
+            "region": "Región Metropolitana (Santiago)",
             "presupuesto_mandante": 5000000,
             "costo_base_hotel": 3800000,
             "estado_embudo": "Identificada",
@@ -295,7 +295,7 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(creada["tipo_jornada"], "Media Jornada Manana (4 hrs)")
         self.assertEqual(creada["horario_evento"], "08:30 a 13:00 hrs")
         self.assertEqual(creada["id_salon_asignado"], "SALON-PERGOLA")
-        self.assertEqual(creada["nombre_salon"], "Salon Pergola")
+        self.assertEqual(creada["nombre_salon"], "Salón Pergola")
         self.assertEqual(creada["capacidad_salon"], 450)
 
         # Actualizar asignacion de salon y aforo
@@ -306,7 +306,7 @@ class TestDatabase(unittest.TestCase):
         actualizada = database.get_licitacion_by_id("TEST-CAPACIDAD-01")
         self.assertEqual(actualizada["cantidad_asistentes"], 200)
         self.assertEqual(actualizada["id_salon_asignado"], "SALON-PERGOLA")
-        self.assertEqual(actualizada["nombre_salon"], "Salon Pergola")
+        self.assertEqual(actualizada["nombre_salon"], "Salón Pergola")
 
 
 if __name__ == "__main__":

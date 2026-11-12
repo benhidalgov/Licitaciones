@@ -731,6 +731,37 @@ def init_db() -> None:
             "WHERE clave = 'tope_compra_agil' AND valor = 6900000",
             (TOPE_COMPRA_AGIL_DEFECTO,),
         )
+        # Normaliza tildes en los datos de ejemplo ya cargados.
+        for _tabla, _campo, _cambios in (
+            ("licitaciones", "region", (("Region", "Región"),)),
+            ("licitaciones", "organismo", (
+                ("Mineria", "Minería"), ("Subsecretaria", "Subsecretaría"),
+                ("Direccion", "Dirección"), ("Educacion", "Educación"),
+            )),
+            ("licitaciones", "titulo", (
+                ("Licitacion", "Licitación"), ("Banqueteria", "Banquetería"),
+                ("Planificacion", "Planificación"), ("Alimentacion", "Alimentación"),
+                ("Direccion", "Dirección"), ("Mineria", "Minería"),
+            )),
+            ("salones", "nombre", (("Salon ", "Salón "),)),
+            ("salones", "tipo", (("Salon", "Salón"),)),
+            ("reservas_salones", "organismo_o_empresa", (
+                ("Subsecretaria", "Subsecretaría"),
+            )),
+            ("reservas_salones", "cliente_evento", (
+                ("Licitacion", "Licitación"), ("Banqueteria", "Banquetería"),
+                ("Planificacion", "Planificación"), ("Alimentacion", "Alimentación"),
+            )),
+            ("reservas_salones", "tipo_evento", (
+                ("Reunion", "Reunión"), ("Licitacion", "Licitación"),
+            )),
+        ):
+            for _viejo, _nuevo in _cambios:
+                cursor.execute(
+                    f"UPDATE {_tabla} SET {_campo} = REPLACE({_campo}, ?, ?) "
+                    f"WHERE {_campo} LIKE ?",
+                    (_viejo, _nuevo, f"%{_viejo}%"),
+                )
         conn.commit()
     finally:
         conn.close()

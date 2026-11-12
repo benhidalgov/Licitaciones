@@ -131,7 +131,7 @@ INVALID_LINE_WITHOUT_EQUALS
             "Descripcion": "Alojamiento en habitaciones singles y dobles en Santiago",
             "Comprador": {
                 "NombreOrganismo": "Instituto Nacional de Deportes",
-                "RegionUnidad": "Region Metropolitana de Santiago"
+                "RegionUnidad": "Región Metropolitana de Santiago"
             },
             "MontoEstimado": 8500000
         }
@@ -150,10 +150,10 @@ INVALID_LINE_WITHOUT_EQUALS
             "CodigoEstado": 5,
             "FechaCierre": "2026-10-18T18:00:00",
             "FechaCreacion": "2026-10-05T09:00:00",
-            "Descripcion": "Banqueteria y arriendo de salon para 50 personas",
+            "Descripcion": "Banquetería y arriendo de salon para 50 personas",
             "Comprador": {
                 "NombreOrganismo": "Servicio de Evaluacion Ambiental",
-                "RegionUnidad": "Region Metropolitana"
+                "RegionUnidad": "Región Metropolitana"
             },
             "MontoEstimado": 4200000
         }
@@ -173,10 +173,10 @@ INVALID_LINE_WITHOUT_EQUALS
             "Nombre": "Servicio de coffee break y salones",
             "FechaCierre": "2026-10-18T18:00:00",
             "FechaCreacion": "2026-10-05T09:00:00",
-            "Descripcion": "Banqueteria y arriendo de salon para 50 personas",
+            "Descripcion": "Banquetería y arriendo de salon para 50 personas",
             "Comprador": {
                 "NombreOrganismo": "Servicio de Evaluacion Ambiental",
-                "RegionUnidad": "Region Metropolitana"
+                "RegionUnidad": "Región Metropolitana"
             },
             "MontoEstimado": 4200000
         }
@@ -189,10 +189,10 @@ INVALID_LINE_WITHOUT_EQUALS
             "Nombre": "Servicio de coffee break y salones",
             "FechaCierre": "2026-12-18T18:00:00",
             "FechaCreacion": "2026-11-05T09:00:00",
-            "Descripcion": "Banqueteria y arriendo de salon para 50 personas",
+            "Descripcion": "Banquetería y arriendo de salon para 50 personas",
             "Comprador": {
                 "NombreOrganismo": "Servicio de Evaluacion Ambiental",
-                "RegionUnidad": "Region Metropolitana",
+                "RegionUnidad": "Región Metropolitana",
             },
             "MontoEstimado": 7000000,
         }
@@ -210,7 +210,7 @@ INVALID_LINE_WITHOUT_EQUALS
             "Descripcion": "Insumos hospitalarios y material quirurgico de urgencia",
             "Comprador": {
                 "NombreOrganismo": "Servicio de Salud Metropolitano",
-                "RegionUnidad": "Region Metropolitana"
+                "RegionUnidad": "Región Metropolitana"
             },
             "MontoEstimado": 15000000
         }
@@ -227,7 +227,7 @@ INVALID_LINE_WITHOUT_EQUALS
             "Moneda": "UF",
             "Comprador": {
                 "NombreOrganismo": "Organismo Extranjero",
-                "RegionUnidad": "Region Metropolitana"
+                "RegionUnidad": "Región Metropolitana"
             },
             "MontoEstimado": 500
         }
@@ -323,14 +323,14 @@ INVALID_LINE_WITHOUT_EQUALS
             "Listado": [
                 {
                     "CodigoExterno": "1058-12-COT24",
-                    "Nombre": "Servicio de Banqueteria y Salones",
+                    "Nombre": "Servicio de Banquetería y Salones",
                     "CodigoEstado": 5,
                     "FechaCierre": "2026-10-15T18:00:00",
                     "FechaCreacion": "2026-10-01T10:00:00",
                     "Descripcion": "Jornada de planificacion",
                     "Comprador": {
-                        "NombreOrganismo": "Subsecretaria de Turismo",
-                        "RegionUnidad": "Region Metropolitana de Santiago"
+                        "NombreOrganismo": "Subsecretaría de Turismo",
+                        "RegionUnidad": "Región Metropolitana de Santiago"
                     },
                     "MontoEstimado": 5800000
                 }
@@ -343,7 +343,7 @@ INVALID_LINE_WITHOUT_EQUALS
         resultado = mercado_publico.consultar_licitacion("1058-12-COT24", ticket="MOCK_TICKET_123")
         self.assertIsNotNone(resultado)
         self.assertEqual(resultado["CodigoExterno"], "1058-12-COT24")
-        self.assertEqual(resultado["Nombre"], "Servicio de Banqueteria y Salones")
+        self.assertEqual(resultado["Nombre"], "Servicio de Banquetería y Salones")
 
     def test_consultar_sin_ticket_retorna_error(self):
         # Empty or placeholder ticket should raise ValueError or return None gracefully
@@ -385,7 +385,7 @@ INVALID_LINE_WITHOUT_EQUALS
                     "Descripcion": "Coffee break continuo para 80 personas",
                     "Comprador": {
                         "NombreOrganismo": "Universidad de Santiago",
-                        "RegionUnidad": "Region Metropolitana"
+                        "RegionUnidad": "Región Metropolitana"
                     },
                     "MontoEstimado": 4500000
                 },
@@ -398,7 +398,7 @@ INVALID_LINE_WITHOUT_EQUALS
                     "Descripcion": "Obras viales",
                     "Comprador": {
                         "NombreOrganismo": "Municipalidad de Maipu",
-                        "RegionUnidad": "Region Metropolitana"
+                        "RegionUnidad": "Región Metropolitana"
                     },
                     "MontoEstimado": 35000000
                 },
@@ -411,7 +411,7 @@ INVALID_LINE_WITHOUT_EQUALS
                     "Descripcion": "Hospedaje de 4 noches en Santiago Centro",
                     "Comprador": {
                         "NombreOrganismo": "Ministerio de Ciencias",
-                        "RegionUnidad": "Region Metropolitana de Santiago"
+                        "RegionUnidad": "Región Metropolitana de Santiago"
                     },
                     "MontoEstimado": 5200000
                 }
@@ -426,7 +426,7 @@ INVALID_LINE_WITHOUT_EQUALS
             ticket="TICKET_TEST_VALIDO"
         )
         self.assertEqual(resumen["total_consultadas"], 3)
-        self.assertEqual(resumen["total_pertinentes"], 2)  # Banqueteria + Alojamiento
+        self.assertEqual(resumen["total_pertinentes"], 2)  # Banquetería + Alojamiento
         self.assertEqual(resumen["total_descartadas"], 1)  # Obras viales
         self.assertEqual(resumen["total_guardadas"], 2)
 

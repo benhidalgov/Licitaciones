@@ -17,7 +17,7 @@ def _lic(**extra):
         "organismo": "Ministerio de Educacion",
         "categoria": "Alojamiento",
         "modalidad": "Licitacion Publica",
-        "region": "Region Metropolitana",
+        "region": "Región Metropolitana",
         "estado_embudo": "Identificada",
         "validacion_adjuntos": "Valida",
         "tiene_anexo4": 1, "tiene_escrituras": 1,

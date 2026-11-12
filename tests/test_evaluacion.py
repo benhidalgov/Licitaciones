@@ -40,14 +40,14 @@ class TestEvaluacionOperativa(unittest.TestCase):
         # Solo "Tam" sigue como provisional: el catalogo oficial no le dedica
         # fila propia y sus aforos se deducen de las combinaciones.
         prov = [s["nombre"] for s in salones if s["es_provisional"]]
-        self.assertEqual(prov, ["Salon Tam"])
+        self.assertEqual(prov, ["Salón Tam"])
 
         # Aforos tomados del documento oficial del hotel, no estimados.
         por_id = {s["id_salon"]: s for s in salones}
         self.assertEqual(por_id["SALON-PERGOLA"]["capacidad_maxima"], 450)
         self.assertEqual(por_id["SALON-DANUBIO"]["capacidad_maxima"], 100)
         self.assertEqual(por_id["SALON-EJECUTIVO"]["capacidad_maxima"], 8)
-        # Superficie del Salon Pergola, la unica apta para 450 personas.
+        # Superficie del Salón Pergola, la unica apta para 450 personas.
         self.assertIn("362 m2", por_id["SALON-PERGOLA"]["ubicacion"])
         # Ningun salon del catalogo real se llama como los de prueba.
         self.assertFalse(any("Andes" in s["nombre"] or "Cordillera" in s["nombre"]
@@ -136,7 +136,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
             "organismo": "Organismo",
             "categoria": "Alojamiento",
             "modalidad": "Compra Agil",
-            "region": "Region Metropolitana",
+            "region": "Región Metropolitana",
             "presupuesto_mandante": 1000000,
             "costo_base_hotel": 500000,
             "estado_embudo": "Identificada",
@@ -159,7 +159,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
             "organismo": "Ministerio de Prueba",
             "categoria": "Eventos / Catering",
             "modalidad": "Compra Agil",
-            "region": "Region Metropolitana (Santiago)",
+            "region": "Región Metropolitana (Santiago)",
             "presupuesto_mandante": 5000000,
             "costo_base_hotel": 1000000,
             "estado_embudo": "Identificada",
@@ -185,7 +185,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
             "organismo": "Ministerio de Prueba",
             "categoria": "Eventos / Catering",
             "modalidad": "Compra Agil",
-            "region": "Region Metropolitana",
+            "region": "Región Metropolitana",
             "presupuesto_mandante": 1000,
             "costo_base_hotel": 950,
             "estado_embudo": "Identificada",
@@ -222,7 +222,7 @@ class TestEvaluacionOperativa(unittest.TestCase):
     def test_descarta_banqueteria_fuera_del_hotel(self):
         item = {
             "CodigoExterno": "9000-1-COT24",
-            "Nombre": "Banqueteria a domicilio para evento institucional",
+            "Nombre": "Banquetería a domicilio para evento institucional",
             "FechaCierre": "2026-12-01T18:00:00",
             "Descripcion": "Servicio de coctel a domicilio en oficinas del mandante",
             "Comprador": {"NombreOrganismo": "Servicio de Prueba"},
@@ -239,7 +239,7 @@ def _lic_ejemplo():
         "organismo": "Servicio de Prueba",
         "categoria": "Eventos / Catering",
         "modalidad": "Licitacion Publica",
-        "region": "Region Metropolitana",
+        "region": "Región Metropolitana",
         "estado_embudo": "Identificada",
         "validacion_adjuntos": "Valida",
         "descripcion_tdr": "Evento el 15 de marzo de 2026 y el 20/03/2026, "
