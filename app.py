@@ -8,7 +8,7 @@ import threading
 import time
 from datetime import date, datetime, timedelta
 from functools import wraps
-from flask import Flask, abort, flash, make_response, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, make_response, redirect, render_template, request, send_file, session, url_for
 import database
 import mercado_publico
 import resumen
@@ -23,6 +23,23 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_COOKIE_SECURE", "") 
 app.config["CSRF_ENABLED"] = True
 app.config["LOGIN_RATE_LIMIT"] = 5
 app.config["LOGIN_RATE_WINDOW"] = 300
+
+
+@app.after_request
+def _cabeceras_seguridad(respuesta):
+    respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+    respuesta.headers.setdefault("X-Frame-Options", "DENY")
+    respuesta.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    respuesta.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self' https://cdn.tailwindcss.com",
+    )
+    return respuesta
 
 # Perfiles operativos. Los datos y estados son compartidos entre todos.
 # Las claves demo se pueden reemplazar con LICITACIONES_PASSWORD_<USUARIO>.
@@ -54,7 +71,7 @@ VALID_ESTADOS_RESERVA = ["Confirmada", "Tentativa", "Bloqueo Interno"]
 def inject_csrf_token():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_urlsafe(32)
-    return {"csrf_token": session["csrf_token"]}
+    return {"csrf_token": session["csrf_token"], "hoy": database.hoy_chile().isoformat()}
 
 
 @app.before_request
@@ -168,6 +185,7 @@ app.jinja_env.globals["format_clp"] = format_clp
 app.jinja_env.globals["detectar_cliente_clave"] = database.detectar_cliente_clave
 app.jinja_env.globals["margen_minimo_clp"] = database.margen_minimo_clp
 app.jinja_env.globals["direccion_hotel"] = "Av. Libertador Bernardo O'Higgins 816, Santiago"
+app.jinja_env.globals["url_ficha_publica"] = mercado_publico.url_ficha_publica
 
 
 @app.template_filter("miles")
@@ -225,6 +243,7 @@ def dashboard():
     tope_compra_agil = database.get_tope_compra_agil()
     margen_tolerancia = database.get_margen_tolerancia()
     priorizadas = database.get_oportunidades_prioritarias(**filtros)
+    hay_abiertas = database.count_licitaciones_abiertas()
 
     return render_template(
         "dashboard.html",
@@ -247,6 +266,7 @@ def dashboard():
         tope_compra_agil=tope_compra_agil,
         margen_tolerancia=margen_tolerancia,
         priorizadas=priorizadas,
+        hay_abiertas=hay_abiertas,
         propiedades=database.PROPIEDADES,
         clientes_clave=[c[0] for c in database.CLIENTES_CLAVE],
         motivos_descarte=database.MOTIVOS_DESCARTE,
@@ -345,9 +365,16 @@ def licitacion_detalle(id_licitacion):
     )
 
 
-@app.route("/licitaciones/exportar.csv")
-@login_required
-def exportar_licitaciones():
+EXPORT_HEADERS = [
+    "ID", "Titulo", "Organismo", "Propiedad", "Categoria", "Modalidad",
+    "Region", "Presupuesto CLP", "Costo base CLP", "Margen CLP",
+    "Estado", "Motivo descarte", "Descripcion descarte", "Revisada",
+    "Revisada por", "Fecha revision", "Fecha publicacion", "Fecha cierre",
+    "Asistentes", "Salon", "Notas", "Ficha Mercado Publico",
+]
+
+
+def _filtros_exportacion():
     filtros = {
         "categoria": request.args.get("categoria", "").strip() or None,
         "modalidad": request.args.get("modalidad", "").strip() or None,
@@ -358,46 +385,85 @@ def exportar_licitaciones():
         "motivo": request.args.get("motivo", "").strip() or None,
         "revisada_por": request.args.get("revisada_por", "").strip() or None,
     }
-    filtros = {k: v for k, v in filtros.items() if v}
-    licitaciones = database.get_all_licitaciones(**filtros)
+    return {k: v for k, v in filtros.items() if v}
+
+
+def _fila_exportacion(lic):
+    margen = lic["presupuesto_mandante"] - lic["costo_base_hotel"]
+    return [
+        lic["id_licitacion"], lic["titulo"], lic["organismo"], lic["propiedad"],
+        lic["categoria"], lic["modalidad"], lic["region"],
+        lic["presupuesto_mandante"], lic["costo_base_hotel"], margen,
+        lic["estado_embudo"], lic["motivo_descarte"],
+        lic.get("descripcion_descarte") or "",
+        "Si" if lic["revisada"] else "No",
+        lic.get("revisada_por") or "", lic.get("revisada_en") or "",
+        lic["fecha_publicacion"], lic["fecha_cierre"],
+        lic["cantidad_asistentes"], lic.get("nombre_salon") or "",
+        (lic.get("notas") or "").replace("\n", " | "),
+        mercado_publico.url_ficha_publica(
+            lic["id_licitacion"], lic.get("modalidad") or ""
+        ),
+    ]
+
+
+@app.route("/licitaciones/exportar.csv")
+@login_required
+def exportar_licitaciones():
+    licitaciones = database.get_all_licitaciones(**_filtros_exportacion())
 
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
-    writer.writerow([
-        "ID", "Titulo", "Organismo", "Propiedad", "Categoria", "Modalidad",
-        "Region", "Presupuesto CLP", "Costo base CLP", "Margen CLP",
-        "Estado", "Motivo descarte", "Revisada", "Revisada por", "Fecha revision",
-        "Fecha publicacion", "Fecha cierre", "Asistentes", "Salon", "Notas"
-    ])
+    writer.writerow(EXPORT_HEADERS)
     for lic in licitaciones:
-        margen = lic["presupuesto_mandante"] - lic["costo_base_hotel"]
-        writer.writerow([
-            _celda_csv(lic["id_licitacion"]),
-            _celda_csv(lic["titulo"]),
-            _celda_csv(lic["organismo"]),
-            _celda_csv(lic["propiedad"]),
-            _celda_csv(lic["categoria"]),
-            _celda_csv(lic["modalidad"]),
-            _celda_csv(lic["region"]),
-            lic["presupuesto_mandante"],
-            lic["costo_base_hotel"],
-            margen,
-            _celda_csv(lic["estado_embudo"]),
-            _celda_csv(lic["motivo_descarte"]),
-            "Si" if lic["revisada"] else "No",
-            _celda_csv(lic.get("revisada_por") or ""),
-            lic.get("revisada_en") or "",
-            lic["fecha_publicacion"],
-            lic["fecha_cierre"],
-            lic["cantidad_asistentes"],
-            _celda_csv(lic.get("nombre_salon") or ""),
-            _celda_csv((lic.get("notas") or "").replace("\n", " | ")),
-        ])
+        fila = _fila_exportacion(lic)
+        writer.writerow([_celda_csv(v) if isinstance(v, str) else v for v in fila])
 
     respuesta = make_response("\ufeff" + buffer.getvalue())
     respuesta.headers["Content-Type"] = "text/csv; charset=utf-8"
     respuesta.headers["Content-Disposition"] = "attachment; filename=licitaciones.csv"
     return respuesta
+
+
+@app.route("/licitaciones/exportar.xlsx")
+@login_required
+def exportar_licitaciones_xlsx():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill
+    except ImportError:
+        return exportar_licitaciones()
+
+    licitaciones = database.get_all_licitaciones(**_filtros_exportacion())
+    libro = Workbook()
+    hoja = libro.active
+    hoja.title = "Licitaciones"
+    hoja.append(EXPORT_HEADERS)
+    for celda in hoja[1]:
+        celda.font = Font(bold=True, color="FFFFFF")
+        celda.fill = PatternFill("solid", fgColor="111111")
+
+    for lic in licitaciones:
+        hoja.append(_fila_exportacion(lic))
+        celda_url = hoja.cell(row=hoja.max_row, column=len(EXPORT_HEADERS))
+        celda_url.hyperlink = celda_url.value
+        celda_url.style = "Hyperlink"
+
+    hoja.freeze_panes = "A2"
+    hoja.auto_filter.ref = hoja.dimensions
+    anchos = {"A": 18, "B": 44, "C": 32, "M": 34, "V": 46}
+    for columna, ancho in anchos.items():
+        hoja.column_dimensions[columna].width = ancho
+
+    buffer = io.BytesIO()
+    libro.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"licitaciones_{database.hoy_chile().isoformat()}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 @app.route("/licitaciones/<id_licitacion>/eliminar", methods=["POST"])
@@ -421,6 +487,12 @@ def cambiar_estado_licitacion(id_licitacion):
     nuevo_estado = request.form.get("estado_embudo", "").strip()
     if nuevo_estado not in VALID_ESTADOS:
         flash(f"Estado invalido '{nuevo_estado}'. Seleccione una etapa valida del embudo comercial.", "error")
+        return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
+    if nuevo_estado == "Descartada":
+        flash(
+            "Para descartar una oportunidad use el boton No participamos y registre el motivo.",
+            "error",
+        )
         return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
     database.update_licitacion(id_licitacion, {"estado_embudo": nuevo_estado})
@@ -673,7 +745,7 @@ def _rango_reporte(periodo, desde_txt="", hasta_txt=""):
     if periodo not in ("semanal", "mensual"):
         periodo = "semanal"
     dias = 7 if periodo == "semanal" else 30
-    hasta = date.today()
+    hasta = database.hoy_chile()
     desde = hasta - timedelta(days=dias - 1)
     return periodo, desde, hasta
 
@@ -697,6 +769,7 @@ def informes():
         desde=desde,
         hasta=hasta,
         reporte=reporte,
+        generado_en=database.ahora_chile(),
         user=session.get("user"),
         nombre=session.get("nombre") or session.get("user"),
     )
@@ -712,12 +785,13 @@ def exportar_informe():
     writer.writerow(["Informe consolidado", etiqueta])
     writer.writerow(["Desde", desde.isoformat(), "Hasta", hasta.isoformat()])
     writer.writerow(["Preparado para", "Gerencia General y Direccion de Finanzas"])
+    writer.writerow(["Generado", database.ahora_chile().strftime("%Y-%m-%d %H:%M")])
     writer.writerow([])
     writer.writerow(["Resumen"])
     writer.writerow(["Oportunidades", reporte["total"]])
     writer.writerow(["Presupuesto CLP", reporte["presupuesto"]])
     writer.writerow(["Costo base CLP", reporte["costo"]])
-    writer.writerow(["Margen CLP", reporte["margen"]])
+    writer.writerow(["Margen proyectado CLP", reporte["margen_proyectado"]])
     writer.writerow(["Identificadas", reporte["identificadas"]])
     writer.writerow(["Calificadas", reporte["calificadas"]])
     writer.writerow(["Participadas", reporte["participadas"]])
@@ -867,7 +941,7 @@ def ficha_md(id_licitacion):
 @app.route("/ajustes/tope_compra_agil", methods=["POST"])
 @login_required
 def guardar_tope_compra_agil():
-    # Acepta formato chileno ("6.900.000") y numerico plano ("6900000")
+    # Acepta formato chileno ("7.244.000") y numerico plano ("7244000")
     bruto = request.form.get("tope_compra_agil", "")
     digitos = bruto.replace(".", "").replace("$", "").replace(" ", "")
     try:
@@ -889,19 +963,23 @@ def guardar_margen_tolerancia():
     bruto = request.form.get("valor", "").strip()
     if modo == "clp":
         digitos = bruto.replace(".", "").replace("$", "").replace(" ", "")
+        try:
+            valor = int(digitos)
+        except ValueError:
+            valor = -1
     else:
-        digitos = bruto.replace("%", "").replace(" ", "")
-    try:
-        valor = int(digitos)
-    except ValueError:
-        valor = -1
+        digitos = bruto.replace("%", "").replace(" ", "").replace(",", ".").strip()
+        try:
+            valor = float(digitos)
+        except ValueError:
+            valor = -1.0
     if modo not in ("porcentaje", "clp"):
         flash("El tipo de margen debe ser porcentaje o monto CLP.", "error")
     elif valor < 0 or (modo == "porcentaje" and valor > 100):
         flash("El margen debe estar entre 0 y 100% o ser un monto CLP mayor o igual a cero.", "error")
     else:
         database.set_margen_tolerancia(modo, valor)
-        etiqueta = f"{valor}%" if modo == "porcentaje" else format_clp(valor)
+        etiqueta = f"{valor:g}%" if modo == "porcentaje" else format_clp(int(valor))
         flash(f"Margen de tolerancia actualizado a {etiqueta}.", "success")
     return redirect(url_for("dashboard"))
 
@@ -933,6 +1011,54 @@ def sincronizar_licitaciones_route():
     return redirect(url_for("dashboard"))
 
 
+def _inconsistencias_agenda(reservas, licitaciones):
+    """Cruza reservas y licitaciones para avisar inconsistencias de agenda."""
+    por_id = {lic["id_licitacion"]: lic for lic in licitaciones}
+    con_reserva = {r["id_licitacion"] for r in reservas if r.get("id_licitacion")}
+    avisos = []
+    for reserva in reservas:
+        lic = por_id.get(reserva.get("id_licitacion") or "")
+        if not lic:
+            continue
+        if (
+            reserva.get("estado_reserva") == "Confirmada"
+            and lic.get("estado_embudo") != "Adjudicada"
+        ):
+            avisos.append({
+                "texto": (
+                    f"Reserva confirmada de {reserva['cliente_evento']} vinculada a "
+                    f"{lic['id_licitacion']}, que esta en estado {lic['estado_embudo']}."
+                ),
+                "id_licitacion": lic["id_licitacion"],
+                "id_reserva": reserva["id_reserva"],
+            })
+        if (
+            reserva.get("fecha_inicio")
+            and lic.get("fecha_cierre")
+            and reserva["fecha_inicio"] <= lic["fecha_cierre"]
+        ):
+            avisos.append({
+                "texto": (
+                    f"El evento de {reserva['cliente_evento']} empieza el "
+                    f"{reserva['fecha_inicio']}, antes o el mismo dia del cierre de "
+                    f"ofertas de {lic['id_licitacion']} ({lic['fecha_cierre']})."
+                ),
+                "id_licitacion": lic["id_licitacion"],
+                "id_reserva": reserva["id_reserva"],
+            })
+    for lic in licitaciones:
+        if lic.get("estado_embudo") == "Adjudicada" and lic["id_licitacion"] not in con_reserva:
+            avisos.append({
+                "texto": (
+                    f"La licitacion {lic['id_licitacion']} esta adjudicada y no tiene "
+                    "una reserva de salon vinculada."
+                ),
+                "id_licitacion": lic["id_licitacion"],
+                "id_reserva": None,
+            })
+    return avisos
+
+
 @app.route("/salones")
 @login_required
 def salones_catalogo():
@@ -944,6 +1070,9 @@ def salones_catalogo():
     filtros = {k: v for k, v in filtros.items() if v}
 
     total_reservas = database.count_reservas(**filtros)
+    reservas_activas = database.count_reservas(
+        fecha_desde=database.hoy_chile().isoformat(), **filtros
+    )
     # La agenda mantiene su propio tamano de pagina; el tope de 8 es solo para licitaciones.
     reservas_por_pagina = 25
     paginas = max(1, -(-total_reservas // reservas_por_pagina))
@@ -956,7 +1085,9 @@ def salones_catalogo():
     )
 
     total_salones = len(salones)
-    capacidad_total = sum(s["capacidad_maxima"] for s in salones)
+    capacidad_total = sum(
+        s["capacidad_maxima"] for s in salones if not s.get("es_provisional")
+    )
 
     def _coincide(reserva):
         if not q:
@@ -982,16 +1113,23 @@ def salones_catalogo():
         visibles = {r["organismo_o_empresa"] for rs in ocupacion.values() for r in rs}
         clientes_reserva = [c for c in clientes_reserva if c in visibles]
 
+    inconsistencias = _inconsistencias_agenda(
+        database.get_all_reservas(limit=5000),
+        database.get_all_licitaciones(limit=5000),
+    )
+
     return render_template(
         "salones.html",
         salones=salones,
         reservas=reservas,
         ocupacion=ocupacion,
         clientes_reserva=clientes_reserva,
+        inconsistencias=inconsistencias,
         filtro_salon=filtro_salon or "",
         q=q or "",
         total_salones=total_salones,
         total_reservas=total_reservas,
+        reservas_activas=reservas_activas,
         capacidad_total=capacidad_total,
         pagina=pagina,
         paginas=paginas,
@@ -1049,8 +1187,11 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
                 errors.append("La fecha de inicio no puede ser posterior a la fecha de fin.")
         except ValueError:
             errors.append("Las fechas deben tener formato AAAA-MM-DD.")
-    if id_licitacion and database.get_licitacion_by_id(id_licitacion) is None:
-        errors.append("La licitacion vinculada no existe en el sistema.")
+    lic_vinculada = None
+    if id_licitacion:
+        lic_vinculada = database.get_licitacion_by_id(id_licitacion)
+        if lic_vinculada is None:
+            errors.append("La licitacion vinculada no existe en el sistema.")
 
     asistentes = 0
     if asistentes_str:
@@ -1063,6 +1204,22 @@ def parse_and_validate_reserva_form(form, exclude_id_reserva=None):
 
     if estado_reserva not in VALID_ESTADOS_RESERVA:
         errors.append(f"Estado de reserva '{estado_reserva}' invalido. Seleccione una etapa valida.")
+
+    if lic_vinculada and estado_reserva == "Confirmada" and lic_vinculada["estado_embudo"] != "Adjudicada":
+        errors.append(
+            "Solo se puede confirmar una reserva vinculada a una licitacion adjudicada. "
+            "Use Tentativa mientras la licitacion este en proceso."
+        )
+    if (
+        lic_vinculada
+        and len(fecha_inicio) == 10
+        and lic_vinculada.get("fecha_cierre")
+        and fecha_inicio <= lic_vinculada["fecha_cierre"]
+    ):
+        errors.append(
+            "La fecha de inicio del evento debe ser posterior al cierre de ofertas "
+            "de la licitacion vinculada."
+        )
 
     if salon and estado_reserva == "Confirmada" and asistentes > salon["capacidad_maxima"]:
         errors.append(

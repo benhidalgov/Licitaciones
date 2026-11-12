@@ -36,7 +36,9 @@
         </div>
         <div class="card-editorial p-5 bg-white flex flex-col justify-between">
             <div class="text-[10px] font-semibold uppercase tracking-wider text-[#6E6D6A]">Precio final promedio</div>
-            <div class="text-2xl font-bold font-mono text-[#111111] my-2">{{ benchmark.precio_promedio | clp }}</div>
+            <div class="text-2xl font-bold font-mono text-[#111111] my-2">
+                {% if benchmark.precio_promedio is not none %}{{ benchmark.precio_promedio | clp }}{% else %}Sin datos{% endif %}
+            </div>
             <div class="text-[10px] text-[#6E6D6A]">Referencia de mercado observada</div>
         </div>
         <div class="card-editorial p-5 bg-white flex flex-col justify-between">
@@ -50,6 +52,12 @@
             <div class="text-[10px] text-[#6E6D6A]">Suma de OC importadas</div>
         </div>
     </div>
+
+    {% if benchmark.adjudicadas_sin_precio %}
+    <div class="card-editorial p-4 bg-[#FBF3DB] border border-[#F3E0A9] text-xs text-[#956400]">
+        Hay {{ benchmark.adjudicadas_sin_precio }} adjudicacion(es) sin precio final. Complete el precio en la fila correspondiente para conciliar el historial con el tablero.
+    </div>
+    {% endif %}
 
     <!-- Benchmarking -->
     <div class="card-editorial overflow-hidden bg-white">
@@ -92,13 +100,17 @@
                             {{ f.adjudicatario or 'No informado' }}
                         </td>
                         <td class="px-4 py-3.5 text-right font-mono text-[#111111]">
+                            {% if f.precio_pendiente %}
+                            <span class="badge-spot badge-spot-yellow">Precio pendiente</span>
+                            {% else %}
                             {{ f.precio_final | clp }}
+                            {% endif %}
                         </td>
                         <td class="px-4 py-3.5 text-right font-mono {% if f.desviacion_pct > 0 %}text-[#9F2F2D]{% else %}text-[#346538]{% endif %}">
-                            {{ f.desviacion_pct }}%
+                            {% if f.precio_pendiente %}-{% else %}{{ f.desviacion_pct }}%{% endif %}
                         </td>
                         <td class="px-4 py-3.5 text-right font-mono {% if f.margen_vs_costo > 0 %}text-[#346538]{% else %}text-[#9F2F2D]{% endif %}">
-                            {{ f.margen_vs_costo | clp }}
+                            {% if f.precio_pendiente %}-{% else %}{{ f.margen_vs_costo | clp }}{% endif %}
                         </td>
                         <td class="px-4 py-3.5 text-right font-mono text-[#111111]">
                             {{ f.puntaje_adjudicacion if f.puntaje_adjudicacion else '-' }}

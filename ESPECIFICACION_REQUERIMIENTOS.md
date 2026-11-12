@@ -42,7 +42,7 @@ La categoria **Eventos / Catering** agrupa las lineas de salones y de alimentos 
 
 ### 2.3. Modalidad Compra Agil
 * El sistema debe identificar, priorizar y generar alertas inmediatas para procesos de **Compra Agil**.
-* Debe ajustarse al umbral normativo vigente de hasta **6.900.000 CLP** (actualizado respecto al limite anterior de 1.900.000 CLP).
+* Debe ajustarse al umbral normativo vigente de hasta **100 UTM** (referencia $7.244.000 CLP en noviembre de 2026; se actualiza mensualmente).
 
 ### 2.4. Validacion Robusta de ID y Existencia Real
 * **Regla estricta:** El asistente virtual no debe limitarse a leer el ID visible en la ficha resumen del portal.

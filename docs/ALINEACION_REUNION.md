@@ -58,7 +58,7 @@ usuario final; **P2** = bonus track.
 
 ## 3. Lo que ya esta alineado y no se debe tocar
 
-- Tope de Compra Agil en **$6.900.000 CLP** configurable (`database.py:916-939`).
+- Tope de Compra Agil en **100 UTM** (referencia $7.244.000 CLP en noviembre de 2026) configurable (`database.py`).
 - Embudo comercial y metricas de conversion (`database.py:889-913`).
 - Cruce documental y "Efecto ID" (campo `validacion_adjuntos`).
 - Checklist de admisibilidad de 4 antecedentes.

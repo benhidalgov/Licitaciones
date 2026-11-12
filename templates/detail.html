@@ -17,8 +17,8 @@
             <a href="{{ url_for('dashboard') }}" class="btn-secondary text-xs px-3 py-1.5">
                 Volver al Tablero
             </a>
-            <a href="{{ url_for('adjuntos_licitacion', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
-                Ver documentos
+            <a href="{{ url_ficha_publica(lic.id_licitacion, lic.modalidad) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
+                Ver ficha en Mercado Publico
             </a>
             <a href="{{ url_for('ficha_md', id_licitacion=lic.id_licitacion) }}" target="_blank" rel="noopener" class="btn-secondary text-xs px-3 py-1.5">
                 Ver ficha MD
@@ -55,6 +55,9 @@
                     {% set cc = detectar_cliente_clave(lic.organismo ~ ' ' ~ lic.titulo) %}
                     {% if cc %}
                     <span class="badge-spot badge-spot-blue">Cliente clave: {{ cc }}</span>
+                    {% endif %}
+                    {% if lic.fecha_cierre and lic.fecha_cierre < hoy %}
+                    <span class="badge-spot badge-spot-neutral">Vencida</span>
                     {% endif %}
                     {% if revisada_por %}
                     <span class="badge-spot badge-spot-green">Revisada por {{ revisada_por }}</span>
@@ -181,7 +184,7 @@
                         {% if revisada_por %}
                         Ultima revision: {{ revisada_por }} - {{ revisada_en }}
                         {% else %}
-                        Estado compartido para las tres usuarias.
+                        Estado compartido para el equipo.
                         {% endif %}
                     </p>
                 </form>
@@ -237,7 +240,21 @@
         </p>
         {% endif %}
 
-        <p class="text-xs text-[#111111] leading-relaxed">{{ ficha_resumen.texto }}</p>
+        {% if ficha_resumen.lineas %}
+        <ul class="text-sm text-[#111111] leading-7 max-w-[70ch] space-y-1 list-disc pl-5">
+            {% for linea in ficha_resumen.lineas %}
+            <li>{{ linea }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-[#111111] leading-7 max-w-[70ch]">{{ ficha_resumen.texto }}</p>
+        {% endif %}
+
+        {% if ficha_resumen.requiere_descarte %}
+        <div class="rounded-[6px] border border-[#F8D1D3] bg-[#FDEBEC] p-3 text-xs text-[#9F2F2D]">
+            El criterio <strong>Presupuesto (mandatorio)</strong> no se cumple. La oportunidad requiere descarte.
+        </div>
+        {% endif %}
 
         {% if ficha_resumen.ponderacion %}
         <div class="pt-2 border-t border-[#EAEAEA] flex flex-wrap items-center gap-2 text-[11px]">
@@ -415,7 +432,7 @@
         <div class="border-b border-[#EAEAEA] pb-3">
             <h2 class="text-sm font-semibold text-[#111111]">Asignacion de Salon y Costo</h2>
             <p class="text-xs text-[#6E6D6A] mt-0.5">
-                Complete aforo y salon. Si deja el costo vacio, el sistema lo calcula con la tarifa del salon y el consumo por persona. Un costo validado superior al presupuesto descarta la oportunidad por precio.
+                Complete aforo y salon. Si deja el costo vacio, se suma la tarifa del salon (si esta cargada) y el consumo por persona. Si la tarifa esta pendiente, el margen puede estar sobreestimado. Un costo validado superior al presupuesto descarta la oportunidad por precio.
             </p>
         </div>
 
@@ -459,8 +476,11 @@
                     <label for="costo_base_hotel" class="block text-xs font-medium text-[#111111] mb-1.5">Costo Base Minimo (CLP)</label>
                     <input type="text" inputmode="numeric" id="costo_base_hotel" name="costo_base_hotel" value="{{ lic.costo_base_hotel if lic.costeo_validado else '' }}" placeholder="Automatico: salon + consumo por persona" class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] font-mono">
                     <p class="text-[10px] text-[#6E6D6A] mt-1">
-                        {% if lic.costeo_validado %}Costo validado actualmente.{% else %}Hoy es un valor provisional; completelo para aplicar la regla de presupuesto.{% endif %}
+                        {% if lic.costeo_validado %}Costo validado actualmente.{% else %}Costo provisional; completelo para aplicar la regla de presupuesto.{% endif %}
                     </p>
+                    {% if salon_asignado and not salon_asignado.tarifa_referencial %}
+                    <p class="text-[10px] text-[#956400] mt-1">La tarifa de este salon esta por confirmar: el costo y el margen son estimaciones.</p>
+                    {% endif %}
                 </div>
             </div>
 
@@ -674,7 +694,7 @@
                 <span class="text-xs font-medium text-[#111111]">Consistencia Documental Acreditada</span>
             </div>
             <p class="text-xs text-[#6E6D6A] leading-relaxed">
-                El identificador registrado en la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) coincide de manera precisa con el correlativo interno consignado en los archivos descargables, anexos contractuales y bases administrativas. No se registran discrepancias de identificacion.
+                El identificador de la ficha oficial (<strong>{{ lic.id_licitacion }}</strong>) fue marcado como verificado por el equipo. Esta marca es manual y no reemplaza la revision de los archivos adjuntos.
             </p>
         </div>
         {% elif lic.validacion_adjuntos == 'Error ID / Discrepancia' %}

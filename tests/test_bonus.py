@@ -155,6 +155,16 @@ class TestBonus(unittest.TestCase):
         self.assertEqual(lic["adjudicatario"], "")
         self.assertEqual(lic["precio_final"], 0)
 
+    def test_benchmarking_incluye_adjudicada_sin_precio(self):
+        database.create_licitacion(
+            _lic(id_licitacion="ADJ-SIN-PRECIO", estado_embudo="Adjudicada")
+        )
+        benchmark = database.get_benchmarking()
+        self.assertEqual(benchmark["adjudicaciones"], 1)
+        self.assertEqual(benchmark["adjudicadas_sin_precio"], 1)
+        self.assertTrue(benchmark["filas"][0]["precio_pendiente"])
+        self.assertIsNone(benchmark["precio_promedio"])
+
     def test_analitica_renderiza_vacia(self):
         resp = self.client.get("/analitica")
         html = resp.get_data(as_text=True)

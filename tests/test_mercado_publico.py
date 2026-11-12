@@ -162,7 +162,7 @@ INVALID_LINE_WITHOUT_EQUALS
         self.assertEqual(res["id_licitacion"], "1100-33-COT24")
         self.assertEqual(res["categoria"], "Eventos / Catering")
         self.assertEqual(res["modalidad"], "Compra Agil")
-        self.assertLessEqual(res["presupuesto_mandante"], 6900000)
+        self.assertLessEqual(res["presupuesto_mandante"], 7244000)
 
     def test_tope_compra_agil_configurable(self):
         database.set_tope_compra_agil(1000000)
@@ -182,6 +182,24 @@ INVALID_LINE_WITHOUT_EQUALS
         }
         # Con tope de 1.000.000 CLP el mismo monto deja de calificar como Compra Agil
         self.assertEqual(mercado_publico.filtrar_y_clasificar_licitacion(item)["modalidad"], "Licitacion Publica")
+
+    def test_compra_agil_de_7_millones_califica_con_tope_100_utm(self):
+        item = {
+            "CodigoExterno": "1100-99-LP26",
+            "Nombre": "Servicio de coffee break y salones",
+            "FechaCierre": "2026-12-18T18:00:00",
+            "FechaCreacion": "2026-11-05T09:00:00",
+            "Descripcion": "Banqueteria y arriendo de salon para 50 personas",
+            "Comprador": {
+                "NombreOrganismo": "Servicio de Evaluacion Ambiental",
+                "RegionUnidad": "Region Metropolitana",
+            },
+            "MontoEstimado": 7000000,
+        }
+        self.assertEqual(
+            mercado_publico.filtrar_y_clasificar_licitacion(item)["modalidad"],
+            "Compra Agil",
+        )
 
     def test_filtrar_y_clasificar_descarte_no_relevante(self):
         item = {

@@ -137,6 +137,18 @@ class TestInformes(unittest.TestCase):
         reporte = database.get_reporte_periodo(hoy, hoy)
         self.assertEqual(reporte["tasa_cierre"], 50.0)
 
+    def test_informe_muestra_descartadas_y_margen_proyectado(self):
+        hoy = date.today().isoformat()
+        database.create_licitacion(
+            _licitacion_informe("TEST-DESC", estado="Descartada", presupuesto=1000)
+        )
+        reporte = database.get_reporte_periodo(hoy, hoy)
+        self.assertEqual(reporte["descartadas"], 1)
+        self.assertLessEqual(reporte["margen_proyectado"], reporte["margen"])
+        html = self.client.get("/informes?periodo=semanal").data.decode("utf-8")
+        self.assertIn("Descartadas", html)
+        self.assertIn("Solo oportunidades vigentes y viables", html)
+
 
 if __name__ == "__main__":
     unittest.main()

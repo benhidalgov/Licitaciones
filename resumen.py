@@ -147,6 +147,10 @@ def generar_resumen_reglas(lic: Dict[str, Any]) -> Dict[str, Any]:
     puntaje_total = int(round(
         sum(c["peso"] * c["puntuacion"] for c in ponderacion) / 100
     ))
+    requiere_descarte = ponderacion[0]["puntuacion"] == 0
+    if requiere_descarte:
+        # El presupuesto es mandatorio: si no se cumple, el puntaje no puede verse aprobado.
+        puntaje_total = 0
 
     lineas = [
         f"Fecha publicacion: {lic.get('fecha_publicacion', 'n/d')}. "
@@ -175,12 +179,14 @@ def generar_resumen_reglas(lic: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "fuente": "reglas",
         "texto": " ".join(lineas),
+        "lineas": lineas,
         "fechas_evento": fechas,
         "personas": asistentes,
         "servicios_alimentacion": servicios,
         "espacio": espacio,
         "ponderacion": ponderacion,
         "puntaje_total": puntaje_total,
+        "requiere_descarte": requiere_descarte,
     }
 
 

@@ -177,8 +177,8 @@ Dentro de la ficha encontraras, en este orden:
 4. Completa el **tipo de jornada** y el **horario** si corresponde.
 5. Selecciona el **salon propuesto**.
 6. Revisa o escribe el **costo base**.
-   - Si lo dejas vacio, la plataforma lo calcula con la tarifa del salon y el
-     consumo por persona.
+   - Si lo dejas vacio, la plataforma suma la tarifa del salon (si esta cargada) y el consumo por persona.
+   - Si la tarifa del salon esta pendiente, el costo y el margen son estimaciones.
 7. Marca los **sellos** que correspondan.
 8. Presiona `Guardar asignacion`.
 9. Lee el mensaje: si el costo supera el presupuesto, la oportunidad se descarta
@@ -359,10 +359,10 @@ adjudicadas.
 
 1. En `Licitaciones`, aplica los filtros que quieras.
 2. Presiona `Exportar a Excel`.
-3. Se descarga un archivo CSV con el listado filtrado.
+3. Se descarga un archivo `.xlsx` con el listado filtrado.
 4. Abrelo con Excel.
 
-El archivo incluye quien reviso y la fecha de revision.
+El archivo incluye quien reviso, la fecha de revision y el enlace a la ficha de Mercado Publico.
 
 ### 18.2 Exportar un informe
 
@@ -419,6 +419,6 @@ revisa que el navegador no este bloqueando el desplazamiento por anclas.
 | `Descartada` | No se participa, con motivo registrado |
 | `Priorizada` | Oportunidad abierta con presupuesto y capacidad viables |
 | `Cliente clave` | Organismo prioritario para el hotel |
-| `Tope Compra Agil` | Limite de referencia de la modalidad Compra Agil |
+| `Tope Compra Agil` | Limite de referencia de la modalidad Compra Agil (100 UTM del mes) |
 | `Margen de tolerancia` | Margen minimo exigido para priorizar |
 | `Revisada por` | Ultima persona que reviso la licitacion |

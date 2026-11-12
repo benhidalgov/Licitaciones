@@ -304,6 +304,8 @@ class TestFichaResumen(unittest.TestCase):
         ficha = resumen.generar_resumen_reglas(lic)
         presupuesto = next(c for c in ficha["ponderacion"] if c["criterio"].startswith("Presupuesto"))
         self.assertEqual(presupuesto["puntuacion"], 0)
+        self.assertTrue(ficha["requiere_descarte"])
+        self.assertEqual(ficha["puntaje_total"], 0)
 
     def test_sin_llave_ia_usa_reglas(self):
         self.assertFalse(resumen.get_ia_config()["api_key"])

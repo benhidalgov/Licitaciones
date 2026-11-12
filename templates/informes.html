@@ -74,14 +74,14 @@
         </div>
         <div class="card-editorial p-4 bg-white">
             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Margen proyectado</div>
-            <div class="text-xl font-bold font-mono mt-1 {% if reporte.margen >= 0 %}text-[#346538]{% else %}text-[#9F2F2D]{% endif %}">
-                {{ reporte.margen | clp }}
+            <div class="text-xl font-bold font-mono mt-1 {% if reporte.margen_proyectado >= 0 %}text-[#346538]{% else %}text-[#9F2F2D]{% endif %}">
+                {{ reporte.margen_proyectado | clp }}
             </div>
-            <div class="text-[11px] text-[#6E6D6A]">Presupuesto menos costo base</div>
+            <div class="text-[11px] text-[#6E6D6A]">Solo oportunidades vigentes y viables</div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div class="card-editorial p-4 bg-white">
             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Identificadas</div>
             <div class="text-xl font-bold font-mono mt-1">{{ reporte.identificadas | miles }}</div>
@@ -98,6 +98,11 @@
             <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Adjudicadas</div>
             <div class="text-xl font-bold font-mono mt-1">{{ reporte.adjudicadas | miles }}</div>
             <div class="text-[11px] text-[#6E6D6A]">Tasa de cierre: {{ reporte.tasa_cierre }}%</div>
+        </div>
+        <div class="card-editorial p-4 bg-white">
+            <div class="text-[10px] uppercase tracking-wider text-[#6E6D6A]">Descartadas</div>
+            <div class="text-xl font-bold font-mono mt-1">{{ reporte.descartadas | miles }}</div>
+            <div class="text-[11px] text-[#6E6D6A]">Incluidas en el total</div>
         </div>
     </div>
 
@@ -233,7 +238,7 @@
     </div>
 
     <p class="text-[11px] text-[#6E6D6A]">
-        Informe generado el {{ hasta.strftime('%d-%m-%Y') }}. Los montos son referenciales y el costo base debe validarse con el area operativa.
+        Informe generado el {{ generado_en.strftime('%d-%m-%Y %H:%M') }}. Los montos son referenciales y el costo base debe validarse con el area operativa.
     </p>
     {% endif %}
 </div>

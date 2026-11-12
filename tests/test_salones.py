@@ -220,6 +220,25 @@ class TestSalones(unittest.TestCase):
         self.assertIn("Cena de Gala Anual", html)
         self.assertIn("Asociacion de Hoteleria", html)
 
+    def test_crear_reserva_confirmada_vinculada_requiere_adjudicada(self):
+        payload = {
+            "id_salon": "SALON-EJECUTIVO",
+            "cliente_evento": "Reserva Anticipada",
+            "organismo_o_empresa": "Organismo Test",
+            "tipo_evento": "Reunion",
+            "fecha_inicio": "2027-01-10",
+            "fecha_fin": "2027-01-10",
+            "horario": "10:00 a 12:00 hrs",
+            "asistentes_estimados": "2",
+            "estado_reserva": "Confirmada",
+            "id_licitacion": "1058-12-COT24",
+            "contacto_responsable": "",
+            "observaciones": "",
+        }
+        response = self.client.post("/reservas/nueva", data=payload, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Solo se puede confirmar", response.data.decode("utf-8"))
+
     def test_crear_reserva_post_invalid_dates(self):
         payload = {
             "id_salon": "SALON-PERGOLA",

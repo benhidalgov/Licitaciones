@@ -4,3 +4,5 @@ gunicorn>=22.0.0
 # Lectura del historial de OC en .xlsx (el hotel entrega Excel).
 # El importador tambien acepta .csv, que no requiere esta dependencia.
 openpyxl>=3.1.0
+# Zona horaria de Chile para que las fechas de informes y cierres no dependan de UTC.
+tzdata>=2024.1

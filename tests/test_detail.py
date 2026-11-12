@@ -232,7 +232,8 @@ class TestDetail(unittest.TestCase):
         html = response.data.decode("utf-8")
 
         self.assertIn("Compra Agil", html)
-        self.assertIn("6.900.000 CLP", html)
+        self.assertIn("7.244.000 CLP", html)
+        self.assertIn("buscador.mercadopublico.cl/ficha?code=1058-12-COT24", html)
 
     def test_detail_capacity_panel_adequate(self):
         # 1058-12-COT24 has 80 personas, SALON-DANUBIO (capacidad: 100)

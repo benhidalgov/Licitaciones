@@ -1,7 +1,7 @@
 # {{ lic.titulo }}
 
 - **Codigo:** {{ lic.id_licitacion }}
-- **Ficha oficial (Mercado Publico):** https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion={{ lic.id_licitacion }}
+- **Ficha oficial (Mercado Publico):** {{ url_ficha_publica(lic.id_licitacion, lic.modalidad) }}
 - **Organismo:** {{ lic.organismo }}
 - **Region de ejecucion:** {{ lic.region }}
 - **Categoria:** {{ lic.categoria }}

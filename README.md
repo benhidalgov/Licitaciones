@@ -35,7 +35,7 @@ El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el
 
 ### 1. Embudo Comercial y Prospeccion Focalizada
 * **Segmentacion por Rubros Clave:** Filtro de oportunidades en las unidades de negocio estrategicas: **Alojamiento** (delegaciones, hospedaje) y **Eventos / Catering** (salones, jornadas, seminarios y alimentacion intramuros).
-* **Priorizacion Compra Agil:** Marcador automatico para procesos bajo la modalidad Compra Agil con limite normativo vigente de hasta **$6.900.000 CLP**.
+* **Priorizacion Compra Agil:** Marcador automatico para procesos bajo la modalidad Compra Agil con limite normativo de **100 UTM** (referencia $7.244.000 CLP en noviembre de 2026; actualizar mensualmente).
 * **Alcance por Propiedad:** **Hotel Plaza San Francisco** (salones, eventos y habitaciones) y **Hotel Ismael** (solo hospedaje). Se descarta banqueteria o eventos fuera de las instalaciones.
 * **Geolocalizacion Informativa:** La region se muestra como dato, pero no descarta automaticamente por comuna. Si el presupuesto deja margen, la oportunidad se evalua igualmente (Las Condes, Vitacura u otras).
 * **Ciclo de Conversion de 5 Etapas:** Seguimiento de estado (`Identificada`, `Calificada`, `Participada`, `Adjudicada`, `Descartada`) con metricas financieras en tiempo real (monto total identificado, costo base proyectado y margen estimado).

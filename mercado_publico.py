@@ -22,6 +22,18 @@ logger = logging.getLogger(__name__)
 
 MERCADO_PUBLICO_BASE_URL = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
 MP_FICHA_URL = "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion="
+MP_FICHA_CA_URL = "https://buscador.mercadopublico.cl/ficha?code="
+
+
+def url_ficha_publica(codigo: str, modalidad: str = "") -> str:
+    """Ficha oficial: las Compras Agiles usan el buscador, no DetailsAcquisition."""
+    codigo = str(codigo or "").strip()
+    es_compra_agil = (
+        str(modalidad or "").lower().startswith("compra")
+        or "-COT" in codigo.upper()
+        or codigo.upper().endswith("-CO")
+    )
+    return f"{MP_FICHA_CA_URL if es_compra_agil else MP_FICHA_URL}{codigo}"
 
 VOCAB_ALOJAMIENTO = (
     "hospedaje", "alojamiento", "habitacion", "habitaciones",
@@ -494,7 +506,7 @@ def consultar_licitaciones_fecha(fecha: str, ticket: Optional[str] = None) -> Li
 def _cierre_vencido(fecha_iso: str) -> bool:
     """True si la fecha de cierre ya paso. Una fecha ausente no se descarta."""
     try:
-        return datetime.strptime(str(fecha_iso)[:10], "%Y-%m-%d").date() < datetime.now().date()
+        return datetime.strptime(str(fecha_iso)[:10], "%Y-%m-%d").date() < database.hoy_chile()
     except (TypeError, ValueError):
         return False
 

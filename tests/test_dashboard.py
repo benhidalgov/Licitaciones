@@ -1,3 +1,4 @@
+import io
 import os
 import re
 import unittest
@@ -177,14 +178,14 @@ class TestDashboard(unittest.TestCase):
         # 805-19-LP24 has validacion_adjuntos = 'Error ID / Discrepancia'
         self.assertIn("Discrepancia ID", html)
         # Normal tenders have validacion_adjuntos = 'Valida'
-        self.assertIn("ID Verificado", html)
+        self.assertIn("ID verificado", html)
 
     def test_dashboard_action_links(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode("utf-8")
         self.assertIn("/licitaciones/1058-12-COT24", html)
-        self.assertIn("Ver Detalle", html)
+        self.assertIn(">Ver</a>", html)
         self.assertIn("Eliminar", html)
 
     def test_dashboard_no_emojis(self):
@@ -247,6 +248,48 @@ class TestDashboard(unittest.TestCase):
             flask_app._sync_lock.release()
         self.assertIn("Ya hay una sincronizacion en curso", res.get_data(as_text=True))
         mock_sync.assert_not_called()
+
+    def test_busqueda_ignora_tildes(self):
+        html = self.client.get("/licitaciones?q=Región").get_data(as_text=True)
+        self.assertIn("1058-12-COT24", html)
+        html = self.client.get("/licitaciones?q=Minería").get_data(as_text=True)
+        self.assertIn("723-4-LP24", html)
+
+    def test_filtro_cliente_clave_minsal(self):
+        html = self.client.get("/licitaciones?cliente_clave=Minsal").get_data(as_text=True)
+        self.assertIn("440-8-COT24", html)
+
+    def test_margen_tolerancia_decimal(self):
+        response = self.client.post(
+            "/ajustes/margen_tolerancia",
+            data={"modo": "porcentaje", "valor": "0,2"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            database.get_margen_tolerancia(), {"modo": "porcentaje", "valor": 0.2}
+        )
+        self.assertIn("0.2%", response.get_data(as_text=True))
+
+    def test_exportacion_xlsx_con_enlace(self):
+        response = self.client.get("/licitaciones/exportar.xlsx")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("spreadsheetml", response.headers["Content-Type"])
+        from openpyxl import load_workbook
+        libro = load_workbook(io.BytesIO(response.data))
+        hoja = libro.active
+        encabezados = [celda.value for celda in hoja[1]]
+        self.assertIn("Ficha Mercado Publico", encabezados)
+
+    def test_priorizadas_avisa_cuando_todo_cerro(self):
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn("Todas las licitaciones registradas ya cerraron", html)
+
+    def test_cabeceras_de_seguridad(self):
+        response = self.client.get("/")
+        self.assertEqual(response.headers["X-Frame-Options"], "DENY")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+        self.assertIn("Content-Security-Policy", response.headers)
 
     def test_metricas_enlazan_al_listado_filtrado(self):
         html = self.client.get("/").get_data(as_text=True)

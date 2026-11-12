@@ -25,7 +25,7 @@
                 <span class="badge-spot badge-spot-yellow text-[10px] font-mono" title="Configure MERCADO_PUBLICO_TICKET en el archivo .env">Ticket pendiente</span>
             {% endif %}
 
-            <a href="{{ url_for('exportar_licitaciones', **filtros) }}" class="btn-secondary text-xs px-3 py-2 inline-flex items-center" title="Exportar el listado filtrado a planilla">
+            <a href="{{ url_for('exportar_licitaciones_xlsx', **filtros) }}" class="btn-secondary text-xs px-3 py-2 inline-flex items-center" title="Exportar el listado filtrado a Excel">
                 Exportar a Excel
             </a>
 
@@ -53,11 +53,12 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input
                 type="text"
-                inputmode="numeric"
+                inputmode="decimal"
                 name="valor"
-                value="{{ margen_tolerancia.valor | miles }}"
+                value="{% if margen_tolerancia.modo == 'porcentaje' %}{{ margen_tolerancia.valor }}{% else %}{{ margen_tolerancia.valor | miles }}{% endif %}"
                 aria-label="Valor del margen de tolerancia"
                 placeholder="15"
+                pattern="[0-9.,]+"
                 class="w-28 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
             >
             <select name="modo" aria-label="Tipo de margen" class="text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111]">
@@ -141,7 +142,11 @@
         </div>
         {% else %}
         <div class="card-editorial p-4 bg-[#FBFBFA] text-xs text-[#6E6D6A]">
-            No hay oportunidades abiertas con presupuesto y capacidad viables a la fecha. Sincronice Mercado Publico o revise los filtros.
+            {% if not hay_abiertas %}
+            Todas las licitaciones registradas ya cerraron. Sincronice Mercado Publico para traer oportunidades nuevas.
+            {% else %}
+            Hay oportunidades abiertas, pero ninguna cumple el margen, el presupuesto, la capacidad o los filtros actuales.
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -180,8 +185,9 @@
                     <div class="text-xs font-medium text-[#6E6D6A] uppercase tracking-wide">Compra Agil</div>
                     <div class="text-3xl font-bold font-mono text-[#111111] mt-1">{{ metrics.Compra_Agil | miles }}</div>
                     <div class="text-[11px] text-[#346538] font-mono mt-1">
-                        Monto total sin comision: {{ metrics.Compra_Agil_Monto | clp }}
+                        Monto viable: {{ metrics.Compra_Agil_Monto | clp }}
                     </div>
+                    <div class="text-[10px] text-[#6E6D6A]">Excluye descartadas e inviables</div>
                 </div>
                 <div class="text-[11px] text-[#6E6D6A] pt-2 border-t border-[#EAEAEA] space-y-2">
                     <form id="tope-compra-agil" method="POST" action="{{ url_for('guardar_tope_compra_agil') }}" class="flex items-center gap-2" onclick="event.stopPropagation()">
@@ -194,11 +200,12 @@
                             id="tope_compra_agil"
                             name="tope_compra_agil"
                             value="{{ tope_compra_agil | miles }}"
-                            placeholder="6.900.000"
+                            placeholder="7.244.000"
                             class="w-32 text-xs px-2 py-1 border border-[#EAEAEA] rounded bg-white text-[#111111] font-mono focus:outline-none focus:border-[#111111]"
                         >
                         <button type="submit" class="btn-secondary text-xs px-3 py-1">Guardar</button>
                     </form>
+                    <p class="text-[10px] text-[#6E6D6A]">100 UTM del mes; el valor cambia mensualmente.</p>
                     <a href="{{ url_for('dashboard', modalidad='Compra Agil', _anchor='oportunidades') }}" class="inline-block font-medium text-[#111111] hover:underline">Ver oportunidades de Compra Agil</a>
                 </div>
             </div>
@@ -272,7 +279,7 @@
 
     <!-- Barra de Filtros Utilitaria -->
     <div class="card-editorial p-5 bg-white">
-        <form method="GET" action="{{ url_for('dashboard') }}" class="space-y-4">
+        <form method="GET" action="{{ url_for('dashboard', _anchor='oportunidades') }}" class="space-y-4" id="form-filtros">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label for="filter-q" class="block text-xs font-medium text-[#111111] mb-1.5">
@@ -329,7 +336,7 @@
                         class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors"
                     >
                         <option value="">Todas las Modalidades</option>
-                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope {{ tope_compra_agil | clp }})</option>
+                        <option value="Compra Agil" {% if modalidad == 'Compra Agil' %}selected{% endif %}>Compra Agil (Tope referencial {{ tope_compra_agil | clp }})</option>
                         <option value="Licitacion Publica" {% if modalidad == 'Licitacion Publica' %}selected{% endif %}>Licitacion Publica</option>
                     </select>
                 </div>
@@ -419,224 +426,108 @@
 
         {% if licitaciones %}
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-xs">
-                <thead class="bg-[#FBFBFA] text-[#6E6D6A] font-medium uppercase text-[10px] tracking-wider">
+            <table class="min-w-full divide-y divide-[#EAEAEA] text-left text-sm">
+                <thead class="bg-[#FBFBFA] text-[#6E6D6A] font-medium text-xs tracking-wide">
                     <tr>
-                        <th scope="col" class="px-4 py-3">ID / Cierre</th>
-                        <th scope="col" class="px-4 py-3">Titulo y Organismo</th>
-                        <th scope="col" class="px-4 py-3">Categoria / Modalidad</th>
-                        <th scope="col" class="px-4 py-3 text-right">Presupuesto Mandante</th>
-                        <th scope="col" class="px-4 py-3 text-right">Costo Base Hotel</th>
-                        <th scope="col" class="px-4 py-3 text-center">Viabilidad Presupuestaria</th>
-                        <th scope="col" class="px-4 py-3 text-center">Cruce ID Adjuntos</th>
-                        <th scope="col" class="px-4 py-3 text-center">Estado Embudo</th>
-                        <th scope="col" class="px-4 py-3 text-center">Acciones</th>
+                        <th scope="col" class="px-3 py-2">ID / Cierre</th>
+                        <th scope="col" class="px-3 py-2">Licitacion</th>
+                        <th scope="col" class="px-3 py-2 text-right">Monto y viabilidad</th>
+                        <th scope="col" class="px-3 py-2 text-center">Estado</th>
+                        <th scope="col" class="px-3 py-2 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#EAEAEA] bg-white">
                     {% for lic in licitaciones %}
                     {% set minimo = margen_minimo_clp(lic.presupuesto_mandante, margen_tolerancia) %}
                     <tr class="hover:bg-[#FBFBFA] transition-colors cursor-pointer" onclick="if(!event.target.closest('a,button,input,form,select')) window.location.href='{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}'">
-                        <!-- ID y Fecha Cierre -->
-                        <td class="px-4 py-3.5 whitespace-nowrap">
-                            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="font-mono font-semibold text-[#111111] hover:underline">
+                        <td class="px-3 py-2.5 whitespace-nowrap align-top">
+                            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="font-semibold text-[#111111] hover:underline">
                                 {{ lic.id_licitacion }}
                             </a>
-                            <div class="text-[11px] font-mono text-[#6E6D6A] mt-0.5">
-                                Cierre: {{ lic.fecha_cierre }}
-                            </div>
+                            <div class="text-xs text-[#6E6D6A] mt-0.5">Cierre: {{ lic.fecha_cierre }}</div>
                             {% if lic.actualizado_en %}
-                            <div class="text-[10px] font-mono text-[#6E6D6A]">
-                                Actualizado: {{ lic.actualizado_en }}
-                            </div>
+                            <div class="text-xs text-[#6E6D6A]">Act.: {{ lic.actualizado_en }}</div>
                             {% endif %}
                         </td>
 
-                        <!-- Titulo y Organismo -->
-                        <td class="px-4 py-3.5 max-w-xs sm:max-w-sm">
+                        <td class="px-3 py-2.5 align-top">
                             <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="font-medium text-[#111111] hover:underline line-clamp-2">
                                 {{ lic.titulo }}
                             </a>
-                            <div class="text-[#6E6D6A] text-[11px] font-normal mt-0.5">
-                                {{ lic.organismo }}
-                            </div>
-                            <div class="text-[10px] text-[#6E6D6A]">
-                                {{ lic.region }}
-                            </div>
+                            <div class="text-[#6E6D6A] text-xs mt-0.5">{{ lic.organismo }} - {{ lic.region }}</div>
                             <div class="mt-1 flex flex-wrap items-center gap-1">
                                 {% set cc = detectar_cliente_clave(lic.organismo ~ ' ' ~ lic.titulo) %}
-                                {% if cc %}
-                                <span class="badge-spot badge-spot-blue">Cliente: {{ cc }}</span>
-                                {% endif %}
+                                {% if cc %}<span class="badge-spot badge-spot-blue">Cliente: {{ cc }}</span>{% endif %}
                                 {% if lic.revisada_por %}
                                 <span class="badge-spot badge-spot-green">Revisada por {{ lic.revisada_por }}</span>
-                                <span class="text-[10px] font-mono text-[#6E6D6A]">{{ lic.revisada_en }}</span>
                                 {% elif lic.revisada %}
                                 <span class="badge-spot badge-spot-green">Revisada</span>
                                 {% endif %}
-                                {% if lic.motivo_descarte %}
-                                <span class="badge-spot badge-spot-yellow">Descarte: {{ lic.motivo_descarte }}</span>
-                                {% endif %}
-                            </div>
-                            {% if lic.cantidad_asistentes and lic.cantidad_asistentes > 0 %}
-                            <div class="mt-1 flex flex-wrap items-center gap-1">
-                                <span class="badge-spot badge-spot-neutral">
-                                    Aforo: {{ lic.cantidad_asistentes | miles }} pers.
-                                </span>
-                                {% if lic.nombre_salon %}
-                                <span class="badge-spot badge-spot-blue">
-                                    {{ lic.nombre_salon }}
-                                </span>
-                                {% endif %}
-                                {% if lic.tipo_jornada %}
-                                <span class="badge-spot badge-spot-neutral">
-                                    {{ lic.tipo_jornada }}
-                                </span>
-                                {% endif %}
-                            </div>
-                            {% endif %}
-                        </td>
-
-                        <!-- Categoria y Modalidad -->
-                        <td class="px-4 py-3.5 whitespace-nowrap space-y-1">
-                            <div>
-                                <span class="badge-spot badge-spot-neutral">
-                                    {{ lic.categoria }}
-                                </span>
-                            </div>
-                            <div>
-                                {% if lic.modalidad == 'Compra Agil' %}
-                                <span class="badge-spot badge-spot-blue">
-                                    Compra Agil
-                                </span>
+                                {% if lic.motivo_descarte %}<span class="badge-spot badge-spot-yellow">Descarte: {{ lic.motivo_descarte }}</span>{% endif %}
+                                <span class="badge-spot badge-spot-neutral">{{ lic.categoria }}</span>
+                                <span class="badge-spot {% if lic.modalidad == 'Compra Agil' %}badge-spot-blue{% else %}badge-spot-neutral{% endif %}">{{ lic.modalidad }}</span>
+                                {% if lic.validacion_adjuntos == 'Valida' %}
+                                <span class="badge-spot badge-spot-neutral">ID verificado</span>
+                                {% elif lic.validacion_adjuntos == 'Error ID / Discrepancia' %}
+                                <span class="badge-spot badge-spot-yellow">Discrepancia ID</span>
                                 {% else %}
-                                <span class="badge-spot badge-spot-neutral">
-                                    Licitacion Publica
-                                </span>
+                                <span class="badge-spot badge-spot-neutral">Sin verificar</span>
+                                {% endif %}
+                                {% if lic.cantidad_asistentes %}<span class="badge-spot badge-spot-neutral">{{ lic.cantidad_asistentes | miles }} pers.</span>{% endif %}
+                                {% if lic.nombre_salon %}<span class="badge-spot badge-spot-blue">{{ lic.nombre_salon }}</span>{% endif %}
+                            </div>
+                        </td>
+
+                        <td class="px-3 py-2.5 whitespace-nowrap text-right align-top">
+                            <div class="font-semibold text-[#111111]">
+                                {% if lic.presupuesto_mandante > 0 %}{{ lic.presupuesto_mandante | clp }}{% else %}No informado{% endif %}
+                            </div>
+                            <div class="text-xs text-[#6E6D6A]">Costo: {{ lic.costo_base_hotel | clp }}</div>
+                            <div class="mt-1">
+                                {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
+                                <span class="badge-spot badge-spot-yellow">Sobre tope Compra Agil</span>
+                                <div class="text-xs text-[#956400] mt-0.5">Tope: {{ tope_compra_agil | clp }}</div>
+                                {% elif lic.presupuesto_mandante <= 0 %}
+                                <span class="badge-spot badge-spot-neutral">Monto no informado</span>
+                                {% elif lic.costo_base_hotel > lic.presupuesto_mandante %}
+                                <span class="badge-spot badge-spot-red">Inviable / Costo Excede</span>
+                                <div class="text-xs text-[#9F2F2D] mt-0.5">Deficit: {{ (lic.costo_base_hotel - lic.presupuesto_mandante) | clp }}</div>
+                                {% elif (lic.presupuesto_mandante - lic.costo_base_hotel) < minimo %}
+                                <span class="badge-spot badge-spot-yellow">Margen bajo el minimo</span>
+                                <div class="text-xs text-[#956400] mt-0.5">Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}</div>
+                                {% else %}
+                                <span class="badge-spot badge-spot-green">Viable / Margen Positivo</span>
+                                <div class="text-xs text-[#346538] mt-0.5">Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}</div>
                                 {% endif %}
                             </div>
                         </td>
 
-                        <!-- Presupuesto Mandante -->
-                        <td class="px-4 py-3.5 whitespace-nowrap text-right font-mono font-medium text-[#111111]">
-                            {% if lic.presupuesto_mandante > 0 %}
-                            {{ lic.presupuesto_mandante | clp }}
-                            {% else %}
-                            <span class="text-[#6E6D6A]">No informado</span>
-                            {% endif %}
-                        </td>
-
-                        <!-- Costo Base Hotel -->
-                        <td class="px-4 py-3.5 whitespace-nowrap text-right font-mono text-[#6E6D6A]">
-                            {{ lic.costo_base_hotel | clp }}
-                        </td>
-
-                        <!-- Viabilidad Presupuestaria -->
-                        <td class="px-4 py-3.5 whitespace-nowrap text-center">
-                            {% if lic.modalidad == 'Compra Agil' and lic.presupuesto_mandante > tope_compra_agil %}
-                            <span class="badge-spot badge-spot-yellow">
-                                Sobre tope Compra Agil
-                            </span>
-                            <div class="text-[10px] font-mono text-[#956400] mt-0.5">
-                                Tope: {{ tope_compra_agil | clp }}
-                            </div>
-                            {% elif lic.presupuesto_mandante <= 0 %}
-                            <span class="badge-spot badge-spot-neutral">
-                                Monto no informado
-                            </span>
-                            <div class="text-[10px] font-mono text-[#6E6D6A] mt-0.5">
-                                Requiere costeo manual
-                            </div>
-                            {% elif lic.costo_base_hotel > lic.presupuesto_mandante %}
-                            <span class="badge-spot badge-spot-red">
-                                Inviable / Costo Excede
-                            </span>
-                            <div class="text-[10px] font-mono text-[#9F2F2D] mt-0.5">
-                                Deficit: {{ (lic.costo_base_hotel - lic.presupuesto_mandante) | clp }}
-                            </div>
-                            {% elif (lic.presupuesto_mandante - lic.costo_base_hotel) < minimo %}
-                            <span class="badge-spot badge-spot-yellow">
-                                Margen bajo el minimo
-                            </span>
-                            <div class="text-[10px] font-mono text-[#956400] mt-0.5">
-                                Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}
-                            </div>
-                            {% else %}
-                            <span class="badge-spot badge-spot-green">
-                                Viable / Margen Positivo
-                            </span>
-                            <div class="text-[10px] font-mono text-[#346538] mt-0.5">
-                                Margen: +{{ (lic.presupuesto_mandante - lic.costo_base_hotel) | clp }}
-                            </div>
-                            {% endif %}
-                        </td>
-
-                        <!-- Cruce ID Adjuntos -->
-                        <td class="px-4 py-3.5 whitespace-nowrap text-center">
-                            {% if lic.validacion_adjuntos == 'Valida' %}
-                            <span class="badge-spot badge-spot-neutral">
-                                ID Verificado
-                            </span>
-                            {% elif lic.validacion_adjuntos == 'Error ID / Discrepancia' %}
-                            <span class="badge-spot badge-spot-yellow">
-                                Discrepancia ID
-                            </span>
-                            <div class="text-[10px] text-[#956400] font-mono mt-0.5">
-                                Conflicto en TDR
-                            </div>
-                            {% else %}
-                            <span class="badge-spot badge-spot-neutral">
-                                Sin verificar
-                            </span>
-                            {% endif %}
-                        </td>
-
-                        <!-- Estado del Embudo -->
-                        <td class="px-4 py-3.5 whitespace-nowrap text-center">
+                        <td class="px-3 py-2.5 whitespace-nowrap text-center align-top">
                             {% if lic.estado_embudo == 'Identificada' %}
-                            <span class="badge-spot badge-spot-neutral">
-                                Identificada
-                            </span>
+                            <span class="badge-spot badge-spot-neutral">Identificada</span>
                             {% elif lic.estado_embudo == 'Calificada' %}
-                            <span class="badge-spot badge-spot-blue">
-                                Calificada
-                            </span>
+                            <span class="badge-spot badge-spot-blue">Calificada</span>
                             {% elif lic.estado_embudo == 'Participada' %}
-                            <span class="badge-spot badge-spot-yellow">
-                                Participada
-                            </span>
+                            <span class="badge-spot badge-spot-yellow">Participada</span>
                             {% elif lic.estado_embudo == 'Adjudicada' %}
-                            <span class="badge-spot badge-spot-green">
-                                Adjudicada
-                            </span>
+                            <span class="badge-spot badge-spot-green">Adjudicada</span>
                             {% elif lic.estado_embudo == 'Descartada' %}
-                            <span class="badge-spot badge-spot-neutral">
-                                Descartada
-                            </span>
+                            <span class="badge-spot badge-spot-neutral">Descartada</span>
                             {% else %}
-                            <span class="badge-spot badge-spot-neutral">
-                                {{ lic.estado_embudo }}
-                            </span>
+                            <span class="badge-spot badge-spot-neutral">{{ lic.estado_embudo }}</span>
                             {% endif %}
-                            <div class="text-[10px] font-mono text-[#6E6D6A] mt-0.5">
-                                {% if lic.cantidad_asistentes %}{{ lic.cantidad_asistentes | miles }} pers.{% else %}Sin aforo{% endif %}
-                            </div>
+                            {% if lic.fecha_cierre and lic.fecha_cierre < hoy %}
+                            <div class="mt-1"><span class="badge-spot badge-spot-neutral">Vencida</span></div>
+                            {% endif %}
                         </td>
 
-                        <!-- Acciones -->
-                        <td class="px-4 py-3.5 whitespace-nowrap text-center font-mono">
-                            <div class="flex items-center justify-center space-x-1.5 text-[11px]">
-                                <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="text-[#111111] hover:underline font-medium">
-                                    Ver Detalle
-                                </a>
-                                <span class="text-[#EAEAEA]">|</span>
-                                <form method="POST" action="{{ url_for('eliminar_licitacion', id_licitacion=lic.id_licitacion) }}" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit" class="text-[#9F2F2D] hover:underline bg-transparent border-0 p-0 cursor-pointer text-[11px]" onclick="event.stopPropagation()">
-                                        Eliminar
-                                    </button>
-                                </form>
-                            </div>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-center align-top text-xs">
+                            <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="text-[#111111] hover:underline font-medium">Ver</a>
+                            <span class="text-[#EAEAEA] mx-1">|</span>
+                            <form method="POST" action="{{ url_for('eliminar_licitacion', id_licitacion=lic.id_licitacion) }}" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="text-[#9F2F2D] hover:underline bg-transparent border-0 p-0 cursor-pointer text-xs" onclick="event.stopPropagation()">Eliminar</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
@@ -650,12 +541,12 @@
             </span>
             <div class="flex items-center gap-2">
                 {% if pagina > 1 %}
-                <a href="{{ url_for('dashboard', pagina=pagina-1, **filtros) }}" class="btn-secondary text-xs px-3 py-1.5">
+                <a href="{{ url_for('dashboard', pagina=pagina-1, _anchor='oportunidades', **filtros) }}" class="btn-secondary text-xs px-3 py-1.5">
                     Anterior
                 </a>
                 {% endif %}
                 {% if pagina < paginas %}
-                <a href="{{ url_for('dashboard', pagina=pagina+1, **filtros) }}" class="btn-secondary text-xs px-3 py-1.5">
+                <a href="{{ url_for('dashboard', pagina=pagina+1, _anchor='oportunidades', **filtros) }}" class="btn-secondary text-xs px-3 py-1.5">
                     Siguiente
                 </a>
                 {% endif %}
@@ -675,4 +566,15 @@
         {% endif %}
     </div>
 </div>
+<script>
+    (function () {
+        var form = document.getElementById('form-filtros');
+        if (!form) return;
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var params = new URLSearchParams(new FormData(form));
+            window.location.href = form.action.split('#')[0] + '?' + params.toString() + '#oportunidades';
+        });
+    })();
+</script>
 {% endblock %}

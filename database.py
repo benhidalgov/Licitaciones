@@ -4,9 +4,25 @@ import sqlite3
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+try:
+    from zoneinfo import ZoneInfo
+    _TZ_CHILE = ZoneInfo("America/Santiago")
+except Exception:
+    _TZ_CHILE = None
+
 DB_NAME = os.environ.get("LICITACIONES_DB_PATH") or os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "licitaciones.db"
 )
+
+
+def ahora_chile() -> datetime:
+    """Hora de Chile, con respaldo a la hora local si falta tzdata."""
+    return datetime.now(_TZ_CHILE) if _TZ_CHILE is not None else datetime.now()
+
+
+def hoy_chile() -> date:
+    """Fecha de Chile; evita que el servidor en UTC cambie el dia antes de tiempo."""
+    return ahora_chile().date()
 
 ALLOWED_COLUMNS = {
     "titulo", "organismo", "categoria", "modalidad", "region",
@@ -29,8 +45,14 @@ MOTIVOS_DESCARTE = ["Precio", "Disponibilidad", "Fuera de alcance", "Otro"]
 # Nombre visible + alias de busqueda sobre `organismo` y `titulo`.
 # ponytail: lista en codigo; mover a la tabla `ajustes` si el hotel la edita seguido.
 CLIENTES_CLAVE = [
-    ("Mineduc", ("ministerio de educacion", "subsecretaria de educacion", "mineduc")),
-    ("Minsal", ("ministerio de salud", "subsecretaria de salud", "minsal")),
+    ("Mineduc", (
+        "ministerio de educacion", "subsecretaria de educacion", "mineduc",
+        "direccion de educacion", "servicio local de educacion",
+    )),
+    ("Minsal", (
+        "ministerio de salud", "subsecretaria de salud", "minsal",
+        "servicio de salud", "servicios de salud", "fonasa",
+    )),
     ("U. de Chile", ("universidad de chile", "uchile")),
     ("Usach", ("universidad de santiago", "usach")),
     ("Productoras", ("productora", "produccion audiovisual", "productoras")),
@@ -656,6 +678,23 @@ def init_db() -> None:
         cursor.execute(
             "INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('seed_demo', 1)"
         )
+        # Los descartes historicos sin motivo quedan con un motivo explicito;
+        # desde ahora el cambio de estado exige usar "No participamos".
+        cursor.execute(
+            "UPDATE licitaciones SET motivo_descarte = 'Disponibilidad' "
+            "WHERE id_licitacion = '310-7-COT24' AND estado_embudo = 'Descartada' "
+            "AND motivo_descarte = ''"
+        )
+        cursor.execute(
+            "UPDATE licitaciones SET motivo_descarte = 'Otro' "
+            "WHERE estado_embudo = 'Descartada' AND motivo_descarte = ''"
+        )
+        # Actualiza el tope heredado de 6.900.000 al valor de 100 UTM de noviembre 2026.
+        cursor.execute(
+            "UPDATE ajustes SET valor = ? "
+            "WHERE clave = 'tope_compra_agil' AND valor = 6900000",
+            (TOPE_COMPRA_AGIL_DEFECTO,),
+        )
         conn.commit()
     finally:
         conn.close()
@@ -1009,10 +1048,11 @@ def _filtros_licitaciones(
             where += " AND 1=0"  # cliente fuera de la lista configurable
     if q:
         where += (
-            " AND (l.id_licitacion LIKE ? OR l.titulo LIKE ? OR l.organismo LIKE ?"
-            " OR l.notas LIKE ? OR l.region LIKE ?)"
+            " AND (l.id_licitacion LIKE ? OR sin_acentos(l.titulo) LIKE ?"
+            " OR sin_acentos(l.organismo) LIKE ? OR sin_acentos(l.notas) LIKE ?"
+            " OR sin_acentos(l.region) LIKE ?)"
         )
-        term = f"%{q}%"
+        term = f"%{_sin_acentos(q)}%"
         params.extend([term, term, term, term, term])
     return where, params
 
@@ -1132,7 +1172,7 @@ def get_oportunidades_prioritarias(
     `filtros` acepta los mismos nombres que `_filtros_licitaciones`, de modo que
     el bloque priorizado respete la misma busqueda que el listado de abajo.
     """
-    fecha_referencia = hoy or date.today().isoformat()
+    fecha_referencia = hoy or hoy_chile().isoformat()
     tolerancia = get_margen_tolerancia()
     conn = get_db_connection()
     try:
@@ -1340,7 +1380,11 @@ def get_funnel_metrics() -> Dict[str, int]:
             "SELECT estado_embudo, COUNT(*) as total FROM licitaciones GROUP BY estado_embudo"
         ).fetchall()
         ca_row = conn.execute(
-            "SELECT COUNT(*) as total, COALESCE(SUM(presupuesto_mandante), 0) as monto "
+            "SELECT COUNT(*) as total, "
+            "COALESCE(SUM(CASE "
+            "  WHEN estado_embudo != 'Descartada' "
+            "   AND NOT (presupuesto_mandante > 0 AND costo_base_hotel > presupuesto_mandante) "
+            "  THEN presupuesto_mandante ELSE 0 END), 0) as monto "
             "FROM licitaciones WHERE modalidad = 'Compra Agil'"
         ).fetchone()
 
@@ -1362,6 +1406,19 @@ def get_funnel_metrics() -> Dict[str, int]:
         conn.close()
 
 
+def count_licitaciones_abiertas(hoy: Optional[str] = None) -> int:
+    """Cantidad de licitaciones cuya fecha de cierre aun no pasa."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS total FROM licitaciones WHERE fecha_cierre >= ?",
+            (hoy or hoy_chile().isoformat(),),
+        ).fetchone()
+        return int(row["total"])
+    finally:
+        conn.close()
+
+
 def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
     """Consolidado de oportunidades publicadas entre dos fechas ISO."""
     filtro = " WHERE fecha_publicacion BETWEEN ? AND ?"
@@ -1376,7 +1433,12 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Calificada' THEN 1 ELSE 0 END), 0) AS calificadas,
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Participada' THEN 1 ELSE 0 END), 0) AS participadas,
                    COALESCE(SUM(CASE WHEN estado_embudo = 'Adjudicada' THEN 1 ELSE 0 END), 0) AS adjudicadas,
-                   COALESCE(SUM(CASE WHEN estado_embudo = 'Descartada' THEN 1 ELSE 0 END), 0) AS descartadas
+                   COALESCE(SUM(CASE WHEN estado_embudo = 'Descartada' THEN 1 ELSE 0 END), 0) AS descartadas,
+                   COALESCE(SUM(CASE
+                       WHEN estado_embudo != 'Descartada'
+                        AND presupuesto_mandante > 0
+                        AND costo_base_hotel <= presupuesto_mandante
+                       THEN presupuesto_mandante - costo_base_hotel ELSE 0 END), 0) AS margen_proyectado
             FROM licitaciones
         """ + filtro, params).fetchone()
 
@@ -1424,7 +1486,7 @@ def get_reporte_periodo(desde: str, hasta: str) -> Dict[str, Any]:
         conn.close()
 
 
-TOPE_COMPRA_AGIL_DEFECTO = 6900000
+TOPE_COMPRA_AGIL_DEFECTO = 7244000  # 100 UTM de noviembre 2026; actualizar cada mes.
 
 
 def get_tope_compra_agil() -> int:
@@ -1458,22 +1520,30 @@ def get_margen_tolerancia() -> Dict[str, Any]:
             "SELECT clave, valor FROM ajustes "
             "WHERE clave IN ('margen_tolerancia_modo', 'margen_tolerancia_valor')"
         ).fetchall()
-        ajustes = {row["clave"]: int(row["valor"]) for row in rows}
-        modo = "clp" if ajustes.get("margen_tolerancia_modo", 0) == 1 else "porcentaje"
-        valor = max(0, ajustes.get("margen_tolerancia_valor", 0))
+        ajustes = {row["clave"]: row["valor"] for row in rows}
+        modo = "clp" if int(ajustes.get("margen_tolerancia_modo", 0)) == 1 else "porcentaje"
         if modo == "porcentaje":
-            valor = min(100, valor)
+            valor = min(100.0, max(0.0, float(ajustes.get("margen_tolerancia_valor", 0))))
+            if float(valor).is_integer():
+                valor = int(valor)
+        else:
+            valor = max(0, int(ajustes.get("margen_tolerancia_valor", 0)))
         return {"modo": modo, "valor": valor}
     finally:
         conn.close()
 
 
-def set_margen_tolerancia(modo: str, valor: int) -> None:
+def set_margen_tolerancia(modo: str, valor: float) -> None:
     if modo not in ("porcentaje", "clp"):
         raise ValueError("Modo de margen invalido")
-    valor = int(valor)
-    if valor < 0 or (modo == "porcentaje" and valor > 100):
-        raise ValueError("Margen de tolerancia invalido")
+    if modo == "porcentaje":
+        valor = float(valor)
+        if not 0 <= valor <= 100:
+            raise ValueError("Margen de tolerancia invalido")
+    else:
+        valor = int(valor)
+        if valor < 0:
+            raise ValueError("Margen de tolerancia invalido")
     conn = get_db_connection()
     try:
         conn.execute(
@@ -1671,7 +1741,7 @@ def get_benchmarking(licitaciones: Optional[List[Dict[str, Any]]] = None) -> Dic
     filas = []
     for lic in licitaciones:
         precio = int(lic.get("precio_final") or 0)
-        if precio <= 0:
+        if precio <= 0 and lic.get("estado_embudo") != "Adjudicada":
             continue
         presupuesto = int(lic.get("presupuesto_mandante") or 0)
         costo = int(lic.get("costo_base_hotel") or 0)
@@ -1682,6 +1752,7 @@ def get_benchmarking(licitaciones: Optional[List[Dict[str, Any]]] = None) -> Dic
             "adjudicatario": lic.get("adjudicatario") or "",
             "puntaje_adjudicacion": lic.get("puntaje_adjudicacion") or 0,
             "precio_final": precio,
+            "precio_pendiente": precio <= 0,
             "presupuesto_mandante": presupuesto,
             "costo_base_hotel": costo,
             # > 0 el adjudicatario pago mas de lo que pedia el mandante
@@ -1689,9 +1760,14 @@ def get_benchmarking(licitaciones: Optional[List[Dict[str, Any]]] = None) -> Dic
             # > 0 hay espacio para ofertar por debajo del precio observado
             "margen_vs_costo": precio - costo,
         })
-    filas.sort(key=lambda f: f["precio_final"], reverse=True)
+    filas.sort(key=lambda f: (f["precio_pendiente"], -f["precio_final"]))
+    con_precio = [f for f in filas if not f["precio_pendiente"]]
     return {
         "filas": filas,
         "adjudicaciones": len(filas),
-        "precio_promedio": int(round(sum(f["precio_final"] for f in filas) / len(filas))) if filas else 0,
+        "adjudicadas_sin_precio": len(filas) - len(con_precio),
+        "precio_promedio": (
+            int(round(sum(f["precio_final"] for f in con_precio) / len(con_precio)))
+            if con_precio else None
+        ),
     }
