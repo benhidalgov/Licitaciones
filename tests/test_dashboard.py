@@ -63,6 +63,12 @@ class TestDashboard(unittest.TestCase):
         # Should NOT include Banquetería / Eventos tender
         self.assertNotIn("1058-12-COT26", html)
 
+    def test_listado_incluye_enlace_mp(self):
+        response = self.client.get("/")
+        html = response.data.decode("utf-8")
+        # Enlace directo a la ficha publica de Mercado Publico desde el listado
+        self.assertIn("mercadopublico.cl", html)
+
     def test_filtro_miles(self):
         env = flask_app.app.jinja_env
         self.assertEqual(env.filters["miles"](1234567), "1.234.567")

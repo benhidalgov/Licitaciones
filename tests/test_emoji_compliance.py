@@ -24,9 +24,9 @@ class TestEmojiCompliance(unittest.TestCase):
         violations = []
 
         for root, dirs, files in os.walk(repo_root):
-            # Excluir directorios internos de versionamiento y cache
-            if any(part in root for part in [".git", "__pycache__", ".superpowers"]):
-                continue
+            # Excluir directorios internos, cache y el venv: los emojis de
+            # paquetes de terceros no son de esta aplicacion
+            dirs[:] = [d for d in dirs if d not in {".git", "__pycache__", ".superpowers", "env"}]
 
             for file_name in files:
                 ext = os.path.splitext(file_name)[1].lower()

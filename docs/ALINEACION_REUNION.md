@@ -41,7 +41,7 @@ Estado de la suite al momento de este analisis: **121 pruebas, 0 fallos**
 | 7 | Geografia | No descartar por comuna si el margen es atractivo | La especificacion exige prioridad estricta RM (`ESPECIFICACION_REQUERIMIENTOS.md:33-34`), aunque el codigo no filtra | Regla escrita contradice la reunion | Quitar filtro estricto; region solo informativa; evaluar margen | P0 |
 | 8 | Sellos | Sello Mujer, 40 horas, Sernatur, inclusion laboral | Checklist solo con 4 documentos administrativos (`detail.html:517-636`) | No se evaluan exigencias complementarias | Checklist de sellos y criterios tecnicos | P1 |
 | 9 | Home | Vista priorizada de oportunidades del dia con match viable | Listado completo por fecha de cierre (`database.py:799`) | No hay priorizacion diaria | Bloque "Oportunidades priorizadas de hoy" | P0 |
-| 10 | ID y enlace | ID destacado y enlace directo a Mercado Publico | Existe en la ficha (`detail.html:6, 21`), no en la fila del listado | Falta acceso directo desde el home | Agregar enlace MP en la tabla | P1 |
+| 10 | ID y enlace | ID destacado y enlace directo a Mercado Publico | Enlace MP en la ficha y en el listado del tablero (tarjetas priorizadas y fila) | Resuelto | — | P1 (resuelto) |
 | 11 | Ficha IA | Resumen: fechas, personas, salones/habitaciones, A&B y ponderaciones | **Implementado** en `resumen.py` + panel en `detail.html` | Sin IA configurada usa reglas deterministicas; `RESUMEN_IA_API_KEY` la habilita | Reglas por defecto, IA opcional, desglose de ponderacion que suma 100 | P1 |
 | 12 | Estados | Revisada/Vista, Participamos, No participamos + motivo | 5 etapas de embudo (`app.py:25-31`) | No hay marca de revision ni motivo de descarte | Campo `revisada`, `motivo_descarte` (precio/disponibilidad) y notas | P0 |
 | 13 | Exportacion | Exportar resumenes e indicadores a Excel | Solo ficha Markdown (`app.py:308-318`) | No hay exportacion tabular | Exportacion CSV compatible con Excel (stdlib `csv`, BOM UTF-8) | P0 |
@@ -115,7 +115,8 @@ usuario final; **P2** = bonus track.
 1. ~~Ficha resumen estructurada: fechas, personas, salones/habitaciones, A&B y
    ponderacion de criterios.~~ **Hecho**: `resumen.py`, reglas por defecto y
    IA opcional via `RESUMEN_IA_API_KEY`.
-2. Enlace directo a Mercado Publico en el listado.
+2. ~~Enlace directo a Mercado Publico en el listado.~~ **Hecho**: en las
+   tarjetas priorizadas y en la columna Acciones del listado.
 3. ~~Monitoreo de clientes clave.~~ **Hecho**: `CLIENTES_CLAVE`, filtro y etiqueta.
 4. ~~Benchmarking de adjudicaciones.~~ **Hecho**: bloque en la ficha + pagina
    `/analitica`.

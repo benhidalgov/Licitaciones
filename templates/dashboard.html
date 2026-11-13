@@ -105,9 +105,14 @@
                         </a>
                         <div class="text-[11px] text-[#6E6D6A]">{{ lic.organismo }}</div>
                     </div>
-                    <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="btn-secondary text-[10px] px-2 py-1 whitespace-nowrap">
-                        Ver detalle
-                    </a>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="btn-secondary text-[10px] px-2 py-1 whitespace-nowrap">
+                            Ver detalle
+                        </a>
+                        <a href="{{ url_ficha_publica(lic.id_licitacion, lic.modalidad) }}" target="_blank" rel="noopener" class="btn-secondary text-[10px] px-2 py-1 whitespace-nowrap">
+                            MP
+                        </a>
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-[11px] pt-2 border-t border-[#EAEAEA]">
                     <div>
@@ -554,6 +559,8 @@
 
                         <td class="px-3 py-2.5 whitespace-nowrap text-center align-top text-xs">
                             <a href="{{ url_for('licitacion_detalle', id_licitacion=lic.id_licitacion) }}" class="text-[#111111] hover:underline font-medium">Ver</a>
+                            <span class="text-[#EAEAEA] mx-1">|</span>
+                            <a href="{{ url_ficha_publica(lic.id_licitacion, lic.modalidad) }}" target="_blank" rel="noopener" class="text-[#111111] hover:underline font-medium">MP</a>
                             <span class="text-[#EAEAEA] mx-1">|</span>
                             <form method="POST" action="{{ url_for('eliminar_licitacion', id_licitacion=lic.id_licitacion) }}" class="inline" onsubmit="return confirm('Confirma la eliminacion de esta licitacion?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

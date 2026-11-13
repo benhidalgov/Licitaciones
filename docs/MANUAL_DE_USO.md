@@ -47,7 +47,8 @@ Al entrar veras la pantalla `Licitaciones`. De arriba hacia abajo:
 2. **Margen de tolerancia:** valor minimo que se exige para priorizar una
    oportunidad. Se puede expresar en porcentaje o en pesos.
 3. **Oportunidades Priorizadas de Hoy:** las licitaciones abiertas que tienen
-   presupuesto y capacidad viables.
+   presupuesto y capacidad viables. Cada tarjeta incluye un enlace `MP` a la
+   ficha publica en Mercado Publico.
 4. **Metricas del Embudo Comercial:** Total, Compra Agil, Identificadas,
    Calificadas, Participadas, Adjudicadas, Descartadas y Cerradas.
 5. **Filtros:** busqueda, cliente clave, categoria, modalidad, estado, motivo de
@@ -143,7 +144,8 @@ Cada fila muestra:
    monto no informado o sobre el tope de Compra Agil.
 7. **Cruce de ID con adjuntos:** verificado, discrepancia o sin verificar.
 8. **Estado del embudo.**
-9. **Acciones:** ver detalle o eliminar.
+9. **Acciones:** ver detalle, abrir la ficha en Mercado Publico (MP) o
+   eliminar.
 
 Haz clic en cualquier parte de la fila para abrir la ficha.
 
