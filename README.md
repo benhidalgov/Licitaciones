@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Flask_3.0-111111?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
 [![Base de Datos](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-229_Aprobadas-10B981?style=flat-square)](tests)
+[![Tests](https://img.shields.io/badge/Tests-230_Aprobadas-10B981?style=flat-square)](tests)
 [![Interfaz](https://img.shields.io/badge/UI-Minimalist_Editorial-111111?style=flat-square)](templates)
 [![Normativa](https://img.shields.io/badge/Mercado_Publico-Ley_19.886-0284C7?style=flat-square)](https://www.mercadopublico.cl/)
 
@@ -234,7 +234,7 @@ Variables de entorno minimas: `FLASK_SECRET_KEY`, `FLASK_COOKIE_SECURE=1` y las 
 
 ## Suite de Pruebas Automatizadas y Flujo de Calidad
 
-El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 229 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
+El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 230 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
 
 ### 1. Verificacion Oficial Previa a Integracion
 
