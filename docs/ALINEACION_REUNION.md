@@ -24,7 +24,7 @@ invalida esa base, pero si corrige cuatro supuestos:
    motivos de descarte. Hoy existe un unico usuario demo.
 
 Estado de la suite al momento de este analisis: **121 pruebas, 0 fallos**
-(`python verify.py`).
+(`python -m pytest`).
 
 ---
 
@@ -140,7 +140,7 @@ usuario final; **P2** = bonus track.
   existe capacidad, junto al aviso de validacion en PMS.
 - Dos usuarios distintos ven el mismo estado y las mismas notas.
 - El listado se exporta a un archivo que Excel abre sin pasos adicionales.
-- La suite completa sigue en verde (`python verify.py`).
+- La suite completa sigue en verde (`python -m pytest`).
 
 ---
 

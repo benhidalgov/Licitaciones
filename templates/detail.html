@@ -482,7 +482,7 @@
                     <label for="costo_base_hotel" class="block text-xs font-medium text-[#111111] mb-1.5">Costo Base Mínimo (CLP)</label>
                     <input type="text" inputmode="numeric" id="costo_base_hotel" name="costo_base_hotel" value="{{ lic.costo_base_hotel if lic.costeo_validado else '' }}" placeholder="Automatico: salon + consumo por persona" class="w-full text-xs px-3 py-2 border border-[#EAEAEA] rounded bg-[#FBFBFA] text-[#111111] font-mono">
                     <p class="text-[10px] text-[#6E6D6A] mt-1">
-                        {% if lic.costeo_validado %}Costo validado actualmente.{% else %}Costo provisional; completelo para aplicar la regla de presupuesto.{% endif %}
+                        {% if lic.costeo_validado %}Costo validado actualmente.{% else %}Costo provisional automatico: se valida al guardar asistentes o salon; editelo para ajustarlo.{% endif %}
                     </p>
                     {% if salon_asignado and not salon_asignado.tarifa_referencial %}
                     <p class="text-[10px] text-[#956400] mt-1">La tarifa de este salón esta por confirmar: el costo y el margen son estimaciones.</p>

@@ -107,6 +107,24 @@ class TestMercadoPublico(unittest.TestCase):
         self.assertIn("MERCADO_PUBLICO_INTERVALO_MS", resumen["mensaje"])
         self.assertGreater(resumen["avisos_rate_limit"], 0)
 
+    @patch("mercado_publico.time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_error_http_distinto_de_429_no_culpa_al_intervalo(self, mock_urlopen, mock_sleep):
+        url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
+        mock_urlopen.side_effect = urllib.error.HTTPError(url, 401, "Unauthorized", {}, None)
+        mercado_publico.avisos_rate_limit.update(cantidad=0, otros=0)
+
+        resumen = mercado_publico.sincronizar_licitaciones(
+            fecha="07102026",
+            ticket="TICKET_TEST_VALIDO"
+        )
+
+        # Un ticket malo no se arregla subiendo el intervalo.
+        self.assertNotIn("MERCADO_PUBLICO_INTERVALO_MS", resumen["mensaje"])
+        self.assertIn("Revise el ticket", resumen["mensaje"])
+        self.assertEqual(mercado_publico.avisos_rate_limit["cantidad"], 0)
+        self.assertGreater(mercado_publico.avisos_rate_limit["otros"], 0)
+
     def test_load_env_file(self):
         test_env_content = """
 # Comentario de prueba

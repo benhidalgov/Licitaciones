@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Flask_3.0-111111?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
 [![Base de Datos](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-197_Aprobadas-10B981?style=flat-square)](tests)
+[![Tests](https://img.shields.io/badge/Tests-229_Aprobadas-10B981?style=flat-square)](tests)
 [![Interfaz](https://img.shields.io/badge/UI-Minimalist_Editorial-111111?style=flat-square)](templates)
 [![Normativa](https://img.shields.io/badge/Mercado_Publico-Ley_19.886-0284C7?style=flat-square)](https://www.mercadopublico.cl/)
 
@@ -54,13 +54,7 @@ El sistema resuelve la dispersion de ofertas en Mercado Publico automatizando el
   4. Certificados de Vigencia de la Sociedad (antiguedad menor a 60 dias).
 
 ### 3. Gestion de Salones, Aforo y Agenda de Ocupacion
-* **Catalogo de 17 Espacios:** El catalogo incorpora los 5 salones confirmados y 12 espacios provisionales marcados como `[PROVISIONAL]`, pendientes de validacion de aforo, montaje y tarifa con el hotel:
-  - *Gran Salon San Francisco (Plenario):* Capacidad de 300 personas.
-  - *Salon Colonial (Banquete / Eventos):* Capacidad de 150 personas.
-  - *Salon Alameda (Seminario / Conferencias):* Capacidad de 80 personas.
-  - *Salon Londres (Reuniones / Taller):* Capacidad de 40 personas.
-  - *Salon Directorio Ejecutivo:* Capacidad de 20 personas.
-  - *12 espacios adicionales:* entre 25 y 120 personas, con montajes de teatro, escuela, banquete, coctel, isla y mesa ejecutiva.
+* **Catalogo de 17 Espacios:** Los 16 salones del catalogo oficial del hotel (documento "SALONES HPSF.pdf", aforos por montaje) mas el Salon Tam, unico provisional: sus aforos se deducen de las combinaciones Danubio Abierto y Dan+Tam+Rhin y se confirman con el hotel. Tarifas y horarios estan por confirmar. Ver [Catalogo y Agenda de Salones](#catalogo-y-agenda-de-salones).
 * **Propuesta de Match por Capacidad:** El sistema propone los salones cuya capacidad maxima cubre el aforo requerido. La disponibilidad final siempre se valida en el PMS del hotel; no existe sincronizacion automatica con Mercado Publico.
 * **Validacion de Aforo y Sobrecupo:** Verificacion entre la cantidad de asistentes solicitada y la capacidad del salon asignado, recomendando alternativas compatibles en caso de sobrecupo.
 * **Agenda de Ocupacion y Reservas (Bookings):** Cronograma de fechas ocupadas con detalle de organismo contratante, asistentes, franja horaria y estado (`Confirmada`, `Tentativa`, `Bloqueo Interno`).
@@ -104,7 +98,6 @@ C:\Licitaciones\
 |-- mercado_publico.py         # Cliente API ChileCompra, normalizacion semantica y filtros
 |-- resumen.py                 # Ficha resumen por reglas (IA opcional) y ponderacion de criterios
 |-- run.py                     # Script de inicio oficial para entorno de ejecucion
-|-- verify.py                  # Script de verificacion de calidad y suite de pruebas unitarias
 |-- requirements.txt           # Dependencias minimas del sistema (Flask >= 3.0.0)
 |-- ESPECIFICACION_REQUERIMIENTOS.md # Especificacion formal de reglas de negocio
 |-- README.md                  # Manual tecnico y documentacion general del proyecto
@@ -215,29 +208,43 @@ Variables de entorno minimas: `FLASK_SECRET_KEY`, `FLASK_COOKIE_SECURE=1` y las 
 ## Catalogo y Agenda de Salones
 
 > [!NOTE]
-> El catalogo operativo contiene **17 espacios**. La tabla siguiente detalla los 5 salones confirmados; los otros 12 estan marcados como `[PROVISIONAL]` hasta que el hotel valide aforo, montaje y tarifa. Todos pertenecen al Hotel Plaza San Francisco. El Hotel Ismael opera solo alojamiento y no tiene salones asociados.
+> El catalogo operativo contiene **17 espacios**: los 16 salones del catalogo oficial del hotel y el Salon Tam, unico marcado como provisional (sus aforos se deducen de las combinaciones Danubio Abierto y Dan+Tam+Rhin, y se confirman con el hotel). El aforo maximo de cada salon corresponde al mejor montaje que admite. Tarifas y horarios estan por confirmar con el hotel. Todos pertenecen al Hotel Plaza San Francisco. El Hotel Ismael opera solo alojamiento y no tiene salones asociados.
 
-| Identificador | Salon | Formato Principal | Aforo Maximo | Horario Operativo | Ubicacion |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| `SALON-PLENARIO` | Gran Salon San Francisco | Plenario / Conferencia | 300 | 08:00 - 23:00 hrs | Nivel Subterraneo |
-| `SALON-COLONIAL` | Salon Colonial | Banquete / Eventos | 150 | 08:00 - 23:00 hrs | Piso 1 - Hall Central |
-| `SALON-ALAMEDA` | Salon Alameda | Seminario / Conferencias | 80 | 08:30 - 20:00 hrs | Piso 2 - Ala Poniente |
-| `SALON-LONDRES` | Salon Londres | Reuniones / Taller | 40 | 08:30 - 19:30 hrs | Piso 2 - Ala Ejecutiva |
-| `SALON-DIRECTORIO` | Salon Directorio Ejecutivo | Directorio / Mesa Ejecutiva | 20 | 08:00 - 20:00 hrs | Piso 3 - Area Presidencial |
+| Identificador | Salon | Piso | m2 | Aforo Maximo |
+| :--- | :--- | :---: | :---: | :---: |
+| `SALON-EJECUTIVO` | Salon Ejecutivo | 2 | 28 | 8 |
+| `SALON-ALERCE` | Salon Alerce | -2 | 41 | 30 |
+| `SALON-ROBLE` | Salon Roble | -2 | 41 | 30 |
+| `SALON-MISTRAL` | Salon Mistral | -1 | 47 | 30 |
+| `SALON-NERUDA` | Salon Neruda | -1 | 50 | 30 |
+| `SALON-PARRA` | Salon Parra | -1 | 62 | 40 |
+| `SALON-EBRO` | Salon Ebro | 2 | 48 | 30 |
+| `SALON-TIBER` | Salon Tiber | 2 | 46 | 30 |
+| `SALON-VOLGA` | Salon Volga | 2 | 49 | 30 |
+| `SALON-DUERO` | Salon Duero | 2 | 58 | 50 |
+| `SALON-ARRAU` | Salon Arrau | -1 | 62 | 50 |
+| `SALON-ARAUCARIA` | Salon Araucaria | -2 | 105 | 100 |
+| `SALON-SENA` | Salon Sena | 2 | 65 | 60 |
+| `SALON-DANUBIO` | Salon Danubio | 2 | 108 | 100 |
+| `SALON-RHIN` | Salon Rhin | 2 | 84 | 60 |
+| `SALON-PERGOLA` | Salon Pergola | 1 | 362 | 450 |
+| `SALON-TAM` | Salon Tam (provisional) | 2 | 50 | 50 |
 
 ---
 
 ## Suite de Pruebas Automatizadas y Flujo de Calidad
 
-El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 197 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
+El proyecto se desarrolla bajo metodologia **Test-Driven Development (TDD)** con una suite de 229 pruebas unitarias e integradas que cubren autenticacion, base de datos, logica financiera, costeo minimo, prevencion de colisiones, integracion con Mercado Publico y cumplimiento normativo.
 
 ### 1. Verificacion Oficial Previa a Integracion
 
 Para validar la suite completa y constatar que la rama de trabajo es apta para fusionarse a `main`:
 
 ```bash
-python verify.py
+python -m pytest
 ```
+
+El comando termina con exito (codigo 0) solo si todas las pruebas pasan; cualquier fallo debe corregirse antes de integrar.
 
 ### 2. Ejecucion Directa con Unittest
 

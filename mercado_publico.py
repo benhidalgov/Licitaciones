@@ -173,7 +173,9 @@ MP_ESPERA_MAX_S = 60
 
 # Estado compartido entre consultas de una misma sincronizacion.
 _ultima_consulta = {"ts": 0.0}
-avisos_rate_limit = {"cantidad": 0}
+# cantidad = bloqueos 429 (sugiere subir el intervalo); otros = fallos HTTP
+# con otro codigo (sugiere revisar el ticket, no el intervalo).
+avisos_rate_limit = {"cantidad": 0, "otros": 0}
 
 
 def _url_sin_ticket(url: str) -> str:
@@ -243,7 +245,10 @@ def _fetch_url(url: str, timeout: int = 15) -> Optional[bytes]:
                 time.sleep(espera)
                 continue
             # Solo se cuenta lo que queda sin resolver: la ficha completa.
-            avisos_rate_limit["cantidad"] += 1
+            if exc.code == 429:
+                avisos_rate_limit["cantidad"] += 1
+            else:
+                avisos_rate_limit["otros"] += 1
             logger.error(f"Mercado Publico respondio HTTP {exc.code} en {_url_sin_ticket(url)}")
             return None
         except urllib.error.URLError as exc:
@@ -546,7 +551,7 @@ def sincronizar_licitaciones(
     total_descartadas = 0
     total_guardadas = 0
 
-    avisos_rate_limit["cantidad"] = 0
+    avisos_rate_limit.update(cantidad=0, otros=0)
 
     for dia in range(dias):
         fecha_dia = (base - timedelta(days=dia)).strftime("%d%m%Y")
@@ -609,6 +614,12 @@ def sincronizar_licitaciones(
             f" La API bloqueo {avisos_rate_limit['cantidad']} consulta(s) por limite "
             f"de llamadas (HTTP 429) y quedaron sin datos de detalle. Suba "
             f"MERCADO_PUBLICO_INTERVALO_MS en .env y repita la sincronizacion."
+        )
+    if avisos_rate_limit["otros"]:
+        mensaje += (
+            f" {avisos_rate_limit['otros']} consulta(s) fallaron con un error HTTP "
+            f"distinto de 429 y quedaron sin datos de detalle. Revise el "
+            f"ticket MERCADO_PUBLICO_TICKET y los logs."
         )
 
     return {

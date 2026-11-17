@@ -65,12 +65,12 @@ git checkout -b feat/nombre-de-la-tarea
 Durante el desarrollo, asegurarse de mantener o agregar las pruebas unitarias correspondientes en el directorio `tests/`.
 
 ### Paso 4: Validacion previa obligatoria
-Antes de confirmar o solicitar fusion, ejecutar el script de verificacion oficial:
+Antes de confirmar o solicitar fusion, ejecutar la suite completa:
 ```bash
-python verify.py
+python -m pytest
 ```
 > [!IMPORTANT]
-> El script debe retornar `[OK] Todas las pruebas han sido aprobadas exitosamente.` (codigo de salida 0). Si alguna prueba falla, debe corregirse antes de proceder.
+> El comando debe terminar con codigo de salida 0 (cero fallos). Si alguna prueba falla, debe corregirse antes de proceder.
 
 ### Paso 5: Confirmar cambios
 ```bash
@@ -90,7 +90,7 @@ Opcion B (Fusion local controlada):
 git checkout main
 git pull origin main
 git merge --no-ff feat/nombre-de-la-tarea
-python verify.py
+python -m pytest
 git push origin main
 git branch -d feat/nombre-de-la-tarea
 ```
