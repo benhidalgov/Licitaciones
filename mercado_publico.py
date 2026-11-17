@@ -376,13 +376,13 @@ def filtrar_y_clasificar_licitacion(item: Dict[str, Any]) -> Optional[Dict[str, 
     if len(fecha_cierre_raw) >= 10:
         fecha_cierre = fecha_cierre_raw[:10]
     else:
-        fecha_cierre = datetime.now().strftime("%Y-%m-%d")
+        fecha_cierre = database.hoy_chile().isoformat()
 
     fecha_creacion_raw = str(item.get("FechaCreacion") or fechas.get("FechaCreacion") or "")
     if len(fecha_creacion_raw) >= 10:
         fecha_pub = fecha_creacion_raw[:10]
     else:
-        fecha_pub = datetime.now().strftime("%Y-%m-%d")
+        fecha_pub = database.hoy_chile().isoformat()
 
     costo_base = int(monto_estimado * 0.75) if monto_estimado > 0 else 0
 
@@ -536,7 +536,9 @@ def sincronizar_licitaciones(
         }
 
     if not fecha:
-        fecha = datetime.now().strftime("%d%m%Y")
+        # Ventana por defecto calculada con hora de Chile: en Render el reloj
+        # del servidor es UTC y tras las 21:00 el dia cambia a destiempo.
+        fecha = database.hoy_chile().strftime("%d%m%Y")
     base = datetime.strptime(fecha, "%d%m%Y")
 
     total_consultadas = 0

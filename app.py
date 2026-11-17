@@ -9,6 +9,7 @@ import time
 from datetime import date, datetime, timedelta
 from functools import wraps
 from flask import Flask, abort, flash, make_response, redirect, render_template, request, send_file, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 import database
 import mercado_publico
 import resumen
@@ -16,6 +17,9 @@ import resumen
 mercado_publico.load_env_file()
 
 app = Flask(__name__)
+# Render entrega las peticiones tras su proxy: sin esto remote_addr es la IP
+# del proxy y el bloqueo por intentos fallidos afecta a todos los usuarios.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -658,7 +662,7 @@ def agregar_nota_licitacion(id_licitacion):
         return redirect(url_for("licitacion_detalle", id_licitacion=id_licitacion))
 
     autor = session.get("nombre") or session.get("user") or "Equipo"
-    linea = f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {autor}: {nota}"
+    linea = f"{database.ahora_chile().strftime('%Y-%m-%d %H:%M')} {autor}: {nota}"
     database.append_nota(id_licitacion, linea)
     _registrar(id_licitacion, "Nota", nota[:200])
     flash("Nota agregada al historial compartido.", "success")

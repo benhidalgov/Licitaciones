@@ -1,5 +1,7 @@
 import os
 import unittest
+from datetime import datetime
+from unittest.mock import patch
 import app as flask_app
 import database
 import mercado_publico
@@ -121,6 +123,16 @@ class TestEvaluacionOperativa(unittest.TestCase):
         self.assertIn("PMS sin disponibilidad", lic["notas"])
         self.assertIn("Se solicito alternativa", lic["notas"])
         self.assertIn("Daniela", lic["notas"])
+
+    def test_nota_usa_hora_de_chile(self):
+        fija = datetime(2026, 11, 17, 21, 30)
+        with patch.object(database, "ahora_chile", return_value=fija):
+            self.client.post(
+                "/licitaciones/1058-12-COT26/notas",
+                data={"nota": "Revision nocturna."},
+            )
+        lic = database.get_licitacion_by_id("1058-12-COT26")
+        self.assertIn("2026-11-17 21:30 Daniela: Revision nocturna.", lic["notas"])
 
     def test_exportacion_csv_abre_en_excel(self):
         response = self.client.get("/licitaciones/exportar.csv")

@@ -1471,7 +1471,7 @@ def create_licitacion(data: Dict[str, Any]) -> str:
             "descripcion_tdr": "",
             "sello_mujer": 0, "jornada_40h": 0,
             "sello_sernatur": 0, "inclusion_laboral": 0,
-            "actualizado_en": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "actualizado_en": ahora_chile().strftime("%Y-%m-%d %H:%M"),
             **data
         }
         normalizar_campos(payload, CAMPOS_TEXTO_LICITACION)
@@ -1508,7 +1508,7 @@ def update_licitacion(id_licitacion: str, data: Dict[str, Any]) -> bool:
         return False
     normalizar_campos(valid_data, CAMPOS_TEXTO_LICITACION)
     # La marca de actualizacion la pone el sistema, no el formulario.
-    valid_data["actualizado_en"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    valid_data["actualizado_en"] = ahora_chile().strftime("%Y-%m-%d %H:%M")
     conn = get_db_connection()
     try:
         fields = [f"{k} = ?" for k in valid_data]
@@ -1529,7 +1529,7 @@ def append_nota(id_licitacion: str, linea: str) -> bool:
             SET notas = CASE WHEN notas = '' THEN ? ELSE notas || char(10) || ? END,
                 actualizado_en = ?
             WHERE id_licitacion = ?
-        """, (linea, linea, datetime.now().strftime("%Y-%m-%d %H:%M"), id_licitacion))
+        """, (linea, linea, ahora_chile().strftime("%Y-%m-%d %H:%M"), id_licitacion))
         conn.commit()
         return cursor.rowcount > 0
     finally:
@@ -1545,7 +1545,7 @@ def registrar_evento(id_licitacion: str, tipo: str, detalle: str, usuario: str =
             VALUES (?, ?, ?, ?, ?)
         """, (
             id_licitacion,
-            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            ahora_chile().strftime("%Y-%m-%d %H:%M"),
             usuario or "",
             tipo or "",
             detalle or "",

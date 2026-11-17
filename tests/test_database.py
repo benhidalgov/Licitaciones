@@ -1,5 +1,7 @@
 import os
 import unittest
+from datetime import datetime
+from unittest.mock import patch
 import database
 
 
@@ -63,6 +65,21 @@ class TestDatabase(unittest.TestCase):
         row = cursor.fetchone()
         self.assertEqual(row["test_col"], 1)
         conn.close()
+
+    def test_timestamps_vienen_de_ahora_chile(self):
+        # En Render el servidor corre en UTC: si estos campos usaran la hora
+        # del servidor, la tarde anotaria mal la hora y el dia.
+        fija = datetime(2026, 11, 17, 21, 30)
+        with patch.object(database, "ahora_chile", return_value=fija):
+            database.registrar_evento("1058-12-COT26", "Decision", "prueba", "Daniela")
+            database.update_licitacion("1058-12-COT26", {"revisada": 1})
+
+        historial = database.get_historial_licitacion("1058-12-COT26")
+        evento = next(h for h in historial if h["detalle"] == "prueba")
+        self.assertEqual(evento["fecha"], "2026-11-17 21:30")
+
+        lic = database.get_licitacion_by_id("1058-12-COT26")
+        self.assertEqual(lic["actualizado_en"], "2026-11-17 21:30")
 
     def test_get_all_licitaciones_filters(self):
         # Filtro por categoria
