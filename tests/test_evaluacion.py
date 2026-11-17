@@ -1,3 +1,4 @@
+import io
 import os
 import unittest
 from datetime import datetime
@@ -163,6 +164,36 @@ class TestEvaluacionOperativa(unittest.TestCase):
         })
         texto = self.client.get("/licitaciones/exportar.csv").data.decode("utf-8-sig")
         self.assertIn("'=HYPERLINK", texto)
+
+    def test_exportacion_xlsx_neutraliza_formulas(self):
+        database.create_licitacion({
+            "id_licitacion": "FORMULA-1",
+            "titulo": "=HYPERLINK(\"http://ejemplo\")",
+            "organismo": "Organismo",
+            "categoria": "Alojamiento",
+            "modalidad": "Compra Agil",
+            "region": "Región Metropolitana",
+            "presupuesto_mandante": 1000000,
+            "costo_base_hotel": 500000,
+            "estado_embudo": "Identificada",
+            "validacion_adjuntos": "Sin verificar",
+            "tiene_anexo4": 0,
+            "tiene_escrituras": 0,
+            "tiene_poderes": 0,
+            "tiene_vigencias": 0,
+            "fecha_publicacion": "2026-01-01",
+            "fecha_cierre": "2026-12-31",
+            "descripcion_tdr": "x",
+        })
+        from openpyxl import load_workbook
+        response = self.client.get("/licitaciones/exportar.xlsx")
+        self.assertEqual(response.status_code, 200)
+        libro = load_workbook(io.BytesIO(response.data))
+        hoja = libro.active
+        celdas_titulo = [hoja.cell(row=f, column=2) for f in range(2, hoja.max_row + 1)]
+        # openpyxl guarda un "=" como formula viva; debe viajar como texto.
+        self.assertEqual([c for c in celdas_titulo if c.data_type == "f"], [])
+        self.assertTrue(any(str(c.value).startswith("'=HYPERLINK") for c in celdas_titulo))
 
     def test_priorizadas_incluye_oportunidad_abierta_y_viable(self):
         database.create_licitacion({

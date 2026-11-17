@@ -27,6 +27,9 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("FLASK_COOKIE_SECURE", "") 
 app.config["CSRF_ENABLED"] = True
 app.config["LOGIN_RATE_LIMIT"] = 5
 app.config["LOGIN_RATE_WINDOW"] = 300
+# El importador de OC materializa la planilla completa en memoria; un archivo
+# gigante tumbaria el worker de Render. 413 a lo que pase de 16 MB.
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 
 @app.after_request
@@ -94,6 +97,9 @@ def verify_csrf_token():
 
 _login_attempts = {}
 _sync_lock = threading.Lock()
+# Estado visible de la ultima sincronizacion: el hilo lo llena y el tablero
+# lo muestra como flash en la carga siguiente.
+_sync_estado = {"en_curso": False, "nivel": "", "mensaje": ""}
 
 
 def _is_login_blocked(ip):
@@ -219,6 +225,11 @@ def dashboard():
     # Cierra lo vencido al entrar al tablero: una licitacion que vence con la
     # app arriba quedaria abierta hasta el proximo reinicio o sincronizacion.
     database.marcar_cerradas()
+
+    # Resultado de una sincronizacion en background: se muestra una sola vez.
+    if not _sync_estado["en_curso"] and _sync_estado["mensaje"]:
+        flash(_sync_estado["mensaje"], _sync_estado["nivel"] or "info")
+        _sync_estado.update(nivel="", mensaje="")
 
     categoria = request.args.get("categoria", "").strip() or None
     modalidad = request.args.get("modalidad", "").strip() or None
@@ -458,7 +469,8 @@ def exportar_licitaciones_xlsx():
         celda.fill = PatternFill("solid", fgColor="111111")
 
     for lic in licitaciones:
-        hoja.append(_fila_exportacion(lic))
+        # Mismo guard que el CSV: openpyxl convierte un "=" en formula viva.
+        hoja.append([_celda_csv(v) if isinstance(v, str) else v for v in _fila_exportacion(lic)])
         celda_url = hoja.cell(row=hoja.max_row, column=len(EXPORT_HEADERS))
         celda_url.hyperlink = celda_url.value
         celda_url.style = "Hyperlink"
@@ -1018,6 +1030,26 @@ def guardar_margen_tolerancia():
     return redirect(url_for("dashboard"))
 
 
+def _correr_sync(fecha):
+    """Corre en un hilo: una semana de consultas tarda minutos y el usuario
+    no debe esperar colgado en la peticion."""
+    try:
+        # Sin fecha explicita sincroniza la ultima semana; con fecha, solo ese dia
+        resultado = mercado_publico.sincronizar_licitaciones(fecha=fecha, dias=1 if fecha else 7)
+        if resultado.get("total_guardadas", 0) > 0:
+            nivel = "success"
+        elif resultado.get("total_consultadas", 0) > 0:
+            nivel = "info"
+        else:
+            nivel = "warning"
+        _sync_estado.update(nivel=nivel, mensaje=resultado["mensaje"])
+    except Exception as exc:
+        _sync_estado.update(nivel="error", mensaje=f"La sincronizacion fallo: {exc}")
+    finally:
+        _sync_estado["en_curso"] = False
+        _sync_lock.release()
+
+
 @app.route("/licitaciones/sincronizar", methods=["POST"])
 @login_required
 def sincronizar_licitaciones_route():
@@ -1031,17 +1063,9 @@ def sincronizar_licitaciones_route():
     if not _sync_lock.acquire(blocking=False):
         flash("Ya hay una sincronizacion en curso. Espere a que termine.", "warning")
         return redirect(url_for("dashboard"))
-    try:
-        # Sin fecha explicita sincroniza la ultima semana; con fecha, solo ese dia
-        resumen = mercado_publico.sincronizar_licitaciones(fecha=fecha, dias=1 if fecha else 7)
-    finally:
-        _sync_lock.release()
-    if resumen.get("total_guardadas", 0) > 0:
-        flash(resumen["mensaje"], "success")
-    elif resumen.get("total_consultadas", 0) > 0:
-        flash(resumen["mensaje"], "info")
-    else:
-        flash(resumen["mensaje"], "warning")
+    _sync_estado.update(en_curso=True, nivel="", mensaje="")
+    threading.Thread(target=_correr_sync, args=(fecha,), daemon=True).start()
+    flash("Sincronizacion iniciada en segundo plano. Vuelva al tablero en unos minutos para ver el resultado.", "info")
     return redirect(url_for("dashboard"))
 
 

@@ -228,6 +228,10 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         html = res.data.decode("utf-8")
         self.assertIn("Sincronizar Mercado Público", html)
+        # La sync corre en un hilo: esperar a que libere el lock asegura que
+        # el llamado ocurrio y el estado quedo publicado.
+        self.assertTrue(flask_app._sync_lock.acquire(timeout=5))
+        flask_app._sync_lock.release()
         # Sin fecha explicita sincroniza la ultima semana
         mock_sync.assert_called_with(fecha=None, dias=7)
 
@@ -254,6 +258,26 @@ class TestDashboard(unittest.TestCase):
             flask_app._sync_lock.release()
         self.assertIn("Ya hay una sincronizacion en curso", res.get_data(as_text=True))
         mock_sync.assert_not_called()
+
+    @patch("mercado_publico.sincronizar_licitaciones")
+    def test_sincronizar_corre_en_segundo_plano(self, mock_sync):
+        flask_app._sync_estado.update(en_curso=False, nivel="", mensaje="")
+        mock_sync.return_value = {
+            "total_consultadas": 3, "total_guardadas": 1,
+            "mensaje": "Guardadas 1 licitaciones nuevas.",
+        }
+        # La respuesta vuelve de inmediato; el trabajo sigue en el hilo.
+        res = self.client.post("/licitaciones/sincronizar")
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(flask_app._sync_lock.acquire(timeout=5))
+        flask_app._sync_lock.release()
+        mock_sync.assert_called_once_with(fecha=None, dias=7)
+
+        # El resultado se muestra una vez en el siguiente ingreso al tablero.
+        self.assertEqual(flask_app._sync_estado["mensaje"], "Guardadas 1 licitaciones nuevas.")
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn("Guardadas 1 licitaciones nuevas.", html)
+        self.assertEqual(flask_app._sync_estado["mensaje"], "")
 
     def test_busqueda_ignora_tildes(self):
         html = self.client.get("/licitaciones?q=Región").get_data(as_text=True)
