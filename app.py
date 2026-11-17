@@ -1411,7 +1411,13 @@ def editar_reserva(id_reserva):
                 user=session.get("user")
             )
 
-        database.update_reserva(id_reserva, form_data)
+        if database.update_reserva(id_reserva, form_data) is None:
+            flash(
+                "Otro usuario confirmo una reserva para ese salon en las mismas fechas. "
+                "Actualice la agenda y elija otro salon o fechas.",
+                "error",
+            )
+            return redirect(url_for("salones_catalogo"))
         flash("Reserva actualizada exitosamente en la agenda.", "success")
         return redirect(url_for("salones_catalogo"))
 

@@ -166,6 +166,31 @@ class TestSalones(unittest.TestCase):
         self.assertEqual(reserva["cliente_evento"], "Jornada Actualizada")
         self.assertEqual(reserva["asistentes_estimados"], 95)
 
+    def test_update_reserva_no_permite_doble_confirmacion(self):
+        nuevo_id = database.create_reserva({
+            "id_salon": "SALON-SENA",
+            "cliente_evento": "Reserva movible",
+            "organismo_o_empresa": "Organismo B",
+            "tipo_evento": "Reunion",
+            "fecha_inicio": "2027-05-10",
+            "fecha_fin": "2027-05-10",
+            "horario": "15:00 a 18:00 hrs",
+        })
+        # La reserva 1 del seed ocupa SALON-DANUBIO el 2026-09-20 confirmada:
+        # moverse ahi debe rechazarse, igual que al crear.
+        choque = database.update_reserva(nuevo_id, {
+            "id_salon": "SALON-DANUBIO",
+            "fecha_inicio": "2026-09-20",
+            "fecha_fin": "2026-09-20",
+        })
+        self.assertIsNone(choque)
+
+        # Editar solo el nombre no toca la agenda y sigue funcionando.
+        self.assertTrue(database.update_reserva(nuevo_id, {"cliente_evento": "Renombrada"}))
+        reserva = database.get_reserva_by_id(nuevo_id)
+        self.assertEqual(reserva["id_salon"], "SALON-SENA")
+        self.assertEqual(reserva["cliente_evento"], "Renombrada")
+
     def test_delete_reserva(self):
         # Create a temp reservation and delete it
         temp_id = database.create_reserva({

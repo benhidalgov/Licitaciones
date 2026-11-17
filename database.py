@@ -1092,13 +1092,40 @@ def get_reserva_by_id(id_reserva: int) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
-def update_reserva(id_reserva: int, data: Dict[str, Any]) -> bool:
+def update_reserva(id_reserva: int, data: Dict[str, Any]) -> Optional[bool]:
+    """True = guardada, False = inexistente o sin campos validos, None = colision."""
     valid_data = {k: v for k, v in data.items() if k in ALLOWED_COLUMNS_RESERVAS}
     if not valid_data:
         return False
     normalizar_campos(valid_data, CAMPOS_TEXTO_RESERVA)
     conn = get_db_connection()
     try:
+        # BEGIN IMMEDIATE serializa el chequeo y el UPDATE igual que en
+        # create_reserva: dos ediciones simultaneas no cruzan el control.
+        conn.execute("BEGIN IMMEDIATE")
+        actual = conn.execute(
+            "SELECT * FROM reservas_salones WHERE id_reserva = ?", (id_reserva,)
+        ).fetchone()
+        if actual is None:
+            conn.rollback()
+            return False
+        # Solo tocar salon/fechas/estado puede crear una colision; renombrar
+        # un evento no. Se chequea con los valores efectivos del UPDATE.
+        tocamos_agenda = any(
+            k in valid_data for k in ("id_salon", "fecha_inicio", "fecha_fin", "estado_reserva")
+        )
+        efectiva = {**actual, **valid_data}
+        if tocamos_agenda and efectiva["estado_reserva"] == "Confirmada":
+            choque = conn.execute("""
+                SELECT 1 FROM reservas_salones
+                WHERE id_salon = ? AND estado_reserva = 'Confirmada'
+                  AND id_reserva != ?
+                  AND fecha_inicio <= ? AND fecha_fin >= ?
+                LIMIT 1
+            """, (efectiva["id_salon"], id_reserva, efectiva["fecha_fin"], efectiva["fecha_inicio"])).fetchone()
+            if choque:
+                conn.rollback()
+                return None
         fields = [f"{k} = ?" for k in valid_data]
         values = list(valid_data.values()) + [id_reserva]
         cursor = conn.execute(f"UPDATE reservas_salones SET {', '.join(fields)} WHERE id_reserva = ?", values)
