@@ -27,6 +27,7 @@ Mapeo entre la lista de entrega y los archivos de esta carpeta.
 
 | Documento | Contenido |
 | :--- | :--- |
+| `manual_de_instalacion.md` | Requisitos, instalacion local paso a paso, despliegue en Render, actualizacion, desinstalacion y solucion de problemas |
 | `plan_de_pruebas.md` | Estrategia, tipos y distribucion de las 230 pruebas, 18 casos representativos, criterios de aceptacion y limites |
 
 ## Nota: por que el APK no aplica
