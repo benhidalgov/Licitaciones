@@ -23,6 +23,12 @@ Mapeo entre la lista de entrega y los archivos de esta carpeta.
 | Modelo relacional | Generado (esquema con claves y restricciones) | `modelo_relacional.md` |
 | NO SQL descripciones de las colecciones | Generado (justificacion de no aplica + colecciones JSON externas) | `no_sql_colecciones.md` |
 
+## Otros documentos
+
+| Documento | Contenido |
+| :--- | :--- |
+| `plan_de_pruebas.md` | Estrategia, tipos y distribucion de las 230 pruebas, 18 casos representativos, criterios de aceptacion y limites |
+
 ## Nota: por que el APK no aplica
 
 El sistema es una aplicacion web (Flask + SQLite) que se sirve y se usa
